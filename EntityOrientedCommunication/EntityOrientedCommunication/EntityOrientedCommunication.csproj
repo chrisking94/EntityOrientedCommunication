@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{09F6F7A2-0B17-457A-90C3-72C90C83A593}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>EntityOrientedCommunication</RootNamespace>
+    <AssemblyName>EntityOrientedCommunication</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net35\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLog.4.7.0\lib\net35\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Agent.cs" />
+    <Compile Include="IniFile.cs" />
+    <Compile Include="TException.cs" />
+    <Compile Include="IToken.cs" />
+    <Compile Include="Logger\Logger.cs" />
+    <Compile Include="LoginAgent.cs" />
+    <Compile Include="Mail\IMailDispatcher.cs" />
+    <Compile Include="Mail\IMailReceiver.cs" />
+    <Compile Include="Mail\MailRouteInfo.cs" />
+    <Compile Include="Messages\ArrayCarrier.cs" />
+    <Compile Include="Messages\EnumCarrier.cs" />
+    <Compile Include="Messages\Envelope.cs" />
+    <Compile Include="Messages\ITMObject.cs" />
+    <Compile Include="Messages\TMBox.cs" />
+    <Compile Include="Messages\TMCmdline.cs" />
+    <Compile Include="Messages\TMError.cs" />
+    <Compile Include="Messages\TMessage.cs" />
+    <Compile Include="Messages\TMFiles.cs" />
+    <Compile Include="Messages\TMLetter.cs" />
+    <Compile Include="Messages\TMLoggedin.cs" />
+    <Compile Include="Messages\TMLogin.cs" />
+    <Compile Include="Messages\TMObject.cs" />
+    <Compile Include="Messages\TMText.cs" />
+    <Compile Include="Messages\TMUpdate.cs" />
+    <Compile Include="Utilities\CycleUpdater.cs" />
+    <Compile Include="Utilities\InitializedDictionary.cs" />
+    <Compile Include="Utilities\JsonList.cs" />
+    <Compile Include="Utilities\ObjectMarker.cs" />
+    <Compile Include="Utilities\ObjectPattern.cs" />
+    <Compile Include="Utilities\ObjectPatternSet.cs" />
+    <Compile Include="Utilities\OPSingleProperty.cs" />
+    <Compile Include="Utilities\OPSinglePropertyFunction.cs" />
+    <Compile Include="Utilities\StringFormatter.cs" />
+    <Compile Include="Utilities\TCounter.cs" />
+    <Compile Include="Utilities\ThreadControl.cs" />
+    <Compile Include="Utilities\TimeBlock.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serializer.cs" />
+    <Compile Include="StaffDefinition\TapaOperator.cs" />
+    <Compile Include="Utilities\Transaction.cs" />
+    <Compile Include="Utilities\TransactionPool.cs" />
+    <Compile Include="Utilities\TypeExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
+    <None Include="TAPACSBase.ini" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
