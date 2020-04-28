@@ -51,7 +51,7 @@ namespace EntityOrientedCommunication
                 {LogType.WR, LogLevel.Warn },
             };
 
-        private static TimeSpan lastDayTime;
+        private static DateTime lastDateTime;
         #endregion
 
         #region constructor
@@ -124,12 +124,12 @@ namespace EntityOrientedCommunication
         /// </summary>
         public static void IntelliUpdateConfiguration()
         {
-            if (DateTime.Now.TimeOfDay < lastDayTime)  // update target file's name when 'day' of DateTime.Now changed.
+            if (DateTime.Now.Day > lastDateTime.Day)  // update target file's name when 'day' of DateTime.Now changed.
             {
                 LogManager.ReconfigExistingLoggers();
             }
 
-            lastDayTime = DateTime.Now.TimeOfDay;
+            lastDateTime = DateTime.Now;
         }
         #endregion
     }

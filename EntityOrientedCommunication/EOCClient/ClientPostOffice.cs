@@ -143,7 +143,7 @@ namespace EOCClient
             if (letter.Recipient != "")
             {
                 // send to tele-entity
-                this.dispatcher.Send(letter);
+                this.dispatcher.Dispatch(letter);
             }
 
             if (localRouteInfo != null)

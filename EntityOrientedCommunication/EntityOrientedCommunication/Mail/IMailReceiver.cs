@@ -15,17 +15,17 @@ using EntityOrientedCommunication.Messages;
 namespace EntityOrientedCommunication.Mail
 {
     /// <summary>
-    /// 收件器
+    /// mail receiver
     /// </summary>
     public interface IMailReceiver
     {
         /// <summary>
-        /// 用于路由，为空时使用TypeFullName作为EntityName
+        /// use for routing, the route info is likes 'EntityName'@'UserName'
         /// </summary>
         string EntityName { get; }
 
         /// <summary>
-        /// 接收一封信件
+        /// receive a new coming letter
         /// </summary>
         /// <param name="letter"></param>
         void Pickup(TMLetter letter);

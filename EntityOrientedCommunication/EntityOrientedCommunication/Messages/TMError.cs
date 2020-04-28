@@ -17,10 +17,10 @@ namespace EntityOrientedCommunication.Messages
     public enum ErrorCode
     {
         Default,
-        RedundantLogin,  // 重复登陆
-        IncorrectUsernameOrPassword,  // 用户名或密码错误
-        UnregisteredUser,  // 未注册
-        InvalidOperation,  // 无效操作
+        RedundantLogin,
+        IncorrectUsernameOrPassword,
+        UnregisteredUser,
+        InvalidOperation,
         ServerBlocked,
     }
 

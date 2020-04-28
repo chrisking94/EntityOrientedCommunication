@@ -49,7 +49,7 @@ namespace TAPAServer
             #endregion
 
             #region interface
-            void IMailDispatcher.Send(TMLetter letter)
+            void IMailDispatcher.Dispatch(TMLetter letter)
             {
                 letter.SetEnvelope(GetEnvelope());
                 Request(StatusCode.Letter, letter);
@@ -89,7 +89,7 @@ namespace TAPAServer
                                 Operator = opr;
                                 Token = server.GenToken(TeleClientName);
                                 msg = new TMLoggedin(login, ClientName, opr, Token);
-                                msg.Status |= StatusCode.Command | StatusCode.Update | StatusCode.Time;  // sync time command
+                                msg.Status |= StatusCode.Command | StatusCode.SyncTime;  // sync time command
                                 logger = new Logger(TeleClientName);
 
                                 Phase = OperationPhase.P2LoggedIn;

@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 namespace EntityOrientedCommunication.Messages
 {
     /// <summary>
-    /// 数组转Json会出现引用问题，该类用于包装数组
+    /// there is a problem when convert 'array' to json string, this class is used to wrap 'array'
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class ArrayCarrier

@@ -63,7 +63,7 @@ namespace TAPAServer
             #endregion
 
             #region private
-            void IMailDispatcher.Send(TMLetter letter)  // client send, send to server through memory
+            void IMailDispatcher.Dispatch(TMLetter letter)  // client send, send to server through memory
             {
                 this.serverLoginAgentSimulator.ProcessRequest(letter);
             }

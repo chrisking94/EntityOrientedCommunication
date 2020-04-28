@@ -65,17 +65,13 @@
     <Compile Include="Messages\EnumCarrier.cs" />
     <Compile Include="Messages\Envelope.cs" />
     <Compile Include="Messages\ITMObject.cs" />
-    <Compile Include="Messages\TMBox.cs" />
-    <Compile Include="Messages\TMCmdline.cs" />
     <Compile Include="Messages\TMError.cs" />
     <Compile Include="Messages\TMessage.cs" />
-    <Compile Include="Messages\TMFiles.cs" />
     <Compile Include="Messages\TMLetter.cs" />
     <Compile Include="Messages\TMLoggedin.cs" />
     <Compile Include="Messages\TMLogin.cs" />
     <Compile Include="Messages\TMObject.cs" />
     <Compile Include="Messages\TMText.cs" />
-    <Compile Include="Messages\TMUpdate.cs" />
     <Compile Include="Utilities\CycleUpdater.cs" />
     <Compile Include="Utilities\InitializedDictionary.cs" />
     <Compile Include="Utilities\JsonList.cs" />

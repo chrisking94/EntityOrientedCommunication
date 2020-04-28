@@ -10,6 +10,9 @@ using System.Text;
 
 namespace EntityOrientedCommunication.Mail
 {
+    /// <summary>
+    /// route information of a letter
+    /// </summary>
     public class MailRouteInfo
     {
         #region data
@@ -115,7 +118,7 @@ namespace EntityOrientedCommunication.Mail
 
         #region private
         /// <summary>
-        /// ignore spaces
+        /// ignore white spaces
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>

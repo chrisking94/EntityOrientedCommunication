@@ -33,7 +33,7 @@ namespace TAPAServer
                 this.SOperator.PostOffice.Activate(this);  // activate post office
             }
 
-            public void Send(TMLetter letter)
+            public void Dispatch(TMLetter letter)
             {
                 client.ProcessRequest(letter);  // send to client through memory
             }

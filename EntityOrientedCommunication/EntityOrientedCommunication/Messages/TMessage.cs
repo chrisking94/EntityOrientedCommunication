@@ -16,32 +16,22 @@ namespace EntityOrientedCommunication.Messages
         None         = 0x00_00_0000,
         Request         = 0x00_00_0001,
         Response        = 0x00_00_0002,
-        Register        = 0x00_00_0004,  // 注册
+        Register        = 0x00_00_0004,
         Unregister      = Register | Not,
-        GetVersions     = 0x00_00_0008,  // 读取server版本控制表
-        Command         = Request | Response,  // 只能由服务器发出的命令
-        Operate         = 0x00_00_0010,  // 申请操作一个数据单元，服务器同意后返回Ok，否则返回码中不包含Ok
-        Login           = 0x00_00_0020,  // 客户端登陆
+        Command         = Request | Response,  // this command will only be emitted by server
+        Login           = 0x00_00_0020, 
         Logout          = Login | Not,
         Pull            = 0x00_00_0040,  // 拉取服务器数据
         Ok              = 0x00_00_0080,
         Denied          = 0x00_00_0100,
-        NoAutoReply     = 0x00_00_0200,  // 用于取消自动回复
-        Push            = 0x00_00_0400,  // 添加到版本控制
-        Update          = 0x00_00_0800,  // 软件升级
-        Cmdline         = 0x00_00_1000,  // 执行命令行
-        Upload          = 0x00_00_2000,  // 上载文件
-        Download        = 0x00_00_4000,  // 下载文件
-        Optimize        = 0x00_00_8000,  // 调用求解器
-        Delete          = 0x00_01_0000,  // 删除一个托管对象
+        NoAutoReply     = 0x00_00_0200,  // this flag is used to cancel aoto reply
         /* describer */
         Raw             = 0x01_00_0000,  // 代表一个普通文档对象
         Letter          = 0x02_00_0000,  // 信件，可延迟收发
         Receiver        = 0x04_00_0000,  // 信件接收器
-        Entity          = 0x08_00_0000,  // 标记与实体相关的操作
         Not             = 0x10_00_0000,  // 取反
         Decision        = 0x20_00_0000,  // 决策文件
-        Time            = 0x40_00_0000,  // 时间操作
+        SyncTime            = 0x40_00_0000,  // sychronize time.now
     }
     [JsonObject(MemberSerialization.OptIn)]
     public class TMessage

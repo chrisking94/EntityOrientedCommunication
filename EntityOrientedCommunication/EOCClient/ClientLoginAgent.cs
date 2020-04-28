@@ -131,7 +131,7 @@ namespace EOCClient
         /// 使用 'localhost' 作收件人可以把信件发到本机
         /// </summary>
         /// <param name="letter"></param>
-        void IMailDispatcher.Send(TMLetter letter)
+        void IMailDispatcher.Dispatch(TMLetter letter)
         {
             if (letter.Recipient == ClientName || letter.Recipient == "localhost")  // send to self
             {
@@ -180,7 +180,7 @@ namespace EOCClient
         public void Synchronize(DateTime dateTime)
         {
             var smg = new TMObject<DateTime>(GetEnvelope(), dateTime);
-            Request(StatusCode.Update | StatusCode.Time, smg);
+            Request(StatusCode.SyncTime, smg);
         }
         #endregion
 
@@ -370,7 +370,7 @@ namespace EOCClient
             {
                 postOffice.Pickup(msg as TMLetter);
             }
-            else if (msg.HasFlag(StatusCode.Time | StatusCode.Update))
+            else if (msg.HasFlag(StatusCode.SyncTime))
             {
                 if (msg is ITMObject<DateTime> dt)  // sync time
                 {

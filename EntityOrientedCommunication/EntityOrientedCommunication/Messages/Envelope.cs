@@ -16,10 +16,6 @@ namespace EntityOrientedCommunication.Messages
         {
             ID = envelope;
         }
-        public Envelope(TMessage msg)
-        {
-            ID = msg.ID;
-        }
 
         public override string ToString()
         {

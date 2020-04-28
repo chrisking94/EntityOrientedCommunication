@@ -15,6 +15,6 @@ namespace EntityOrientedCommunication.Mail
     {
         string ClientName { get; }
 
-        void Send(TMLetter letter);
+        void Dispatch(TMLetter letter);
     }
 }

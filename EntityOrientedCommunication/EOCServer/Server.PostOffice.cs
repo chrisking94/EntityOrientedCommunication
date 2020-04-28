@@ -100,46 +100,6 @@ namespace TAPAServer
                 }
             }
 
-            /// <summary>
-            /// 弹出发送给该用户的信件
-            /// </summary>
-            public List<TMLetter> Pop(LetterType letterType, List<string> receiverTypeFullNames)
-            {
-                var list = dictlLetterTypeAndInBox[letterType];
-                var letters = new List<TMLetter>();
-
-                foreach (var letterInfo in list)
-                {
-                    var intr = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
-                    var remain = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
-
-                    foreach (var typeStr in letterInfo.recipient.ReceiverEntityNames)
-                    {
-                        if (receiverTypeFullNames.Contains(typeStr))
-                        {
-                            intr.Add(typeStr);
-                        }
-                        else
-                        {
-                            remain.Add(typeStr);
-                        }
-                    }
-
-                    if (intr.Count > 0)
-                    {
-                        letterInfo.recipient = new MailRouteInfo(letterInfo.recipient.UserName, remain);
-                        var newRecipInfo = new MailRouteInfo(letterInfo.recipient.UserName, intr);
-                        var letter = new TMLetter(newRecipInfo.ToLiteral(), letterInfo.sender.ToLiteral(),
-                            letterInfo.letter.Title, letterInfo.letter.Content, letterInfo.letter.Status,
-                            null, letterInfo.letter.LetterType);
-
-                        letters.Add(letter);
-                    }
-                }
-
-                return letters;
-            }
-
             public void DiscardRealTimeLetters()
             {
                 lock (dictlLetterTypeAndInBox)
@@ -234,6 +194,46 @@ namespace TAPAServer
                 currentPopingThread = new ThreadControl(__threadPop);
             }
 
+            /// <summary>
+            /// 弹出发送给该用户的信件
+            /// </summary>
+            private List<TMLetter> Pop(LetterType letterType, List<string> receiverTypeFullNames)
+            {
+                var list = dictlLetterTypeAndInBox[letterType];
+                var letters = new List<TMLetter>();
+
+                foreach (var letterInfo in list)
+                {
+                    var intr = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
+                    var remain = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
+
+                    foreach (var typeStr in letterInfo.recipient.ReceiverEntityNames)
+                    {
+                        if (receiverTypeFullNames.Contains(typeStr))
+                        {
+                            intr.Add(typeStr);
+                        }
+                        else
+                        {
+                            remain.Add(typeStr);
+                        }
+                    }
+
+                    if (intr.Count > 0)
+                    {
+                        letterInfo.recipient = new MailRouteInfo(letterInfo.recipient.UserName, remain);
+                        var newRecipInfo = new MailRouteInfo(letterInfo.recipient.UserName, intr);
+                        var letter = new TMLetter(newRecipInfo.ToLiteral(), letterInfo.sender.ToLiteral(),
+                            letterInfo.letter.Title, letterInfo.letter.Content, letterInfo.letter.Status,
+                            null, letterInfo.letter.LetterType);
+
+                        letters.Add(letter);
+                    }
+                }
+
+                return letters;
+            }
+
             private void __threadPop(object obj)  // mail poper
             {
                 var control = obj as ThreadControl;
@@ -260,7 +260,7 @@ namespace TAPAServer
                         }
                         else
                         {
-                            dispatcher.Send(letter);
+                            dispatcher.Dispatch(letter);
                         }
                     }
 
