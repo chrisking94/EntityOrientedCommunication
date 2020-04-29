@@ -9,6 +9,7 @@ using EntityOrientedCommunication;
 using System.IO;
 using System.Threading;
 using EntityOrientedCommunication.Utilities;
+using ServerDemo;
 
 namespace EntityOrientedCommunication.Server
 {
@@ -40,7 +41,7 @@ namespace EntityOrientedCommunication.Server
                     }
                     else if (key.Key == ConsoleKey.S)  // service
                     {
-                        server = new Server(serverIp, serverPort);
+                        server = new Server("TServer", serverIp, serverPort);
                     }
                     else if(key.Key == ConsoleKey.C)  // control
                     {
@@ -50,7 +51,20 @@ namespace EntityOrientedCommunication.Server
             }
             else
             {
-                server = new Server(serverIp, serverPort);
+                server = new Server("TServer", serverIp, serverPort);
+            }
+
+            {
+                // 添加200个测试用户
+                var testUCount = 200;
+                for (var i = 0; i < testUCount; ++i)
+                {
+                    var uname = $"user{i}";
+                    var user = new UserInfo(uname);
+                    user.NickName = $"测试用户{i}";
+                    server.UserManager.Register(user);
+                }
+                Console.WriteLine($"添加了{testUCount}个测试账户");
             }
 
             // resource utilization monitor

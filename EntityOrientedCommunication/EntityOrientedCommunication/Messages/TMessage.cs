@@ -13,61 +13,67 @@ namespace EntityOrientedCommunication.Messages
     [Flags]
     public enum StatusCode
     {
-        None         = 0x00_00_0000,
+        None            = 0x00_00_0000,
+        /* basic status */
         Request         = 0x00_00_0001,
         Response        = 0x00_00_0002,
-        Register        = 0x00_00_0004,
-        Unregister      = 0x00_00_0008,
-        Command         = Request | Response,  // this command will only be emitted by server
-        Login           = 0x00_00_0010, 
-        Logout          = 0x00_00_0020,
-        Pull            = 0x00_00_0040,  // 拉取服务器数据
-        Ok              = 0x00_00_0080,
-        Denied          = 0x00_00_0100,
-        NoAutoReply     = 0x00_00_0200,  // this flag is used to cancel aoto reply
-        /* describer */
-        Raw             = 0x01_00_0000,  // 代表一个普通文档对象
-        Letter          = 0x02_00_0000,  // 信件，可延迟收发
-        Receiver        = 0x04_00_0000,  // 信件接收器
-        Decision        = 0x20_00_0000,  // 决策文件
-        SyncTime        = 0x40_00_0000,  // sychronize time.now
+        Command = Request | Response,  // this command is only emitted by server
+
+        /* operation */
+        Register        = 0x00_00_0004,  // register a 'target'
+        Unregister      = 0x00_00_0008,  // unregister a 'target'
+        Login           = 0x00_00_0010,  // login to server
+        Logout          = 0x00_00_0020,  // logout from server
+        Push            = 0x00_00_0020,  // push data to remote endpoint
+        Pull            = 0x00_00_0040,  // pull data from remote endpoint
+        Ok              = 0x00_00_0080,  // request acknowledged
+        Denied          = 0x00_00_0100,  // deny a request
+        NoAutoReply     = 0x00_00_0200,  // this flag is used to cancel auto reply
+
+        /* target */
+        Letter          = 0x02_00_0000,  // EOC letter
+        Entity          = 0x04_00_0000,  // EOC entity
+        Time            = 0x40_00_0000,  // sychronize time.now
     }
+
     [JsonObject(MemberSerialization.OptIn)]
     public class TMessage
     {
         #region property
         [JsonProperty]
-        public StatusCode Status { get; set; }
+        internal StatusCode Status { get; set; }
         #endregion
 
         #region field
         [JsonProperty]
-        public uint ID { get; private set; }
+        internal uint ID { get; private set; }
 
         /// <summary>
-        /// 一些消息发送失败后会重新发送，这个字段存储发送次数，超次消息可能会被遗弃
+        /// size after serializing and compressing, in byte
         /// </summary>
-        public int Trials;
-
         private int size;
         #endregion
 
         #region constructor
         [JsonConstructor]
-        public TMessage() { }
+        protected TMessage() { }
+
         internal TMessage(uint id)
         {
             ID = id;
         }
-        public TMessage(TMessage toReply)
+
+        public TMessage(TMessage copyFrom)
         {
-            ID = toReply.ID;
-            Status = toReply.Status;
+            ID = copyFrom.ID;
+            Status = copyFrom.Status;
         }
-        public TMessage(TMessage copyFrom, StatusCode status): this(copyFrom)
+
+        public TMessage(TMessage toReply, StatusCode status): this(toReply)
         {
             Status = status;
         }
+
         public TMessage(Envelope envelope, StatusCode status = StatusCode.None)
         {
             ID = envelope.ID;
@@ -80,6 +86,7 @@ namespace EntityOrientedCommunication.Messages
         {
             this.ID = env.ID;
         }
+
         public byte[] ToBytes()
         {
             var bytes = Encoding.ASCII.GetBytes(Serializer.ToJson(this));
@@ -93,6 +100,7 @@ namespace EntityOrientedCommunication.Messages
                 return bytes;
             }
         }
+
         public static TMessage FromBytes(byte[] bytes, int index, int count)
         {
             using (var ms = new MemoryStream(bytes, index, count))
@@ -109,14 +117,17 @@ namespace EntityOrientedCommunication.Messages
                 }
             }
         }
+
         public bool HasFlag(StatusCode flag)
         {
-            return (Status & flag) == flag;
+            return (this.Status & flag) == flag;
         }
+
         public string Size()
         {
             return StringFormatter.ByteCountToString(size);
         }
+
         public override string ToString()
         {
             return Format("TMsg");

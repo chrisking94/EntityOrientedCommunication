@@ -7,12 +7,16 @@ using Newtonsoft.Json;
 
 namespace EntityOrientedCommunication.Messages
 {
+    /// <summary>
+    /// sent by client, request log into server
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class TMLogin: TMessage
     {
         #region property
         [JsonProperty]
         public string Username;
+
         [JsonProperty]
         public string Password;
         #endregion
@@ -20,7 +24,8 @@ namespace EntityOrientedCommunication.Messages
         #region constructor
         [JsonConstructor]
         protected TMLogin() { }
-        public TMLogin(TapaOperator opr) : base(2)
+
+        public TMLogin(EOCUser opr) : base(2)  // special Id
         {
             Username = opr.Name;
             Password = opr.Password;

@@ -110,6 +110,11 @@ namespace EntityOrientedCommunication.Mail
             return list;
         }
 
+        /// <summary>
+        /// merge MailRouteInfo object to literal route information
+        /// </summary>
+        /// <param name="infos"></param>
+        /// <returns></returns>
         public static string ToLiteral(IEnumerable<MailRouteInfo> infos)
         {
             return string.Join(";", infos.Select(info => info.ToLiteral()));
@@ -118,7 +123,7 @@ namespace EntityOrientedCommunication.Mail
 
         #region private
         /// <summary>
-        /// ignore white spaces
+        /// list has a literal denotation likes 'a, b, c', the whitespaces are ignored.
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>

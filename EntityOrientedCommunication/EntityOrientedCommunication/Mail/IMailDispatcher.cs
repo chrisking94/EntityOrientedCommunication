@@ -13,8 +13,6 @@ namespace EntityOrientedCommunication.Mail
 {
     public interface IMailDispatcher
     {
-        string ClientName { get; }
-
         void Dispatch(TMLetter letter);
     }
 }

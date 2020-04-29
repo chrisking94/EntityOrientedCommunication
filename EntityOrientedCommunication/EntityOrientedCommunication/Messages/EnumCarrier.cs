@@ -14,7 +14,8 @@ using System.Reflection;
 namespace EntityOrientedCommunication.Messages
 {
     /// <summary>
-    /// 枚举直接作为Operation参数时以整数传输，反序列化时会出现无法识别枚举类型问题，该类主要负责携带附加类型信息
+    /// if a enum type item is serialized at a 'object pointer', then it can not be deserialized to the correct type
+    /// <para>this class carries the type information of the enum value, so it is able to convert the serialized enum value to it's original type</para>
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class EnumCarrier
@@ -22,6 +23,7 @@ namespace EntityOrientedCommunication.Messages
         #region field
         [JsonProperty]
         public Type Type;
+
         [JsonProperty]
         public string Value;
         #endregion
@@ -29,6 +31,7 @@ namespace EntityOrientedCommunication.Messages
         #region constructor
         [JsonConstructor]
         protected EnumCarrier() { }
+
         public EnumCarrier(Enum obj)
         {
             Value = obj.ToString();
@@ -41,6 +44,7 @@ namespace EntityOrientedCommunication.Messages
         {
             return Enum.Parse(Type, Value);
         }
+
         public override string ToString()
         {
             return Value;

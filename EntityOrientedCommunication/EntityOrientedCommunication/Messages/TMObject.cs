@@ -9,14 +9,15 @@ using System.Diagnostics;
 namespace EntityOrientedCommunication.Messages
 {
     /// <summary>
-    /// 用于传输单个对象
+    /// this message is used to transfer an object, the object will be serialized before transfering
+    /// <para>when the remote computer received this message, the object will be deserilized when it is accessed</para>
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMObject<T> : TMessage, ITMObject<T>
+    public class TMObject<T> : TMessage, IObject<T>
     {
         #region property
         /// <summary>
-        /// 使用该属性时相应对象才会被反序列化
+        /// the object json will be converted to 'T' type object when this property is visited first time.
         /// </summary>
         public T Object
         {
@@ -40,7 +41,7 @@ namespace EntityOrientedCommunication.Messages
 
         #region lazy serialization, deserialization
         /// <summary>
-        /// Json序列化时才会产生序列化过后的对象序列化串
+        /// the object will be serialized as string when this message is prepared to transfer to remote computer
         /// </summary>
         [JsonProperty]
         private string _serilizeObject
@@ -77,7 +78,7 @@ namespace EntityOrientedCommunication.Messages
         private T _object;
 
         /// <summary>
-        /// 代表_object已被恢复到目标值
+        /// denote the '_object' of this message has been rehabilitated from json string to it's original form
         /// </summary>
         private bool bObjectRecovered;
         #endregion
@@ -86,14 +87,17 @@ namespace EntityOrientedCommunication.Messages
         #region constructor
         [JsonConstructor]
         protected TMObject() { }
+
         public TMObject(Envelope envelope, T @object) : base(envelope)
         {
             Object = @object;
         }
+
         public TMObject(TMessage toreply, T @object) : base(toreply)
         {
             Object = @object;
         }
+
         public TMObject(TMObject<T> copyFrom) : base(copyFrom)
         {
             _objJson = copyFrom._objJson;

@@ -14,69 +14,66 @@ using EntityOrientedCommunication;
 
 namespace EntityOrientedCommunication.Server
 {
-    public partial class Server
+    internal class ServerTransaction
     {
-        private class ServerTransaction
+        #region data
+        #region property
+        public string Name { get; private set; }
+
+        /// <summary>
+        /// unit：ms
+        /// </summary>
+        public int Interval { get; private set; }
+
+        /// <summary>
+        /// set as EmergencyDo = true to execute this transactin immediately, then this property will be set to 'false' after execution
+        /// </summary>
+        public bool EmergencyDo { get; set; }
+        #endregion
+
+        #region field
+        private Action action;
+
+        private Queue<Action> executionOnceQ;
+        #endregion
+        #endregion
+
+        #region constructor
+        public ServerTransaction(string name, int interval, Action action)
         {
-            #region data
-            #region property
-            public string Name { get; private set; }
-
-            /// <summary>
-            /// 单位：ms
-            /// </summary>
-            public int Interval { get; private set; }
-
-            /// <summary>
-            /// 设成true会紧急执行一次，执行后变成false
-            /// </summary>
-            public bool EmergencyDo;
-            #endregion
-
-            #region field
-            private Action action;
-
-            private Queue<Action> executionOnceQ;
-            #endregion
-            #endregion
-
-            #region constructor
-            public ServerTransaction(string name, int interval, Action action)
-            {
-                Name = name;
-                Interval = interval;
-                this.action = action;
-                executionOnceQ = new Queue<Action>(4);
-            }
-            #endregion
-
-            #region interface
-            public void Do()
-            {
-                action();
-
-                lock (executionOnceQ)
-                {
-                    while (executionOnceQ.Count > 0)
-                    {
-                        var once = executionOnceQ.Dequeue();
-
-                        once();
-                    }
-                }
-            }
-
-            public void RunOnce(Action executionOnce)
-            {
-                lock (executionOnceQ)
-                {
-                    executionOnceQ.Enqueue(executionOnce);
-                }
-            }
-            #endregion
-
-            #region private
-            #endregion
+            Name = name;
+            Interval = interval;
+            this.action = action;
+            executionOnceQ = new Queue<Action>(4);
         }
+        #endregion
+
+        #region interface
+        public void Do()
+        {
+            action();
+
+            lock (executionOnceQ)
+            {
+                while (executionOnceQ.Count > 0)
+                {
+                    var once = executionOnceQ.Dequeue();
+
+                    once();
+                }
+            }
+        }
+
+        public void RunOnce(Action executionOnce)
+        {
+            lock (executionOnceQ)
+            {
+                executionOnceQ.Enqueue(executionOnce);
+            }
+        }
+        #endregion
+
+        #region private
+        #endregion
     }
 }

@@ -7,49 +7,40 @@ using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using EntityOrientedCommunication;
+using EOCServer;
 
 namespace EntityOrientedCommunication
 {
     /// <summary>
-    /// 工位
-    /// </summary>
-    [Flags]
-    public enum StationType
-    {
-        Unkown,
-        StationMaster,  // 站长
-        SystemService,  // 系统服务
-    }
-    /// <summary>
     /// 操作员
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TapaOperator
+    public class EOCUser : IUser
     {
         #region property
         [JsonProperty]
-        public long ID;
+        public long ID { get; set; }
 
         [JsonProperty]
-        public string Name;
+        public string Name { get; set; }
 
         [JsonProperty]
         public string Password { get; private set; }
 
         [JsonProperty]
-        public string NickName;
+        public string NickName { get; set; }
 
         [JsonProperty]
-        public object Detail;
+        public object Detail { get; set; }
         #endregion
 
         #region constructor
         [JsonConstructor]
-        public TapaOperator()
+        public EOCUser()
         {
         }
 
-        protected TapaOperator(string name, string detail = "")
+        protected EOCUser(string name, string detail = "")
         {
             Name = name;
             Detail = detail;
@@ -68,7 +59,7 @@ namespace EntityOrientedCommunication
             return this.Password == password;
         }
 
-        public void Update(TapaOperator opr)
+        public void Update(EOCUser opr)
         {
             Name = opr.Name;
             ID = opr.ID;
@@ -77,12 +68,12 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 没有拷贝密码
+        /// the password is not copied
         /// </summary>
         /// <returns></returns>
-        public TapaOperator AsTapaOperator()
+        public EOCUser Copy()
         {
-            var opr = new TapaOperator();
+            var opr = new EOCUser();
 
             opr.Update(this);
 

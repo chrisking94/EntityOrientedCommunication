@@ -24,6 +24,9 @@ namespace EntityOrientedCommunication.Messages
         ServerBlocked,
     }
 
+    /// <summary>
+    /// this class is used to report errors
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class TMError : TMText
     {

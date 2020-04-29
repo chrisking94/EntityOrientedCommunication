@@ -32,7 +32,7 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region constructor
-        public ClientMailBox(IMailReceiver receiver, ClientPostOffice office)
+        internal ClientMailBox(IMailReceiver receiver, ClientPostOffice office)
         {
             if (receiver.EntityName == null)
             {
@@ -52,12 +52,12 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// 使用 'localhost' 作收件人可以把信件发到本机
+        /// the letter will be delivered to local machine if the 'username' part of recipient is set to 'localhost'
         /// </summary>
         /// <param name="letter"></param>
-        public void Send(string recipient, string title, object content, LetterType letterType = LetterType.Normal, StatusCode status = StatusCode.Letter)
+        public void Send(string recipient, string header, object content, LetterType letterType = LetterType.Normal)
         {
-            var letter = new TMLetter(recipient, mailAdress, title, content, status, null, letterType);
+            var letter = new TMLetter(recipient, mailAdress, header, content, letterType);
             office.Send(letter);
         }
 

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace EntityOrientedCommunication.Messages
 {
-    public interface ITMObject<T>
+    public interface IObject<T>
     {
         T Object { get; }
     }

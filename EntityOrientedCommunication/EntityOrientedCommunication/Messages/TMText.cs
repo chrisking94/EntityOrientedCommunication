@@ -8,6 +8,9 @@ using System.Diagnostics;
 
 namespace EntityOrientedCommunication.Messages
 {
+    /// <summary>
+    /// used to transfer a simple literal string
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class TMText: TMessage
     {
@@ -19,19 +22,23 @@ namespace EntityOrientedCommunication.Messages
         #region constructor
         [JsonConstructor]
         protected TMText() { }
+
         protected TMText(string text)
         {
             Text = text;
         }
+
         public TMText(Envelope envelope, string text) : base(envelope)
         {
             Text = text;
         }
+
         public TMText(TMessage toBeReplied, string text) : base(toBeReplied)
         {
             Text = text;
             Status = toBeReplied.Status;
         }
+
         public TMText(TMessage toBeReplied, string text, StatusCode status) : base(toBeReplied)
         {
             Text = text;

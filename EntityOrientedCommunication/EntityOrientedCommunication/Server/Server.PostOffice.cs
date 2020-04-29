@@ -18,256 +18,268 @@ using EntityOrientedCommunication;
 
 namespace EntityOrientedCommunication.Server
 {
-    public partial class Server
+    internal class LetterInfo
     {
-        private class LetterInfo
+        public readonly TMLetter letter;
+
+        public MailRouteInfo sender;
+
+        public MailRouteInfo recipient;
+
+        public readonly DateTime timeStamp;
+
+        public LetterInfo(TMLetter letter, MailRouteInfo sender, MailRouteInfo recipient)
         {
-            public readonly TMLetter letter;
+            this.letter = letter;
+            this.sender = sender;
+            this.recipient = recipient;
+            timeStamp = DateTime.Now;
+        }
 
-            public MailRouteInfo sender;
+        internal LetterInfo(LetterInfo src, MailRouteInfo newRecipInfo)
+        {
+            this.letter = new TMLetter(newRecipInfo.ToLiteral(), src.letter.Sender,
+                        src.letter.Header, src.letter.Content, src.letter.LetterType);
+            this.sender = src.sender;
+            this.recipient = newRecipInfo;
+            this.timeStamp = src.timeStamp;  // hold timestamp
+        }
+    }
 
-            public MailRouteInfo recipient;
+    internal class ServerPostOffice
+    {
+        #region data
+        #region property
+        /// <summary>
+        /// get state or activate this mailbox
+        /// </summary>
+        public bool IsActivated { get; private set; }
+        #endregion
 
-            public LetterInfo(TMLetter letter, MailRouteInfo sender, MailRouteInfo recipient)
+        #region field
+        private ServerEOCUser owner;
+
+        private InitializedDictionary<LetterType, List<LetterInfo>> dictlLetterTypeAndInBox;
+
+        IMailDispatcher dispatcher;
+
+        ServerUserManager operatorManager => owner.Manager;
+
+        private List<string> registeredReceiverEntityNames = new List<string>(1);
+
+        private ThreadControl currentPopingThread;
+        #endregion
+        #endregion
+
+        #region constructor
+        public ServerPostOffice(ServerEOCUser owner)
+        {
+            this.owner = owner;
+
+            dictlLetterTypeAndInBox = new InitializedDictionary<LetterType, List<LetterInfo>>(
+                () => new List<LetterInfo>(1), 2);
+        }
+        #endregion
+
+        #region interface
+        /// <summary>
+        /// push the letter into this postoffice for transfering to remote computer
+        /// </summary>
+        /// <param name="info"></param>
+        public virtual void Push(TMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
+        {
+            var info = new LetterInfo(letter, senderInfo, recipientInfo);
+
+            if (info.letter.LetterType == LetterType.RealTime)
             {
-                this.letter = letter;
-                this.sender = sender;
-                this.recipient = recipient;
+                if (!IsActivated) return;  // user is not on line, discard
+                lock (this.registeredReceiverEntityNames)
+                {
+                    if (!info.recipient.ReceiverEntityNames.Intersect(registeredReceiverEntityNames).Any())  // entity is not online
+                    {
+                        return;  // discard
+                    }
+                }
+            }
+
+            lock (dictlLetterTypeAndInBox)
+            {
+                dictlLetterTypeAndInBox[info.letter.LetterType].Add(info);
             }
         }
 
-        private class ServerPostOffice
+        /// <summary>
+        /// change the type of letters which satisfies the specified pattern to 'Normal' for incoming transmission
+        /// </summary>
+        /// <param name="patterns"></param>
+        public void Pull(ObjectPatternSet patterns)
         {
-            #region data
-            #region property
-            /// <summary>
-            /// get state or activate this mailbox
-            /// </summary>
-            public bool IsActivated { get; private set; }
-            #endregion
-
-            #region field
-            private ServerOperator owner;
-
-            private InitializedDictionary<LetterType, List<LetterInfo>> dictlLetterTypeAndInBox;
-
-            IMailDispatcher dispatcher;
-
-            ServerOperatorManager operatorManager => owner.Manager;
-
-            private List<string> registeredReceiverEntityNames = new List<string>(1);
-
-            private ThreadControl currentPopingThread;
-            #endregion
-            #endregion
-
-            #region constructor
-            public ServerPostOffice(ServerOperator owner)
+            lock (dictlLetterTypeAndInBox)
             {
-                this.owner = owner;
-
-                dictlLetterTypeAndInBox = new InitializedDictionary<LetterType, List<LetterInfo>>(
-                    () => new List<LetterInfo>(1), 2);
-            }
-            #endregion
-
-            #region interface
-            /// <summary>
-            /// 把信件放入发件箱，准备发往客户端
-            /// </summary>
-            /// <param name="info"></param>
-            public virtual void Push(TMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
-            {
-                var info = new LetterInfo(letter, senderInfo, recipientInfo);
-
-                if (info.letter.LetterType == LetterType.RealTime)
+                foreach (var info in dictlLetterTypeAndInBox.Values.SelectMany(v => v))
                 {
-                    if (!IsActivated) return;  // user is not on line, discard
-                    lock (this.registeredReceiverEntityNames)
+                    if (info.letter.LetterType == LetterType.Retard)
                     {
-                        if (!info.recipient.ReceiverEntityNames.Intersect(registeredReceiverEntityNames).Any())  // entity is not online
-                        {
-                            return;  // discard
-                        }
-                    }
-                }
+                        var bMatch = patterns.All(info);
 
-                info.letter.TimeStamp = DateTime.Now;
-
-                lock (dictlLetterTypeAndInBox)
-                {
-                    dictlLetterTypeAndInBox[info.letter.LetterType].Add(info);
-                }
-            }
-
-            public void DiscardRealTimeLetters()
-            {
-                lock (dictlLetterTypeAndInBox)
-                {
-                    foreach (var kv in dictlLetterTypeAndInBox.ToArray())
-                    {
-                        var rtype = kv.Key;
-                        var inBox = kv.Value;
-
-                        inBox.RemoveAll(l => l.letter.LetterType == LetterType.RealTime);
-                        if (inBox.Count == 0)
-                        {
-                            dictlLetterTypeAndInBox.Remove(rtype);
-                        }
+                        if (bMatch) info.letter.LetterType = LetterType.Normal;  // set type to normal for sending
                     }
                 }
             }
+        }
 
-            /// <summary>
-            /// 把满足所有patterns的Retard信件变成Normal类型以待发送
-            /// </summary>
-            /// <param name="patterns"></param>
-            public void Pull(ObjectPatternSet patterns)
+        public void Register(string entityName)
+        {
+            lock (registeredReceiverEntityNames)
             {
-                lock (dictlLetterTypeAndInBox)
-                {
-                    foreach (var info in dictlLetterTypeAndInBox.Values.SelectMany(v => v))
-                    {
-                        if (info.letter.LetterType == LetterType.Retard)
-                        {
-                            var bMatch = patterns.All(info);
+                registeredReceiverEntityNames.Add(entityName);
+            }
+        }
 
-                            if (bMatch) info.letter.LetterType = LetterType.Normal;  // set type to normal for sending
-                        }
+        public void Activate(IMailDispatcher dispatcher)
+        {
+            this.IsActivated = true;
+            if (this.dispatcher != null)
+            {
+                lock (this.dispatcher)
+                {
+                    this.dispatcher = dispatcher;
+                }
+            }
+            else
+            {
+                this.dispatcher = dispatcher;
+            }
+            RestartPopingThread();
+        }
+
+        public void Deactivate()
+        {
+            if (dispatcher != null)
+            {
+                lock (dispatcher)
+                {
+                    this.dispatcher = null;
+                }
+            }
+            registeredReceiverEntityNames.Clear();
+            DiscardRealTimeLetters();
+        }
+
+        public override string ToString()
+        {
+            return $"{owner}'s postoffice，{dictlLetterTypeAndInBox.Values.Sum(v => v.Count)} unread.";
+        }
+        #endregion
+
+        #region private
+        private void DiscardRealTimeLetters()
+        {
+            lock (dictlLetterTypeAndInBox)
+            {
+                foreach (var kv in dictlLetterTypeAndInBox.ToArray())
+                {
+                    var rtype = kv.Key;
+                    var inBox = kv.Value;
+
+                    inBox.RemoveAll(l => l.letter.LetterType == LetterType.RealTime);
+                    if (inBox.Count == 0)
+                    {
+                        dictlLetterTypeAndInBox.Remove(rtype);
                     }
                 }
             }
+        }
 
-            public void Register(string entityName)
+        private class ThreadControl
+        {
+            public bool stopped;
+
+            public Thread thread;
+
+            public ThreadControl(ParameterizedThreadStart paramStart)
             {
+                this.stopped = false;
+                this.thread = new Thread(paramStart);
+
+                this.thread.IsBackground = true;
+                this.thread.Start(this);
+            }
+        }
+
+        private void RestartPopingThread()
+        {
+            if (currentPopingThread != null)  // stop last thread
+            {
+                currentPopingThread.stopped = true;
+            }
+
+            // create new thread
+            currentPopingThread = new ThreadControl(__threadPop);
+        }
+
+        private List<LetterInfo> Pop(LetterType letterType, List<string> receiverTypeFullNames)
+        {
+            var list = dictlLetterTypeAndInBox[letterType];
+            var popInfos = new List<LetterInfo>();
+
+            foreach (var letterInfo in list)
+            {
+                var intersection = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
+                var remain = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
+
+                foreach (var typeStr in letterInfo.recipient.ReceiverEntityNames)
+                {
+                    if (receiverTypeFullNames.Contains(typeStr))
+                    {
+                        intersection.Add(typeStr);
+                    }
+                    else
+                    {
+                        remain.Add(typeStr);
+                    }
+                }
+
+                if (intersection.Count > 0)
+                {
+                    letterInfo.recipient = new MailRouteInfo(letterInfo.recipient.UserName, remain);
+                    var newRecipInfo = new MailRouteInfo(letterInfo.recipient.UserName, intersection);
+                    var popInfo = new LetterInfo(letterInfo, newRecipInfo);
+
+                    popInfos.Add(popInfo);
+                }
+            }
+
+            return popInfos;
+        }
+
+        private void __threadPop(object obj)  // mail poper
+        {
+            var control = obj as ThreadControl;
+
+            while (IsActivated && !control.stopped)
+            {
+                // mail management
+                List<LetterInfo> letterInfos = new List<LetterInfo>(8);
+
                 lock (registeredReceiverEntityNames)
                 {
-                    registeredReceiverEntityNames.Add(entityName);
+                    letterInfos.AddRange(this.Pop(LetterType.RealTime, registeredReceiverEntityNames));
+                    letterInfos.AddRange(this.Pop(LetterType.Normal, registeredReceiverEntityNames));
+                    letterInfos.AddRange(this.Pop(LetterType.Emergency, registeredReceiverEntityNames));
                 }
-            }
-
-            public void Activate(IMailDispatcher dispatcher)
-            {
-                this.IsActivated = true;
-                this.dispatcher = dispatcher;
-                RestartPopingThread();
-            }
-
-            public void Deactivate()
-            {
-                this.dispatcher = null;
-                registeredReceiverEntityNames.Clear();
-                DiscardRealTimeLetters();
-            }
-
-            public override string ToString()
-            {
-                return $"{owner}的邮局，{dictlLetterTypeAndInBox.Values.Sum(v => v.Count)}未读";
-            }
-            #endregion
-
-            #region private
-            private class ThreadControl
-            {
-                public bool stopped;
-
-                public Thread thread;
-
-                public ThreadControl(ParameterizedThreadStart paramStart)
+                // pop
+                lock (dispatcher)
                 {
-                    this.stopped = false;
-                    this.thread = new Thread(paramStart);
-
-                    this.thread.IsBackground = true;
-                    this.thread.Start(this);
-                }
-            }
-
-            private void RestartPopingThread()
-            {
-                if (currentPopingThread != null)  // stop last thread
-                {
-                    currentPopingThread.stopped = true;
-                }
-
-                // create new thread
-                currentPopingThread = new ThreadControl(__threadPop);
-            }
-
-            /// <summary>
-            /// 弹出发送给该用户的信件
-            /// </summary>
-            private List<TMLetter> Pop(LetterType letterType, List<string> receiverTypeFullNames)
-            {
-                var list = dictlLetterTypeAndInBox[letterType];
-                var letters = new List<TMLetter>();
-
-                foreach (var letterInfo in list)
-                {
-                    var intr = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
-                    var remain = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
-
-                    foreach (var typeStr in letterInfo.recipient.ReceiverEntityNames)
+                    foreach (var info in letterInfos.OrderBy(info => info.timeStamp))
                     {
-                        if (receiverTypeFullNames.Contains(typeStr))
-                        {
-                            intr.Add(typeStr);
-                        }
-                        else
-                        {
-                            remain.Add(typeStr);
-                        }
-                    }
-
-                    if (intr.Count > 0)
-                    {
-                        letterInfo.recipient = new MailRouteInfo(letterInfo.recipient.UserName, remain);
-                        var newRecipInfo = new MailRouteInfo(letterInfo.recipient.UserName, intr);
-                        var letter = new TMLetter(newRecipInfo.ToLiteral(), letterInfo.sender.ToLiteral(),
-                            letterInfo.letter.Title, letterInfo.letter.Content, letterInfo.letter.Status,
-                            null, letterInfo.letter.LetterType);
-
-                        letters.Add(letter);
+                        dispatcher.Dispatch(info.letter);
                     }
                 }
 
-                return letters;
+                Thread.Sleep(1);
             }
-
-            private void __threadPop(object obj)  // mail poper
-            {
-                var control = obj as ThreadControl;
-
-                while (IsActivated && !control.stopped)
-                {
-                    // mail management
-                    List<TMLetter> letters = new List<TMLetter>(8);
-
-                    lock (registeredReceiverEntityNames)
-                    {
-                        letters.AddRange(this.Pop(LetterType.RealTime, registeredReceiverEntityNames));
-                        letters.AddRange(this.Pop(LetterType.Normal, registeredReceiverEntityNames));
-                        letters.AddRange(this.Pop(LetterType.Emergency, registeredReceiverEntityNames));
-                    }
-                    // pop
-                    // TODO: dispatcher可能在循环过程中变为null，需要处理这种情况
-                    foreach (var letter in letters.OrderBy(l => l.TimeStamp))
-                    {
-                        if (dispatcher == null)
-                        {
-                            // not sent, repush into office
-                            this.Push(letter, MailRouteInfo.Parse(letter.Sender)[0], MailRouteInfo.Parse(letter.Recipient)[0]);
-                        }
-                        else
-                        {
-                            dispatcher.Dispatch(letter);
-                        }
-                    }
-
-                    Thread.Sleep(10);
-                }
-            }
-            #endregion
         }
+        #endregion
     }
 }

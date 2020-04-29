@@ -21,9 +21,9 @@ using EntityOrientedCommunication.Mail;
 namespace EntityOrientedCommunication.Client
 {
     /// <summary>
-    /// 实现登陆管理、raw数据存取，等不涉及同步协议的功能 
+    /// implement the function of client login management
     /// </summary>
-    public sealed class ClientLoginAgent : LoginAgent, IClientMailDispatcher
+    public sealed class ClientAgent : LoginAgent, IClientMailDispatcher
     {
         #region data
         #region property
@@ -32,8 +32,6 @@ namespace EntityOrientedCommunication.Client
         public EndPoint EndPoint { get; private set; }
 
         public bool IsLoggedIn => Phase >= OperationPhase.P2LoggedIn;
-
-        public DnsEndPoint IPEndPoint => EndPoint as DnsEndPoint;
 
         public ClientPostOffice PostOffice => postOffice;
 
@@ -50,7 +48,7 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region constructor
-        public ClientLoginAgent(string serverIpOrUrl, int port)
+        public ClientAgent(string serverIpOrUrl, int port)
         {
             this.Now = new TimeBlock();
 
@@ -68,10 +66,11 @@ namespace EntityOrientedCommunication.Client
 
         #region interface
         /// <summary>
-        /// 登陆
+        /// login to server
         /// </summary>
-        /// <param name="timeout">等待超时时间，单位ms，-1代表不等待且永不超时</param>
-        /// <returns></returns>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <param name="timeout">unit: ms, login operation will never be overtime when 'timeout' == -1</param>
         public void Login(string username, string password, int timeout)
         {
             if (username != Operator.Name)
@@ -114,6 +113,9 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
+        /// <summary>
+        /// logout from server
+        /// </summary>
         public void Logout()
         {
             if (Phase >= OperationPhase.P2LoggedIn)
@@ -128,26 +130,49 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// 使用 'localhost' 作收件人可以把信件发到本机
+        /// set server time
         /// </summary>
-        /// <param name="letter"></param>
-        void IMailDispatcher.Dispatch(TMLetter letter)
+        /// <param name="dateTime"></param>
+        public void Synchronize(DateTime dateTime)
         {
-            if (letter.Recipient == ClientName || letter.Recipient == "localhost")  // send to self
+            var smg = new TMObject<DateTime>(GetEnvelope(), dateTime);
+            Request(StatusCode.Time | StatusCode.Push, smg);
+        }
+        #endregion
+
+        #region EOC
+        void IMailDispatcher.Dispatch(TMLetter letter)  // dispatch the local letter to server
+        {
+            CheckLogin();
+
+            letter.SetEnvelope(GetEnvelope());
+
+            var reply = Request(StatusCode.Letter, letter);
+
+            if (reply.HasFlag(StatusCode.Denied))
             {
-                postOffice.Pickup(letter);
+                throw new TException((reply as TMText).Text);
             }
-            else
+        }
+
+        void IClientMailDispatcher.Activate(ClientMailBox mailBox)  // activate a mailbox
+        {
+            if (IsLoggedIn)
             {
-                CheckLogin();
+                var msg = new TMText(GetEnvelope(), mailBox.EntityName);
+                var reply = Request(StatusCode.Register | StatusCode.Entity, msg);
 
-                letter.SetEnvelope(GetEnvelope());
-
-                var reply = Request(StatusCode.Letter, letter);
-
-                if (reply.HasFlag(StatusCode.Denied))
+                if (reply.HasFlag(StatusCode.Ok))
                 {
-                    throw new TException((reply as TMText).Text);
+                    // pass
+                }
+                else
+                {
+                    var error = reply as TMText;
+
+                    ClientAgentEvent?.Invoke(this, new ClientAgentEventArgs(
+                        ClientAgentEventType.Error,
+                        $"unable to register entity '{mailBox.EntityName}'，detail：{error.Text}"));
                 }
             }
         }
@@ -171,16 +196,6 @@ namespace EntityOrientedCommunication.Client
             {
                 throw new Exception((reply as TMText).Text);
             }
-        }
-
-        /// <summary>
-        /// set server time
-        /// </summary>
-        /// <param name="dateTime"></param>
-        public void Synchronize(DateTime dateTime)
-        {
-            var smg = new TMObject<DateTime>(GetEnvelope(), dateTime);
-            Request(StatusCode.SyncTime, smg);
         }
         #endregion
 
@@ -207,18 +222,16 @@ namespace EntityOrientedCommunication.Client
 
         private void Connect()
         {
-            if (Phase < OperationPhase.P1Connected)  // 连接
+            if (Phase < OperationPhase.P1Connected)  // not connected
             {
-                ClientAgentEvent?.Invoke(this,
-                    new ClientAgentEventArgs(ClientAgentEventType.Connecting, $"正在连接{EndPoint}..."));
                 if (socket == null || socket.IsBound)
                 {
                     InitSocket();
                 }
 
-                // 新建一个线程去连接
+                // create a new thread to perform socket connection
                 string errorMessage = null;
-                var connectThread = new Thread((x) =>
+                var connectionThread = new Thread((x) =>
                 {
                     try
                     {
@@ -227,10 +240,18 @@ namespace EntityOrientedCommunication.Client
                     catch (SocketException se)
                     {
                         errorMessage = se.Message;
+                        // check exception error code
+                        if (se.SocketErrorCode == SocketError.ConnectionRefused)
+                        {
+                            logger.Info(se.Message);
+                        }
+
+                        ClientAgentEvent?.Invoke(this,
+                            new ClientAgentEventArgs(ClientAgentEventType.Error, se.Message));
                     }
                 });
-                connectThread.IsBackground = true;
-                connectThread.Start();
+                connectionThread.IsBackground = true;
+                connectionThread.Start();
                 var tc = timeout;
                 while (!socket.Connected && tc > 0 && errorMessage == null)
                 {
@@ -239,32 +260,32 @@ namespace EntityOrientedCommunication.Client
                     if (tc % 1000 == 0)
                     {
                         ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.Connecting, $"正在连接{EndPoint}，{tc / 1000}s"));
+                            new ClientAgentEventArgs(ClientAgentEventType.Connecting | ClientAgentEventType.Prompt, $"connecting to {EndPoint}, {tc / 1000}s"));
                     }
                 }
 
-                // 连接成功
+                // succeeded
                 if (socket.Connected)
                 {
                     GetControl(ThreadType.Listen).Start();
                     Phase = OperationPhase.P1Connected;
                     ClientAgentEvent?.Invoke(this,
-                        new ClientAgentEventArgs(ClientAgentEventType.Connected, $"已连接到{TeleClientName}"));
+                        new ClientAgentEventArgs(ClientAgentEventType.Connected | ClientAgentEventType.Prompt, $"connected to {TeleClientName}"));
                 }
-                else  // 连接失败
+                else  // failed
                 {
                     if (tc <= 0)
                     {
-                        errorMessage = $"连接{EndPoint}超时";
-                        connectThread.Abort();
+                        errorMessage = $"connect to {EndPoint} timeout";
+                        connectionThread.Abort();
                     }
                     else if (errorMessage == null)
                     {
-                        errorMessage = $"未知错误，连接{EndPoint}失败";
+                        errorMessage = $"unkown error, cannot connect to {EndPoint}";
                     }
 
                     ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.Connecting | ClientAgentEventType.Error, errorMessage));
+                            new ClientAgentEventArgs(ClientAgentEventType.Connecting | ClientAgentEventType.Prompt, errorMessage));
                 }
             }
         }
@@ -278,7 +299,7 @@ namespace EntityOrientedCommunication.Client
                 while (!tc.IsReplied && !tc.IsTimeOut)
                 {
                     ClientAgentEvent?.Invoke(this,
-                        new ClientAgentEventArgs(ClientAgentEventType.LogingIn, $"正在登陆, {tc.CountDown / 1000}s..."));
+                        new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Prompt, $"logging in, {tc.CountDown / 1000}s"));
                     Thread.Sleep(1000);
                 }
                 if (tc.IsReplied)
@@ -287,17 +308,17 @@ namespace EntityOrientedCommunication.Client
                     if (echo.Status.HasFlag(StatusCode.Ok))
                     {
                         var loggedIn = echo as TMLoggedin;
-                        Operator.Update(loggedIn.Operator);
+                        Operator.Update(loggedIn.User);
                         TeleClientName = loggedIn.ServerName;
                         Token = loggedIn.Token;
-                        logger = new Logger(TeleClientName);
+                        logger.SetOwner(TeleClientName);
                         Phase = OperationPhase.P2LoggedIn;
                         ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.LoggedIn, "登录成功"));
+                            new ClientAgentEventArgs(ClientAgentEventType.LoggedIn | ClientAgentEventType.Prompt, "login success!"));
 
                         postOffice.ActivateAll();
                     }
-                    else
+                    else  // denied
                     {
                         if (echo is TMError err)
                         {
@@ -309,58 +330,23 @@ namespace EntityOrientedCommunication.Client
                             }
                         }
                         ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.LogingIn | ClientAgentEventType.Error, (echo as TMText).Text));
+                            new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Error, (echo as TMText).Text));
                     }
                 }
                 else
                 {
                     ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.LogingIn | ClientAgentEventType.Error, "登陆超时"));
+                            new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Error, "login timout"));
                 }
             }
         }
 
-        public void Online(ClientMailBox mailBox)
-        {
-            if (IsLoggedIn)
-            {
-                var msg = new TMText(GetEnvelope(), mailBox.EntityName);
-                var reply = Request(StatusCode.Register | StatusCode.Receiver, msg);
-
-                if (reply.HasFlag(StatusCode.Ok))
-                {
-                    // pass
-                }
-                else
-                {
-                    var error = reply as TMText;
-
-                    ClientAgentEvent?.Invoke(this, new ClientAgentEventArgs(
-                        ClientAgentEventType.Error,
-                        $"无法注册接收器 '{mailBox.EntityName}'，错误信息：{error.Text}"));
-                }
-            }
-        }
-
-        protected void Transaction_ConnectionMonitor()
+        private void Transaction_ConnectionMonitor()
         {
             if (bOnWorking)
-            {
-                try
-                {
-                    Connect();
-                    Login();
-                }
-                catch (SocketException se)
-                {
-                    if (se.SocketErrorCode == SocketError.ConnectionRefused)
-                    {
-                        logger.Info(se.Message);
-                    }
-
-                    ClientAgentEvent?.Invoke(this,
-                        new ClientAgentEventArgs(ClientAgentEventType.Error, se.Message));
-                }
+            {  // check connection & login status
+                Connect();
+                Login();
             }
         }
 
@@ -370,9 +356,9 @@ namespace EntityOrientedCommunication.Client
             {
                 postOffice.Pickup(msg as TMLetter);
             }
-            else if (msg.HasFlag(StatusCode.SyncTime))
+            else if (msg.HasFlag(StatusCode.Time | StatusCode.Push))
             {
-                if (msg is ITMObject<DateTime> dt)  // sync time
+                if (msg is IObject<DateTime> dt)  // sync time
                 {
                     this.Now.Set(dt.Object);
                 }
@@ -396,11 +382,11 @@ namespace EntityOrientedCommunication.Client
             envelope = 101;
         }
 
-        protected void CheckLogin()
+        private void CheckLogin()
         {
             if (Phase < OperationPhase.P2LoggedIn)
             {
-                throw new InvalidOperationException("请先登陆");
+                throw new InvalidOperationException("please login first!");
             }
         }
 
@@ -409,7 +395,7 @@ namespace EntityOrientedCommunication.Client
             base.Destroy();
             Phase = OperationPhase.P0Start;
             ClientAgentEvent?.Invoke(this,
-                new ClientAgentEventArgs(ClientAgentEventType.Disconnected, $"{this}已销毁"));
+                new ClientAgentEventArgs(ClientAgentEventType.Disconnected | ClientAgentEventType.Prompt, $"{this} was destroyed"));
             postOffice.Destroy();
             postOffice = null;
 
@@ -427,25 +413,7 @@ namespace EntityOrientedCommunication.Client
         {
             Phase = OperationPhase.P0Start;  // reconnect
             ClientAgentEvent?.Invoke(this,
-                new ClientAgentEventArgs(ClientAgentEventType.Error, "连接超时"));
-        }
-
-        private void CheckError(TMessage msg)
-        {
-            if (msg.HasFlag(StatusCode.Denied))
-            {
-                int errorCode = -1;
-                string errorInfo = "unknown error";
-                if (msg is TMText text)
-                {
-                    errorInfo = text.Text;
-                    if (msg is TMError err)
-                    {
-                        errorCode = (int)err.Code;
-                    }
-                }
-                throw new Exception($"error{errorCode}: {errorInfo}");
-            }  // else pass
+                new ClientAgentEventArgs(ClientAgentEventType.Connection | ClientAgentEventType.Error, "connection time out"));
         }
         #endregion
     }

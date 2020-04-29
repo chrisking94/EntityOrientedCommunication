@@ -18,7 +18,7 @@ using System.Collections;
 namespace EntityOrientedCommunication.Utilities
 {
     /// <summary>
-    /// 解决List&lt;object&gt;实例中值类型元素的序列化和反序列化问题
+    /// to solve the serilization and deserilization problem of value type items in List&lt;object&gt;
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class JsonList<T> : IEnumerable<T>

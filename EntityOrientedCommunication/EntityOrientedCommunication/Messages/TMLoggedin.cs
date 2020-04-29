@@ -13,10 +13,10 @@ using Newtonsoft.Json;
 namespace EntityOrientedCommunication.Messages
 {
     /// <summary>
-    /// 登陆成功
+    /// login succeed message
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMLoggedin : TMText, ITMObject<DateTime>
+    public class TMLoggedin : TMText, IObject<DateTime>
     {
         #region data
         #region property
@@ -28,7 +28,7 @@ namespace EntityOrientedCommunication.Messages
 
         #region field
         [JsonProperty]
-        public TapaOperator Operator;
+        public EOCUser User;
 
         [JsonProperty]
         public string ServerName;
@@ -38,10 +38,10 @@ namespace EntityOrientedCommunication.Messages
         #region constructor
         [JsonConstructor]
         protected TMLoggedin() { }
-        public TMLoggedin(TMLogin toReply, string serverName, TapaOperator @operator, string token) : 
+        public TMLoggedin(TMLogin toReply, string serverName, EOCUser @operator, string token) : 
             base(toReply, token)
         {
-            Operator = @operator.AsTapaOperator();
+            User = @operator.Copy();
             ServerName = serverName;
             Status = StatusCode.Ok;
         }

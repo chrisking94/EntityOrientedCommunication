@@ -59,53 +59,71 @@ namespace EntityOrientedCommunication.Client
 
         #region interface
         /// <summary>
-        /// 注册一个信件接收器，一种接收器类型只能同时注册一个实例。增加离线注册
+        /// register a 'ClientMailBox' box for 'receiver', one entity name can only be registered once
+        /// <para>if the imminent receiver has same name with the old receiver in this office, then the old receiver will be destroyed and replaced</para>
         /// </summary>
         /// <param name="receiver"></param>
         /// <returns></returns>
         public ClientMailBox Register(IMailReceiver receiver)
         {
+            if (receiver.EntityName == null)
+            {
+                throw new ArgumentNullException($"the {nameof(receiver)}.{nameof(receiver.EntityName)} should not be null.");
+            }
+
             var mailBox = new ClientMailBox(receiver, this);
 
             lock (dictEntityName2MailBox)
             {
                 if (dictEntityName2MailBox.ContainsKey(mailBox.EntityName))
                 {
-                    throw new Exception($"there's already a receiver named '{mailBox.EntityName}' registered, unregister it firstly please.");
+                    PostOfficeEvent?.Invoke(this, 
+                        new PostOfficeEventArgs(PostOfficeEventType.Prompt, $"there's already a receiver named '{mailBox.EntityName}' registered, this old receiver will be destroyed."));
+                    var oldBox = dictEntityName2MailBox[mailBox.EntityName];
+                    oldBox.Destroy();
                 }
 
                 dictEntityName2MailBox[mailBox.EntityName] = mailBox;
             }
 
-            dispatcher.Online(mailBox);
+            dispatcher.Activate(mailBox);
 
             return mailBox;
         }
 
-        public bool Contains(string typeFullName)
+        /// <summary>
+        /// determine whether the entityName has been registered
+        /// </summary>
+        /// <param name="entityName"></param>
+        /// <returns></returns>
+        public bool IsRegistered(string entityName)
         {
             lock(dictEntityName2MailBox)
-                return dictEntityName2MailBox.ContainsKey(typeFullName);
+                return dictEntityName2MailBox.ContainsKey(entityName);
         }
 
-        public void Pickup(TMLetter letter)
+        /// <summary>
+        /// pickup a letter sent from remote postoffice
+        /// </summary>
+        /// <param name="letter"></param>
+        internal void Pickup(TMLetter letter)
         {
             ClientMailBox mailBox = null;
 
             lock (dictEntityName2MailBox)
             {
                 var routeInfo = MailRouteInfo.Parse(letter.Recipient)[0];
-                foreach (var receiverType in routeInfo.ReceiverEntityNames)
+                foreach (var entityName in routeInfo.ReceiverEntityNames)
                 {
-                    if (dictEntityName2MailBox.ContainsKey(receiverType))
+                    if (dictEntityName2MailBox.ContainsKey(entityName))
                     {
-                        mailBox = dictEntityName2MailBox[receiverType];
+                        mailBox = dictEntityName2MailBox[entityName];
                     }
                     else
                     {
                         PostOfficeEvent?.Invoke(this,
                             new PostOfficeEventArgs(PostOfficeEventType.Error,
-                            $"当前'{nameof(ClientPostOffice)}'注册了'{receiverType}'类型收件器但是没有找到该类收件器实例，接收信件失败"));
+                            $"unable to pickup letter: postoffice '{this.OfficeName}' has registered a receiver named '{entityName}', but the corresponding instance if not found."));
                     }
                 }
             }
@@ -113,12 +131,16 @@ namespace EntityOrientedCommunication.Client
             mailBox?.Receive(letter);
         }
 
+        /// <summary>
+        /// provide a send interface for every mailbox in this postoffice
+        /// </summary>
+        /// <param name="letter"></param>
         internal void Send(TMLetter letter)
         {
             var routeInfos = MailRouteInfo.Parse(letter.Recipient);
             if (routeInfos == null)
             {
-                throw new Exception($"cannot deliver letter '{letter.Title}', the '{nameof(letter.Recipient)}' of which is not in a valid format.");
+                throw new Exception($"cannot deliver letter '{letter.Header}', the '{nameof(letter.Recipient)}' of which is not in a valid format.");
             }
 
             var teleRouteInfos = new List<MailRouteInfo>(routeInfos.Count);
@@ -155,14 +177,17 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
+        /// <summary>
+        /// activate all mailboxes
+        /// </summary>
         public void ActivateAll()
         {
             lock (dictEntityName2MailBox)
             {
-                // 注册接收器到服务器
+                // tele-register a 
                 foreach (var reciver in this.dictEntityName2MailBox.Values)
                 {
-                    this.dispatcher.Online(reciver);
+                    this.dispatcher.Activate(reciver);
                 }
             }
         }
