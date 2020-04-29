@@ -11,7 +11,7 @@ using System.Text;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 
-namespace EOCClient
+namespace EntityOrientedCommunication.Client
 {
     [Flags]
     public enum ClientAgentEventType : ulong

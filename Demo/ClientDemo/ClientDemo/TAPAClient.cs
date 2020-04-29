@@ -10,9 +10,9 @@ using System.Linq;
 using System.Text;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
-using EOCClient;
 using EntityOrientedCommunication.Utilities;
 using EntityOrientedCommunication;
+using EntityOrientedCommunication.Client;
 
 namespace ClientDemo
 {

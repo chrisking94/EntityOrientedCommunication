@@ -16,7 +16,7 @@ using System.Threading;
 using EntityOrientedCommunication.Messages;
 using EntityOrientedCommunication;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     public partial class Server
     {

@@ -1,7 +1,7 @@
 ﻿using ClientDemo;
 using EntityOrientedCommunication;
+using EntityOrientedCommunication.Client;
 using EntityOrientedCommunication.Mail;
-using EOCClient;
 using System;
 using System.Collections.Generic;
 using System.Data;

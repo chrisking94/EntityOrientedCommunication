@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientDemo", "ClientDemo\Cl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityOrientedCommunication", "..\..\EntityOrientedCommunication\EntityOrientedCommunication\EntityOrientedCommunication.csproj", "{09F6F7A2-0B17-457A-90C3-72C90C83A593}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EOCClient", "..\..\EntityOrientedCommunication\EOCClient\EOCClient.csproj", "{FD552ED8-2D36-4168-965A-F809FEF56BC4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{09F6F7A2-0B17-457A-90C3-72C90C83A593}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09F6F7A2-0B17-457A-90C3-72C90C83A593}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09F6F7A2-0B17-457A-90C3-72C90C83A593}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FD552ED8-2D36-4168-965A-F809FEF56BC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FD552ED8-2D36-4168-965A-F809FEF56BC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FD552ED8-2D36-4168-965A-F809FEF56BC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FD552ED8-2D36-4168-965A-F809FEF56BC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

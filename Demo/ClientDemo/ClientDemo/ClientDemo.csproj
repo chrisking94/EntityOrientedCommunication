@@ -53,10 +53,6 @@
       <Project>{09f6f7a2-0b17-457a-90c3-72c90c83a593}</Project>
       <Name>EntityOrientedCommunication</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\EntityOrientedCommunication\EOCClient\EOCClient.csproj">
-      <Project>{fd552ed8-2d36-4168-965a-f809fef56bc4}</Project>
-      <Name>EOCClient</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

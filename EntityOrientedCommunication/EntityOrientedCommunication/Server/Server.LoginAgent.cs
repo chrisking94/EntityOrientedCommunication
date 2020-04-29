@@ -16,7 +16,7 @@ using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Utilities;
 using EntityOrientedCommunication.Messages;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     public partial class Server
     {
@@ -61,55 +61,52 @@ namespace TAPAServer
             {
                 if (msg.HasFlag(StatusCode.Login))
                 {
-                    if (msg.HasFlag(StatusCode.Not))  // logout
-                    {
-                        Logout();
+                    var login = msg as TMLogin;
+                    bool hasLoggedIn;
 
-                        msg = new TMessage(msg, StatusCode.Ok);
+                    hasLoggedIn = server.GetLoggedInAgents().Any(a => a.TeleClientName == login.Username);
+
+                    if (hasLoggedIn)
+                    {
+                        msg = new TMError(msg, $"'{login.Username}' 已登录，禁止重复登录。", ErrorCode.RedundantLogin);
                     }
-                    else
+                    else if (server.manager.Contains(login.Username))
                     {
-                        var login = msg as TMLogin;
-                        bool hasLoggedIn;
+                        var opr = server.manager.GetOperator(login.Username, login.Password);
 
-                        hasLoggedIn = server.GetLoggedInAgents().Any(a => a.TeleClientName == login.Username);
-
-                        if (hasLoggedIn)
+                        if (opr != null)
                         {
-                            msg = new TMError(msg, $"'{login.Username}' 已登录，禁止重复登录。", ErrorCode.RedundantLogin);
-                        }
-                        else if (server.manager.Contains(login.Username))
-                        {
-                            var opr = server.manager.GetOperator(login.Username, login.Password);
+                            TeleClientName = login.Username;
+                            this.logger.SetOwner(TeleClientName);  // reset owner of logger
+                            Operator = opr;
+                            Token = server.GenToken(TeleClientName);
+                            msg = new TMLoggedin(login, ClientName, opr, Token);
+                            msg.Status |= StatusCode.Command | StatusCode.SyncTime;  // sync time command
+                            logger = new Logger(TeleClientName);
 
-                            if (opr != null)
-                            {
-                                TeleClientName = login.Username;
-                                this.logger.SetOwner(TeleClientName);  // reset owner of logger
-                                Operator = opr;
-                                Token = server.GenToken(TeleClientName);
-                                msg = new TMLoggedin(login, ClientName, opr, Token);
-                                msg.Status |= StatusCode.Command | StatusCode.SyncTime;  // sync time command
-                                logger = new Logger(TeleClientName);
+                            Phase = OperationPhase.P2LoggedIn;
+                            opr.PostOffice.Activate(this);  // activate mailbox
+                            opr.IsOnline = true;
 
-                                Phase = OperationPhase.P2LoggedIn;
-                                opr.PostOffice.Activate(this);  // activate mailbox
-                                opr.IsOnline = true;
-
-                                (msg as TMLoggedin).Object = server.Now;  // set sync time
-                            }
-                            else
-                            {
-                                msg = new TMError(msg, $"密码或用户名错误", ErrorCode.IncorrectUsernameOrPassword);
-                            }
+                            (msg as TMLoggedin).Object = server.Now;  // set sync time
                         }
                         else
                         {
-                            msg = new TMError(msg, $"用户 {login.Username} 未注册", ErrorCode.UnregisteredUser);
+                            msg = new TMError(msg, $"密码或用户名错误", ErrorCode.IncorrectUsernameOrPassword);
                         }
                     }
+                    else
+                    {
+                        msg = new TMError(msg, $"用户 {login.Username} 未注册", ErrorCode.UnregisteredUser);
+                    }
                 }
-                else if(SOperator == null || !SOperator.IsOnline)
+                else if (msg.HasFlag(StatusCode.Logout))
+                {
+                    Logout();
+
+                    msg = new TMessage(msg, StatusCode.Ok);
+                }
+                else if (SOperator == null || !SOperator.IsOnline)
                 {
                     msg = new TMError(msg, "请先登陆");
                 }
@@ -206,7 +203,7 @@ namespace TAPAServer
                     var msg = exp.Tag as TMessage;
                     if (msg.HasFlag(StatusCode.Request))
                     {
-                        Response(new TMText(exp.Tag as TMessage, $"处理请求{msg.ID}时遇到错误：{exp.InnerException.Message}", StatusCode.Denied));
+                        Response(new TMText(exp.Tag as TMessage, $"处理请求 '{msg.ID}' 时遇到错误：{exp.InnerException.Message}", StatusCode.Denied));
                     }
                 }
                 else  // disconnect when fatal error occurs

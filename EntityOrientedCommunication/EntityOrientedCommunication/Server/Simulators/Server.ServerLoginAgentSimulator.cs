@@ -12,7 +12,7 @@ using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Messages;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     public partial class Server
     {

@@ -53,7 +53,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Agent.cs" />
+    <Compile Include="Client\ClientAgentEventArgs.cs" />
+    <Compile Include="Client\ClientLoginAgent.cs" />
+    <Compile Include="Client\ClientMailBox.cs" />
+    <Compile Include="Client\ClientPostOffice.cs" />
+    <Compile Include="Client\IClientMailDispatcher.cs" />
     <Compile Include="IniFile.cs" />
+    <Compile Include="Server\IUser.cs" />
+    <Compile Include="Server\Server.cs" />
+    <Compile Include="Server\Server.LoginAgent.cs" />
+    <Compile Include="Server\Server.Operator.cs" />
+    <Compile Include="Server\Server.OperatorManager.cs" />
+    <Compile Include="Server\Server.PostOffice.cs" />
+    <Compile Include="Server\Server.Transaction.cs" />
+    <Compile Include="Server\Simulators\Server.ClientLoginAgentSimulator.cs" />
+    <Compile Include="Server\Simulators\Server.ServerLoginAgentSimulator.cs" />
     <Compile Include="TException.cs" />
     <Compile Include="IToken.cs" />
     <Compile Include="Logger\Logger.cs" />
@@ -96,7 +110,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="server.ini" />
     <None Include="TAPACSBase.ini" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

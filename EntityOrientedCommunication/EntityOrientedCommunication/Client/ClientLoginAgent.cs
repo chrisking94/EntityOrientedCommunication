@@ -18,7 +18,7 @@ using EntityOrientedCommunication;
 using EntityOrientedCommunication.Messages;
 using EntityOrientedCommunication.Mail;
 
-namespace EOCClient
+namespace EntityOrientedCommunication.Client
 {
     /// <summary>
     /// 实现登陆管理、raw数据存取，等不涉及同步协议的功能 
@@ -118,7 +118,7 @@ namespace EOCClient
         {
             if (Phase >= OperationPhase.P2LoggedIn)
             {
-                var reply = Request(StatusCode.Login | StatusCode.Not, new TMessage(GetEnvelope()));
+                var reply = Request(StatusCode.Logout, new TMessage(GetEnvelope()));
 
                 if (!reply.HasFlag(StatusCode.Ok))
                 {

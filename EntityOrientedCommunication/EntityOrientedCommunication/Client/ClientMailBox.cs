@@ -13,7 +13,7 @@ using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Messages;
 
-namespace EOCClient
+namespace EntityOrientedCommunication.Client
 {
     public sealed class ClientMailBox
     {

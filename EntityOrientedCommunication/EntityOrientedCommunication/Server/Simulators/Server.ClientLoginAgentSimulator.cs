@@ -14,9 +14,9 @@ using System.Diagnostics;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Messages;
-using EOCClient;
+using EntityOrientedCommunication.Client;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     public partial class Server
     {

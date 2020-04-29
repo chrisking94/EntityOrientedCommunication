@@ -10,7 +10,7 @@ using System.Text;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
 
-namespace EOCClient
+namespace EntityOrientedCommunication.Client
 {
     public enum PostOfficeEventType
     {

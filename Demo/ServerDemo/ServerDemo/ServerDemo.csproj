@@ -60,10 +60,6 @@
       <Project>{09f6f7a2-0b17-457a-90c3-72c90c83a593}</Project>
       <Name>EntityOrientedCommunication</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\EntityOrientedCommunication\EOCServer\EOCServer.csproj">
-      <Project>{751de61a-a07d-4b34-bea7-1354f82c9cfb}</Project>
-      <Name>EOCServer</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

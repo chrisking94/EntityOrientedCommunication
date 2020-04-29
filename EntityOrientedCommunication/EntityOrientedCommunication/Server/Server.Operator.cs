@@ -14,7 +14,7 @@ using EntityOrientedCommunication;
 using EntityOrientedCommunication;
 using EOCServer;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     public partial class Server
     {

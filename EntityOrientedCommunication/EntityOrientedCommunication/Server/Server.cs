@@ -7,10 +7,9 @@ using System.Net.Sockets;
 using System.Threading;
 using EntityOrientedCommunication;
 using System.IO;
-using EntityOrientedCommunication;
 using EntityOrientedCommunication.Utilities;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     public partial class Server
     {

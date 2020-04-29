@@ -10,7 +10,7 @@ using System.IO;
 using System.Threading;
 using EntityOrientedCommunication.Utilities;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     class Program
     {

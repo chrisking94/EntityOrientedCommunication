@@ -17,10 +17,10 @@ namespace EntityOrientedCommunication.Messages
         Request         = 0x00_00_0001,
         Response        = 0x00_00_0002,
         Register        = 0x00_00_0004,
-        Unregister      = Register | Not,
+        Unregister      = 0x00_00_0008,
         Command         = Request | Response,  // this command will only be emitted by server
-        Login           = 0x00_00_0020, 
-        Logout          = Login | Not,
+        Login           = 0x00_00_0010, 
+        Logout          = 0x00_00_0020,
         Pull            = 0x00_00_0040,  // 拉取服务器数据
         Ok              = 0x00_00_0080,
         Denied          = 0x00_00_0100,
@@ -29,9 +29,8 @@ namespace EntityOrientedCommunication.Messages
         Raw             = 0x01_00_0000,  // 代表一个普通文档对象
         Letter          = 0x02_00_0000,  // 信件，可延迟收发
         Receiver        = 0x04_00_0000,  // 信件接收器
-        Not             = 0x10_00_0000,  // 取反
         Decision        = 0x20_00_0000,  // 决策文件
-        SyncTime            = 0x40_00_0000,  // sychronize time.now
+        SyncTime        = 0x40_00_0000,  // sychronize time.now
     }
     [JsonObject(MemberSerialization.OptIn)]
     public class TMessage

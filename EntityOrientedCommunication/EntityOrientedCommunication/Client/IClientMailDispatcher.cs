@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using EntityOrientedCommunication.Mail;
 
-namespace EOCClient
+namespace EntityOrientedCommunication.Client
 {
     public interface IClientMailDispatcher : IMailDispatcher
     {

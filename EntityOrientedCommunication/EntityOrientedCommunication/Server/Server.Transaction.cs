@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using EntityOrientedCommunication;
 
-namespace TAPAServer
+namespace EntityOrientedCommunication.Server
 {
     public partial class Server
     {
