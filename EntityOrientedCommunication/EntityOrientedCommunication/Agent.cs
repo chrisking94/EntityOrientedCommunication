@@ -21,7 +21,7 @@ namespace EntityOrientedCommunication
         Listen,
     }
 
-    public enum OperationPhase
+    public enum ConeectionPhase
     {
         P0Start,  // start
         P1Connected,  // server and client are successfully connected through TCP/IP
@@ -29,7 +29,7 @@ namespace EntityOrientedCommunication
     }
 
     /// <summary>
-    /// 底层通信
+    /// the underlying communication, based on TCP/IP
     /// </summary>
     public abstract class Agent
     {
@@ -37,13 +37,25 @@ namespace EntityOrientedCommunication
         #region property
         public virtual bool IsConnected => socket == null ? false : socket.Connected;
 
-        public virtual string ClientName { get; protected set; }  // 本地用户名
+        /// <summary>
+        /// name of local client
+        /// </summary>
+        public virtual string ClientName { get; protected set; } 
 
-        public virtual string TeleClientName { get; protected set; }  // 对方客户名
+        /// <summary>
+        /// name of client on remote computer
+        /// </summary>
+        public virtual string TeleClientName { get; protected set; }
 
-        public OperationPhase Phase { get; protected set; }  // 当前操作阶段
+        /// <summary>
+        /// current connection phase
+        /// </summary>
+        public ConeectionPhase Phase { get; protected set; }
 
-        public bool IsDead { get; private set; }  // 看门狗退出后变为true
+        /// <summary>
+        /// true when watch dog thread is dead
+        /// </summary>
+        public bool IsDead { get; private set; }
         #endregion
 
         #region field
@@ -52,35 +64,31 @@ namespace EntityOrientedCommunication
         protected Socket socket;
 
         private int bufferSize = 65535;
-        private byte[] rbuffer;  // 接收缓冲区
-        private byte[] slot;  // 接收槽
-        private int slotSize;  // 接收槽大小
-        private int watchDog = 0;  // 看门狗计时
-        protected readonly int timeout = 10000;  // 请求超时时长，单位ms
-        private Queue<TMessage> inMsgQueue;  // 接收消息队列
-        private Queue<TMessage> outMsgQueue;  // 发送消息队列
-        private Queue<TCounter> timeoutTCQ;  // 超时请求队列
-        protected readonly int threadInterval = 10;  // 扫描周期,ms
+        private byte[] rbuffer;  // reception buffer
+        private byte[] slot;  // reception slot, it could maintain a series of complete json bytes of a message
+        private int slotSize;
+        private int watchDog = 0;  // watch dog time counter, unit: ms
+        protected readonly int timeout = 10000;  // request timeout milliseconds
+        private Queue<TMessage> inMsgQueue;  // reception message queue
+        private Queue<TMessage> outMsgQueue;  // delivery message queue
+        private Queue<TCounter> timeoutTCQ;  // request timeout message queue
         /// <summary>
-        /// 特殊ID: 0: dog food, 1: envelope, 2: login
+        /// special id: 2-login
         /// </summary>
         private Dictionary<uint, TCounter> dictMsgIdAndTCounter;
         private Mutex sendMutex;
         protected Logger logger;
         protected uint envelope;
-        private bool bSingleUse;  // 一次性，在收到第一条消息（非watchDog）后关闭listen线程
-        private Dictionary<ThreadType, ThreadControl> dictThreadTypeAndControl;  // 管理线程
+        private Dictionary<ThreadType, ThreadControl> dictThreadTypeAndControl;  // maintains some thread controller
         #endregion
         #endregion
 
         #region constructor
         /// <summary>
-        /// 默认启动看门狗线程和事物处理线程
+        /// the watch dog thread is started automatically
         /// </summary>
-        /// <param name="bSingleUse">为true时收到第一条消息后关闭listen线程</param>
-        protected Agent(bool bSingleUse = false)
+        protected Agent()
         {
-            this.bSingleUse = bSingleUse;
             ClientName = "";
             TeleClientName = "";
 
@@ -100,36 +108,38 @@ namespace EntityOrientedCommunication
             };
             ResetEnvelope();
 
-            // 启动看门狗
+            // start watchdog
             GetControl(ThreadType.WatchDog).Start();
         }
         #endregion
 
         #region interface
         /// <summary>
-        /// 销毁后不可恢复
+        /// this agent can not be recovered after it is destroyed
         /// </summary>
         public virtual void Destroy()
         {
-            Reset();
+            ClearMessageQueues();
 
-            // 停止所有线程
+            // stop all treads
             foreach (var control in dictThreadTypeAndControl.Values)
             {
                 control.SafeAbort();
             }
 
-            // 关闭socket
+            // close socket
             CloseSocket();
         }
+
         /// <summary>
-        /// 等待流程达到ph阶段
+        /// wait for connection phase of this agent encounter the specified 'phase'
         /// </summary>
         /// <param name="ph"></param>
-        public void WaitTill(OperationPhase ph)
+        public void WaitTill(ConeectionPhase ph)
         {
             while (Phase < ph) Thread.Sleep(1);
         }
+
         public override string ToString()
         {
             return $"[Agent]{ClientName}<->{TeleClientName}";
@@ -137,18 +147,13 @@ namespace EntityOrientedCommunication
         #endregion
 
         #region private
-        /// <summary>
-        /// 重置this的数据
-        /// </summary>
-        protected void Reset()
+        protected void ClearMessageQueues()
         {
             lock (inMsgQueue) inMsgQueue.Clear();
+            lock (outMsgQueue) outMsgQueue.Clear();
             lock (timeoutTCQ) timeoutTCQ.Clear();
         }
 
-        /// <summary>
-        /// 关闭socket
-        /// </summary>
         private void CloseSocket()
         {
             if (socket != null)
@@ -175,44 +180,16 @@ namespace EntityOrientedCommunication
             }
             else
             {
-                throw new Exception($"there is no thread which is '{threadType}'");
+                throw new Exception($"there is no thread which is of type '{threadType}'");
             }
         }
 
         /// <summary>
-        /// 把消息放回接收队列
+        /// send a message to the remote agent and wait for a response
         /// </summary>
+        /// <param name="status">the extra status code attach to 'msg'</param>
         /// <param name="msg"></param>
-        protected void EnqueueInMsgQ(TMessage msg)
-        {
-            lock(inMsgQueue)
-            {
-                inMsgQueue.Enqueue(msg);
-                ThreadPool.QueueUserWorkItem(_processTask, inMsgQueue);
-            }
-        }
-
-        protected void SetTimeOut(uint msgId, int timeout)
-        {
-            lock (dictMsgIdAndTCounter)
-            {
-                if (dictMsgIdAndTCounter.ContainsKey(msgId))
-                {
-                    dictMsgIdAndTCounter[msgId].CountDown = timeout;
-                }
-                else
-                {
-                    throw new Exception($"不存在 '{msgId}' 号请求");
-                }
-            }
-        }
-
-        /// <summary>
-        /// 发送一个消息并等待回信
-        /// </summary>
-        /// <param name="status">额外状态码</param>
-        /// <param name="msg"></param>
-        /// <param name="timeout">默认为-1时使用this.timeout</param>
+        /// <param name="timeout">use this.timeout when -1, else use the 'timeout' parameter inputed into this function</param>
         /// <returns></returns>
         protected TMessage Request(StatusCode status, TMessage msg, int timeout = -1)
         {
@@ -222,17 +199,18 @@ namespace EntityOrientedCommunication
             SendMessage(msg);
             if (!tc.WaitReply())
             {
-                throw new TimeoutException($"{msg}请求超时");
+                throw new TimeoutException($"{msg} request timeout");
             }
             return tc.ResponseMsg;
         }
 
         /// <summary>
-        /// 异步请求
+        /// asynchronized requst, similiar to 'Request', but this method will not wait for the remote computer to response
         /// </summary>
         /// <param name="status"></param>
         /// <param name="msg"></param>
-        /// <param name="timeout">为0将使用默认值</param>
+        /// <param name="timeout"></param>
+        /// <returns>the time counter for the request 'msg'</returns>
         protected TCounter AsyncRequest(StatusCode status, TMessage msg, int timeout = -1)
         {
             msg.Status |= status | StatusCode.Request;
@@ -244,7 +222,7 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 回应一个请求
+        /// response to a request
         /// </summary>
         /// <param name="msg"></param>
         protected void Response(TMessage msg)
@@ -283,6 +261,10 @@ namespace EntityOrientedCommunication
             envelope = 100;
         }
 
+        /// <summary>
+        /// append 'msg' to the delivery queue
+        /// </summary>
+        /// <param name="msg"></param>
         protected void SendMessage(TMessage msg)
         {
             lock (outMsgQueue)
@@ -293,7 +275,7 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 发送一条消息
+        /// send 'msg' through socket
         /// </summary>
         /// <param name="msg"></param>
         private void Send(TMessage msg)
@@ -315,7 +297,7 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 发送字节流，自动添加头部和校验
+        /// send byte array，the 'header' and 'check code' are auto attached
         /// </summary>
         /// <param name="bytes"></param>
         private void SendBytes(byte[] bytes)
@@ -329,7 +311,8 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 发送未加工过的字节流，仅供SendBytes调用该方法，其他程序禁止调用，以避免出错
+        /// send raw bytes through socket
+        /// <para>attention: only 'SendBytes(byte[])' is granted to invoke this method, other method should not invoke this method, to avoid some latent risk</para>
         /// </summary>
         /// <param name="bytes"></param>
         /// <param name="offset"></param>
@@ -361,36 +344,28 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 每个事件周期会调用一次该方法
-        /// </summary>
-        /// <returns></returns>
-        protected virtual void OnTransaction()
-        {
-            // pass
-        }
-
-        /// <summary>
-        /// 处理收到的请求，只需要编辑msg内容，回传操作由Agent完成
-        /// 警告：不要阻塞该程序，避免在该函数下调用Request函数
+        /// process the request sent from remote agent, overrides shoud edit the 'msg', after to process is completed,
+        /// <para>the edited message will be treated as response message which will be sent to the remote agent, use StatusCode 'NoAutoReply' to cancell this auto reply action</para>
+        /// <para>warning：do not block this method, otherwise program might encounter a connection timeout error, because the response is not sent to remote agent in time</para>
         /// </summary>
         /// <param name="msg"></param>
         protected abstract void ProcessRequest(ref TMessage msg);
 
         /// <summary>
-        /// 处理收到的回应消息，只需处理消息，回应会被自动放入字典对应位置
-        /// 警告：不要阻塞该程序，避免在该函数下调用Request函数
+        /// process the response message came from the remote agent
         /// </summary>
+        /// <param name="requestMsg"></param>
         /// <param name="responseMsg"></param>
         protected abstract void ProcessResponse(TMessage requestMsg, TMessage responseMsg);
 
         /// <summary>
-        /// 处理超时的请求
+        /// process the request messages which are timeout
         /// </summary>
         /// <param name="requestMsg"></param>
         protected abstract void ProcessTimeoutRequest(TMessage requestMsg);
 
         /// <summary>
-        /// 消息发出前会调用该方法
+        /// this method will be invoked before the impending message transmission
         /// </summary>
         /// <param name="msg"></param>
         protected virtual void PreprocessOutMessage(ref TMessage msg)
@@ -399,7 +374,7 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 收到新消息时会调用该方法进行预处理
+        /// this method will be invoked when the new arrived message is dequeued from in message queue
         /// </summary>
         /// <param name="msg"></param>
         protected virtual void PreprocessInMessage(ref TMessage msg)
@@ -408,17 +383,16 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 所有异常交给该函数处理
+        /// some exceptions threw by agent are handled by this function
         /// </summary>
         /// <param name="exp"></param>
-        [MethodImpl(MethodImplOptions.Synchronized)]
         protected virtual void Catch(TException exp)
         {
             throw exp;
         }
 
         /// <summary>
-        /// threadListen退出后会调用该方法一次
+        /// this method will be invoked every time thread listen has exited safely
         /// </summary>
         protected virtual void OnThreadListenAborted()
         {
@@ -426,15 +400,15 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 看门狗检测到连接超时的时候会调用该方法
+        /// this method will be invoked by watch dog when the connection is timeout
         /// </summary>
         protected virtual void OnConnectionTimeout()
         {
-            Reset();
+            ClearMessageQueues();
         }
 
         /// <summary>
-        /// 消息处理线程，由ThreadPool管理
+        /// fetch messages from the 3 message queues and invoke method to process them
         /// </summary>
         /// <param name="state"></param>
         private void _processTask(object state)
@@ -443,9 +417,9 @@ namespace EntityOrientedCommunication
 
             try
             {
-                // #############
-                // 消息接收队列
-                // #############
+                // #######################
+                // in message queue
+                // #######################
                 msg = null;
                 if (state == inMsgQueue)
                 {
@@ -485,9 +459,9 @@ namespace EntityOrientedCommunication
                     }
                 }
 
-                // #############
-                // 消息发送队列
-                // #############
+                // ######################
+                // out message queue
+                // ######################
                 msg = null;
                 if (state == outMsgQueue)
                 {
@@ -503,7 +477,7 @@ namespace EntityOrientedCommunication
                 }
 
                 // #############
-                // 超时消息队列
+                // timeout message
                 // #############
                 msg = null;
                 lock (timeoutTCQ)
@@ -512,7 +486,7 @@ namespace EntityOrientedCommunication
                 }
                 if (msg != null)
                 {
-                    logger.Error($"request {msg.ID} timeout.");
+                    logger.Error($"request '{msg.ID}' timeout.");
                     ProcessTimeoutRequest(msg);
                 }
             }
@@ -530,16 +504,17 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// 最高权限，执行一些轻量操作，如：更新计时器
+        /// watch dog has the highest authority in agent, it performs some light wight operations, such as update 'TCounters'
         /// </summary>
         private void __threadWatchdog(ThreadControl control)
         {
             logger.Debug($"{nameof(__threadWatchdog)}() on duty.");
 
-            var feedCycle = 1000;  // 1s喂一次狗
+            var feedCycle = Math.Min(1000, this.timeout >> 1);  // the cycle of dog feeding, unit: ms
             var feedTCounter = 0;
             var msg = new TMessage(0);
             var foodBag = new[] { dogFoodFlag };
+            var threadInterval = 1;  // watch dog scan cycle, ms
 
             while (!control.SafelyTerminating)
             {
@@ -547,8 +522,8 @@ namespace EntityOrientedCommunication
                 feedTCounter += threadInterval;
                 if (IsConnected)
                 {
-                    // 检查看门狗是否超时
-                    if (watchDog != -1)  // -1代表已经超时，需要由__threadListen重新将其变为0
+                    // check whether the dog is dead
+                    if (watchDog != -1)  // -1 denote the dog is dead，only __threadListen can set it back to '0' to rebirth the dog
                     {
                         watchDog += threadInterval;
                         if (watchDog >= timeout)
@@ -562,12 +537,12 @@ namespace EntityOrientedCommunication
                         }
                     }
                 }
-                // 更新请求计时器
+                // udpate TCounter of request messages
                 KeyValuePair<uint, TCounter>[] msgIdAndTCounterPairs;
                 lock (dictMsgIdAndTCounter) msgIdAndTCounterPairs = dictMsgIdAndTCounter.ToArray();
                 foreach (var kv in msgIdAndTCounterPairs)
                 {
-                    if (kv.Value.Decrease(threadInterval))  // 超时
+                    if (kv.Value.Decrease(threadInterval))  // request timeout
                     {
                         lock (timeoutTCQ)
                         {
@@ -577,12 +552,12 @@ namespace EntityOrientedCommunication
                         ThreadPool.QueueUserWorkItem(_processTask, timeoutTCQ);
                     }
                 }
-                // 喂狗
+                // feed the remote dog
                 if (feedTCounter >= feedCycle)
                 {
                     feedTCounter = 0;  // reset
 
-                    if (IsConnected)  // 喂狗
+                    if (IsConnected)
                     {
                         SendBytes(foodBag);
                     }
@@ -592,11 +567,12 @@ namespace EntityOrientedCommunication
             control.SetAbortedFlags();
 
             logger.Debug($"{nameof(__threadWatchdog)}() aborted.");
+
             this.IsDead = true;
         }
 
         /// <summary>
-        /// 通过socket接收数据流
+        /// receive date stream through socket
         /// </summary>
         /// <param name="control"></param>
         private void __threadListen(ThreadControl control)
@@ -615,31 +591,31 @@ namespace EntityOrientedCommunication
 
                 while (!control.SafelyTerminating)
                 {
-                    var result = socket.BeginReceive(rbuffer, 0, rbuffer.Length, SocketFlags.None, x => x = null, null);  // 异步接收，为了实现SafelyTermination
-                    while (!control.SafelyTerminating && !result.IsCompleted)  // 等待完成
+                    var result = socket.BeginReceive(rbuffer, 0, rbuffer.Length, SocketFlags.None, x => x = null, null);  // async reception，to realize 'SafelyTermination'
+                    while (!control.SafelyTerminating && !result.IsCompleted)  // wait for completion
                     {
                         Thread.Sleep(1);
                     }
-                    if (control.SafelyTerminating || !socket.Connected) break;  // 结束监听
-                    count = socket.EndReceive(result);  // 获取收到的字节数量
-                    for (var j = 0; j < count;)  // 处理收到的字节
+                    if (control.SafelyTerminating || !socket.Connected) break;  // termination signal detected, stop listening
+                    count = socket.EndReceive(result);
+                    for (var j = 0; j < count;)  // deal with the bytes received in rbuffer
                     {
                         if (msgLen == 0)
                         {
                             lenBuff[l] = rbuffer[j];
-                            ++j;  // 指向content第一个字节
+                            ++j;  // point to the 1st byte of content
                             if (++l == lenBuff.Length)
                             {
                                 l = 0;
                                 msgLen = BitConverter.ToUInt32(lenBuff, 0);
-                                if (verifyLen != 0)  // 需要验证
+                                if (verifyLen != 0)  // need validation
                                 {
-                                    if (verifyLen == msgLen)  // 验证通过
+                                    if (verifyLen == msgLen)  // validatin OK
                                     {
-                                        watchDog = 0;  // 重置看门狗
+                                        watchDog = 0;  // feed local dog, reset the timer
                                         if (msgLen == 1)  // 系统命令
                                         {
-                                            if (slot[0] == dogFoodFlag)  // 看门狗，dog food
+                                            if (slot[0] == dogFoodFlag)  // dog food
                                             {
                                                 // pass
                                             }
@@ -650,17 +626,12 @@ namespace EntityOrientedCommunication
 
                                             lock (inMsgQueue) inMsgQueue.Enqueue(msg);
                                             ThreadPool.QueueUserWorkItem(_processTask, inMsgQueue);
-                                            if (bSingleUse)
-                                            {
-                                                control.SafelyTerminating = true;  // 关闭listen线程
-                                                break;  // 结束数据读取
-                                            }
                                         }
                                         msgLen = 0;
                                     }
                                     else
                                     {
-                                        Catch(new TException("传输错误，请重连！"));
+                                        Catch(new TException("transmission error, please reconnect!"));
                                     }
                                     verifyLen = 0;
                                     if (slot.Length != slotSize)

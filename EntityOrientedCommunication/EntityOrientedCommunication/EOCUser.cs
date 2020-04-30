@@ -11,9 +11,6 @@ using EOCServer;
 
 namespace EntityOrientedCommunication
 {
-    /// <summary>
-    /// 操作员
-    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class EOCUser : IUser
     {

@@ -21,7 +21,7 @@ namespace EntityOrientedCommunication.Utilities
         public bool IsRunning { get; private set; }
 
         /// <summary>
-        /// 设为true后通知threadStart安全退出，threadStart退出之后需要将该值恢复成false
+        /// set it to true to inform 'threadStart' to exit safely, 'threadStart' should set it to false when it exits safely by invoking 'SetAbortedFlag' function.
         /// </summary>
         public bool SafelyTerminating { get; internal set; }
 
@@ -53,7 +53,7 @@ namespace EntityOrientedCommunication.Utilities
         }
 
         /// <summary>
-        /// 通知相应线程结束运行，并等待停止操作完成
+        /// notify 'threadStart' to abort, then wait till it stops
         /// </summary>
         public void SafeAbort()
         {
@@ -71,6 +71,9 @@ namespace EntityOrientedCommunication.Utilities
             }
         }
 
+        /// <summary>
+        /// notify 'threadStart' to abort, but do not wait
+        /// </summary>
         public void AsyncSafeAbort()
         {
             lock (this)
@@ -86,8 +89,8 @@ namespace EntityOrientedCommunication.Utilities
         }
 
         /// <summary>
-        /// 由被控制的线程调用，告诉控制器线程已安全退出
-        /// <para>警告：其他程序不要調用這個方法</para>
+        /// invoked by 'threadStart' to tell this controller that it has aborted safely
+        /// <para>warning: only 'threadStart' is entitled to invoke this method</para>
         /// </summary>
         internal void SetAbortedFlags()
         {

@@ -13,7 +13,7 @@ namespace EntityOrientedCommunication.Utilities
     public static class TypeExtensions
     {
         /// <summary>
-        /// 把target对象转成本类型
+        /// convert target to object of 'type'
         /// </summary>
         /// <param name="type"></param>
         /// <param name="target"></param>
@@ -28,7 +28,7 @@ namespace EntityOrientedCommunication.Utilities
             {
                 var orginalType = target.GetType();
 
-                if (!type.IsAssignableFrom(orginalType))  // 派生类不需要转成基类型
+                if (!type.IsAssignableFrom(orginalType))  // there is no need to convert inherited class to base class
                 {
                     if (type.IsEnum)  // enum conversion
                     {
@@ -42,10 +42,10 @@ namespace EntityOrientedCommunication.Utilities
                         }
                         catch  // invalid conversion
                         {
-                            // 优先隐式转换
+                            // implicit operator conversion first
                             var cast = type.GetMethod("op_Implicit", new Type[] { typeof(string) });
-                            if (cast == null)  // Parse解析
-                            {
+                            if (cast == null)
+                            {  // inspect whether there is a 'Parse' method
                                 cast = type.GetMethod("Parse", new Type[] { typeof(string) });
                             }
                             try
@@ -54,7 +54,7 @@ namespace EntityOrientedCommunication.Utilities
                             }
                             catch
                             {
-                                throw new InvalidCastException($"无法转换 '{orginalType.FullName}' 类型对象 '{target}' 成 '{type.FullName}' 类型");
+                                throw new InvalidCastException($"unable to convert '{orginalType.FullName}' type object '{target}' to '{type.FullName}' type");
                             }
                         }
                     }

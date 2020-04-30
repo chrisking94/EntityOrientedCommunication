@@ -6,41 +6,41 @@ using System.Text;
 namespace EntityOrientedCommunication.Utilities
 {
     /// <summary>
-    /// 可以访问任意Key而不会出现Key不存在异常，如果Key不存在会将Key所对应Value设为DefaultValue并返回。
+    /// any key exists in this kind of dictionary logically
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
     public class InitializedDictionary<TKey, TValue> :
-        Dictionary<TKey, TValue>
+        Dictionary<TKey, TValue>, IDictionary<TKey, TValue>
     {
         #region field
-        object defaultValue;  // TValue实例或TValue.Ctor
+        private Func<TKey, TValue> createDefault;
         #endregion
 
         #region constructor
-        public InitializedDictionary(int capacity, TValue defaultValue = default) : base(capacity)
-        {
-            this.defaultValue = defaultValue;
-        }
-
         public InitializedDictionary(TValue defaultValue = default, int capacity = 0) : base(capacity)
         {
-            this.defaultValue = defaultValue;
+            this.createDefault = x => defaultValue;
         }
 
-        public InitializedDictionary(Func<TValue> valueConstructor, int capacity = 0)
+        public InitializedDictionary(Func<TKey, TValue> createDefault, int capacity = 0) : base(capacity)
         {
-            defaultValue = valueConstructor;
+            this.createDefault = createDefault;
         }
 
-        public InitializedDictionary(Dictionary<TKey, TValue> copyFrom, object defaultValue) : base(copyFrom)
+        public InitializedDictionary(Dictionary<TKey, TValue> copyFrom, TValue defaultValue) : base(copyFrom)
         {
-            this.defaultValue = defaultValue;
+            this.createDefault = x => defaultValue;
+        }
+
+        public InitializedDictionary(Dictionary<TKey, TValue> copyFrom, Func<TKey, TValue> createDefault) : base(copyFrom)
+        {
+            this.createDefault = createDefault;
         }
 
         public InitializedDictionary(InitializedDictionary<TKey, TValue> copyFrom) : base(copyFrom)
         {
-            defaultValue = copyFrom.defaultValue;
+            createDefault = copyFrom.createDefault;
         }
         #endregion
 
@@ -49,24 +49,13 @@ namespace EntityOrientedCommunication.Utilities
         {
             get
             {
-                if (ContainsKey(key))
+                TValue val;
+                if (!base.TryGetValue(key, out val))  // key does not exist
                 {
-                    return base[key];
+                    val = createDefault(key);
+                    base[key] = val;
                 }
-                else
-                {
-                    TValue value = default;
-                    if (defaultValue is Func<TValue> createValue)
-                    {
-                        value = createValue();
-                    }
-                    else //(defaultValue is TValue)
-                    {
-                        value = (TValue)defaultValue;
-                    }
-                    base[key] = value;
-                    return value;
-                }
+                return val;
             }
             set
             {

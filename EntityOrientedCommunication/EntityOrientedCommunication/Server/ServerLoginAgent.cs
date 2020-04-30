@@ -22,7 +22,7 @@ namespace EntityOrientedCommunication.Server
     {
         #region data
         #region property
-        public ServerEOCUser SOperator => Operator as ServerEOCUser;
+        public ServerEOCUser SOperator => User as ServerEOCUser;
         #endregion
 
         #region field
@@ -38,7 +38,7 @@ namespace EntityOrientedCommunication.Server
             ClientName = server.Name;
             TeleClientName = socket.RemoteEndPoint.ToString();
             logger = new Logger(TeleClientName);
-            Phase = OperationPhase.P1Connected;
+            Phase = ConeectionPhase.P1Connected;
 
             GetControl(ThreadType.Listen).Start();
 
@@ -76,13 +76,13 @@ namespace EntityOrientedCommunication.Server
                     {
                         TeleClientName = login.Username;
                         this.logger.SetOwner(TeleClientName);  // reset owner of logger
-                        Operator = opr;
+                        User = opr;
                         Token = server.GenToken(TeleClientName);
                         msg = new TMLoggedin(login, ClientName, opr, Token);
                         msg.Status |= StatusCode.Command | StatusCode.Time | StatusCode.Push;  // sync time command
                         logger = new Logger(TeleClientName);
 
-                        Phase = OperationPhase.P2LoggedIn;
+                        Phase = ConeectionPhase.P2LoggedIn;
                         opr.PostOffice.Activate(this);  // activate mailbox
                         opr.IsOnline = true;
 

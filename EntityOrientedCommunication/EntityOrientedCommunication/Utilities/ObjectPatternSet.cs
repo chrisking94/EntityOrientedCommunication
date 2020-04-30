@@ -22,7 +22,7 @@ namespace EntityOrientedCommunication.Utilities
     }
 
     /// <summary>
-    /// 可序列化传输
+    /// serializable pattern set
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class ObjectPatternSet
@@ -35,7 +35,7 @@ namespace EntityOrientedCommunication.Utilities
 
         #region field
         [JsonProperty]
-        private List<ObjectPattern> patterns;
+        private List<IObjectPattern> patterns;
         #endregion
         #endregion
 
@@ -45,22 +45,22 @@ namespace EntityOrientedCommunication.Utilities
 
         public ObjectPatternSet(int capacity)
         {
-            patterns = new List<ObjectPattern>(capacity);
+            patterns = new List<IObjectPattern>(capacity);
         }
 
-        public ObjectPatternSet(params ObjectPattern[] patterns) : this(patterns.Length)
+        public ObjectPatternSet(params IObjectPattern[] patterns) : this(patterns.Length)
         {
             AddRange(patterns);
         }
         #endregion
 
         #region interface
-        public void Add(ObjectPattern pattern)
+        public void Add(IObjectPattern pattern)
         {
             patterns.Add(pattern);
         }
 
-        public void AddRange(IEnumerable<ObjectPattern> patterns)
+        public void AddRange(IEnumerable<IObjectPattern> patterns)
         {
             foreach (var pattern in patterns)
             {
@@ -69,7 +69,7 @@ namespace EntityOrientedCommunication.Utilities
         }
 
         /// <summary>
-        /// 判断obj是否满足该集合中所有模式
+        /// determine whether an 'obj' meets all of the conditions in this pattern set
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
@@ -79,7 +79,7 @@ namespace EntityOrientedCommunication.Utilities
         }
 
         /// <summary>
-        /// 判断obj是否满足任意一个模式
+        /// determine whether an 'obj' meets any of the conditions in this pattern set
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
@@ -88,6 +88,11 @@ namespace EntityOrientedCommunication.Utilities
             return patterns.Any(p => p.Match(obj));
         }
 
+        /// <summary>
+        /// determine whether an 'obj' meets '[MatchType]' of the conditions in this pattern set
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public bool Matches(object obj)
         {
             if (MatchType == PatternMatchType.All)

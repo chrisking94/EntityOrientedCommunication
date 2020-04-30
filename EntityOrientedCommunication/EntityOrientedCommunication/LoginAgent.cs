@@ -19,7 +19,7 @@ namespace EntityOrientedCommunication
         #region property
         public string Token { get; protected set; }
 
-        public EOCUser Operator { get; protected set; }
+        public EOCUser User { get; protected set; }
         #endregion
 
         #region field
@@ -29,7 +29,7 @@ namespace EntityOrientedCommunication
         #region constructor
         protected LoginAgent()
         {
-            Operator = new EOCUser();
+            User = new EOCUser();
         }
         #endregion
 

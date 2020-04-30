@@ -50,11 +50,11 @@ namespace EntityOrientedCommunication.Utilities
             IsReplied = true;
         }
         /// <summary>
-        /// 由看门狗调用吗，超时返回true
+        /// invoked by watch dog，return true when timeout
         /// </summary>
         /// <param name="nStep"></param>
         /// <returns></returns>
-        internal bool Decrease(int nStep)  // 返回isTimeout
+        internal bool Decrease(int nStep)
         {
             if (agent.IsConnected)
             {
@@ -69,12 +69,12 @@ namespace EntityOrientedCommunication.Utilities
         }
 
         /// <summary>
-        /// 等待一个Response，超时返回false
+        /// wait for response, return false when timeout
         /// </summary>
         /// <returns></returns>
         public bool WaitReply()
         {
-            var span = 10;
+            var span = 1;
             for (; ; )
             {
                 Thread.Sleep(span);

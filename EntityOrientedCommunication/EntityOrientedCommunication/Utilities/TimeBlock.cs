@@ -13,6 +13,9 @@ namespace EntityOrientedCommunication.Utilities
 {
     public delegate void TimeBlockValueChangedEventHandler(object sender, EventArgs args);
     
+    /// <summary>
+    /// add some offset to DateTime.Now
+    /// </summary>
     public class TimeBlock
     {
         public TimeBlockValueChangedEventHandler TimeChangedEvent;

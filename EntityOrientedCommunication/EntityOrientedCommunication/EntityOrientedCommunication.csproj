@@ -54,23 +54,23 @@
   <ItemGroup>
     <Compile Include="Agent.cs" />
     <Compile Include="Client\ClientAgentEventArgs.cs" />
-    <Compile Include="Client\ClientLoginAgent.cs" />
+    <Compile Include="Client\ClientAgent.cs" />
     <Compile Include="Client\ClientMailBox.cs" />
     <Compile Include="Client\ClientPostOffice.cs" />
     <Compile Include="Client\IClientMailDispatcher.cs" />
     <Compile Include="IniFile.cs" />
     <Compile Include="Server\IUser.cs" />
     <Compile Include="Server\Server.cs" />
-    <Compile Include="Server\Server.LoginAgent.cs" />
-    <Compile Include="Server\Server.Operator.cs" />
+    <Compile Include="Server\ServerLoginAgent.cs" />
+    <Compile Include="Server\ServerEOCUser.cs" />
     <Compile Include="Server\Server.OperatorManager.cs" />
     <Compile Include="Server\Server.PostOffice.cs" />
     <Compile Include="Server\Server.Transaction.cs" />
-    <Compile Include="Server\Simulators\Server.ClientLoginAgentSimulator.cs" />
-    <Compile Include="Server\Simulators\Server.ServerLoginAgentSimulator.cs" />
+    <Compile Include="Server\Simulators\ClientAgentSimulator.cs" />
+    <Compile Include="Server\Simulators\ServerAgentSimulator.cs" />
     <Compile Include="TException.cs" />
     <Compile Include="IToken.cs" />
-    <Compile Include="Logger\Logger.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="LoginAgent.cs" />
     <Compile Include="Mail\IMailDispatcher.cs" />
     <Compile Include="Mail\IMailReceiver.cs" />
@@ -78,7 +78,7 @@
     <Compile Include="Messages\ArrayCarrier.cs" />
     <Compile Include="Messages\EnumCarrier.cs" />
     <Compile Include="Messages\Envelope.cs" />
-    <Compile Include="Messages\ITMObject.cs" />
+    <Compile Include="Messages\IObject.cs" />
     <Compile Include="Messages\TMError.cs" />
     <Compile Include="Messages\TMessage.cs" />
     <Compile Include="Messages\TMLetter.cs" />
@@ -90,7 +90,7 @@
     <Compile Include="Utilities\InitializedDictionary.cs" />
     <Compile Include="Utilities\JsonList.cs" />
     <Compile Include="Utilities\ObjectMarker.cs" />
-    <Compile Include="Utilities\ObjectPattern.cs" />
+    <Compile Include="Utilities\IObjectPattern.cs" />
     <Compile Include="Utilities\ObjectPatternSet.cs" />
     <Compile Include="Utilities\OPSingleProperty.cs" />
     <Compile Include="Utilities\OPSinglePropertyFunction.cs" />
@@ -100,7 +100,7 @@
     <Compile Include="Utilities\TimeBlock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
-    <Compile Include="StaffDefinition\TapaOperator.cs" />
+    <Compile Include="EOCUser.cs" />
     <Compile Include="Utilities\Transaction.cs" />
     <Compile Include="Utilities\TransactionPool.cs" />
     <Compile Include="Utilities\TypeExtensions.cs" />

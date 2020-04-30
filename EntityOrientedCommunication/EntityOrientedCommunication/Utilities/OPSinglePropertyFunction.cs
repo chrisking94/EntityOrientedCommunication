@@ -42,10 +42,14 @@ namespace EntityOrientedCommunication.Utilities
 
         /// <summary>
         /// bool 'propertyName'.Value.'methodName'(paras[]);
+        /// <para>e.g. assume object a has a property of 'string' type named 'Company', the parameters of this ctor are shown as the parameter comments</para>
         /// </summary>
-        /// <param name="propertyName"></param>
-        /// <param name="methodName"></param>
-        /// <param name="paras"></param>
+        /// <param name="propertyName">one of the property name of target object.
+        /// <para>it should be 'Company' in the function comment example</para></param>
+        /// <param name="methodName">name of the PropertyValue's method which used to determine whether the property value meets the condition 
+        /// <para>name 'Equals' of method 'bool Equals(string)' in the function comment example</para></param>
+        /// <param name="paras">parameters for the PropertyValue's method
+        /// <para>"abc" in the function comment example</para></param>
         public OPSinglePropertyFunction(string propertyName, string methodName, params object[] paras) : base(propertyName)
         {
             this.methodName = methodName;
@@ -57,19 +61,22 @@ namespace EntityOrientedCommunication.Utilities
         #endregion
 
         #region private
-        protected override bool MatchProperty(object obj, PropertyInfo propertyInfo, object propertyValue)
+        protected override bool MatchProperty(object obj, Type PropertyType, object propertyValue)
         {
             // check method
-            var method = propertyInfo.PropertyType.GetMethod(methodName, paras.GetItemsType().ToArray());
+            var method = PropertyType.GetMethod(methodName, paras.GetItemsType().ToArray());
 
             if (method == null)
             {
-                throw new Exception($"{propertyInfo.PropertyType} 类型没有定义方法 {methodName}({string.Join(", ", paras.GetItemsType().Select(t => t.Name))})");
+                if (method.ReturnType != typeof(bool))
+                {
+                    method = null;  // bool method expected
+                }
             }
 
-            if (method.ReturnType != typeof(bool))
+            if (method == null)
             {
-                throw new Exception($"{propertyInfo.PropertyType}.{methodName}() 返回值是 {method.ReturnType} 类型，要求是 {typeof(bool)} 类型");
+                throw new Exception($"'{PropertyType}' does not define a method 'bool {methodName}({string.Join(", ", paras.GetItemsType().Select(t => t.Name))})'");
             }
 
             var bMatch = (bool)method.Invoke(propertyValue, paras.ToArray());

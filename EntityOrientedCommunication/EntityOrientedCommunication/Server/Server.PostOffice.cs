@@ -77,7 +77,7 @@ namespace EntityOrientedCommunication.Server
             this.owner = owner;
 
             dictlLetterTypeAndInBox = new InitializedDictionary<LetterType, List<LetterInfo>>(
-                () => new List<LetterInfo>(1), 2);
+                t => new List<LetterInfo>(1), 2);
         }
         #endregion
 

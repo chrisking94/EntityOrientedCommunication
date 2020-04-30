@@ -17,10 +17,10 @@ using System.Reflection;
 namespace EntityOrientedCommunication.Utilities
 {
     /// <summary>
-    /// 单属性匹配
+    /// match a single property/field
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public abstract class OPSingleProperty : ObjectPattern
+    public abstract class OPSingleProperty : IObjectPattern
     {
         #region data
         #region property
@@ -43,25 +43,33 @@ namespace EntityOrientedCommunication.Utilities
         #endregion
 
         #region interface
-        public override bool Match(object obj)
+        public bool Match(object obj)
         {
-            var propInfo = obj.GetType().GetProperty(propertyName);
+            var type = obj.GetType();
+            var propInfo = type.GetProperty(propertyName);
 
             if (propInfo == null)
             {
-                throw new Exception($"{obj.GetType()} 类型没有属性 {propertyName}");
+                var fieldInfo = type.GetField(propertyName);
+                if (fieldInfo == null)
+                {
+                    throw new Exception($"'{obj.GetType()}' does not contain a property or field named '{propertyName}'");
+                }
+                var value = fieldInfo.GetValue(obj);
+
+                return MatchProperty(obj, fieldInfo.FieldType, value);
             }
             else
             {
                 var value = propInfo.GetValue(obj);
 
-                return MatchProperty(obj, propInfo, value);
+                return MatchProperty(obj, propInfo.PropertyType, value);
             }
         }
         #endregion
 
         #region private
-        protected abstract bool MatchProperty(object obj, PropertyInfo propertyInfo, object propertyValue);
+        protected abstract bool MatchProperty(object obj, Type propertyType, object propertyValue);
         #endregion
     }
 }

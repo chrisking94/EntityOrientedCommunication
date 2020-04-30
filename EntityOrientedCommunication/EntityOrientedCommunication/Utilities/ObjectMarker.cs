@@ -17,7 +17,7 @@ using Newtonsoft.Json;
 namespace EntityOrientedCommunication.Utilities
 {
     /// <summary>
-    /// 附带对象的Type信息，解决值类型对象在列表中反序列化后类型改变的问题
+    /// carry the 'Type' information along an object
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class ObjectMarker
