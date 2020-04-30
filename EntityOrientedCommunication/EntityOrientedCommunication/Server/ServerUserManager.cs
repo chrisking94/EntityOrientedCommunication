@@ -14,7 +14,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region field
-        private Dictionary<string, ServerEOCUser> dictNameAndOperator;
+        private Dictionary<string, ServerUser> dictNameAndOperator;
 
         private Server server;
         #endregion
@@ -23,12 +23,9 @@ namespace EntityOrientedCommunication.Server
         #region constructor
         public ServerUserManager(Server server)
         {
-            dictNameAndOperator = new Dictionary<string, ServerEOCUser>(16);
+            dictNameAndOperator = new Dictionary<string, ServerUser>(16);
 
             this.server = server;
-
-            // register local user 'server'
-            Register(server.LocalClient.ServerSimulator.SUser);
         }
         #endregion
 
@@ -41,9 +38,9 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        internal ServerEOCUser GetOperator(string name)
+        internal ServerUser GetOperator(string name)
         {
-            ServerEOCUser opr = null;
+            ServerUser opr = null;
 
             lock (dictNameAndOperator)
             {
@@ -59,9 +56,9 @@ namespace EntityOrientedCommunication.Server
         /// <param name="name"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        internal ServerEOCUser GetOperator(string name, string password)
+        internal ServerUser GetOperator(string name, string password)
         {
-            ServerEOCUser opr = null;
+            ServerUser opr = null;
 
             lock (dictNameAndOperator)
             {
@@ -138,18 +135,23 @@ namespace EntityOrientedCommunication.Server
             return null;  // succeeded
         }
 
+        internal void Register(ServerUser serverUser)
+        {
+            lock (dictNameAndOperator)
+            {
+                dictNameAndOperator[serverUser.Name] = serverUser;
+                serverUser.SetManager(this);
+            }
+        }
+
         /// <summary>
         /// register an user
         /// </summary>
         /// <param name="opr"></param>
         public void Register(IUser iuser)
         {
-            var serverUser = new ServerEOCUser(iuser);
-            lock (dictNameAndOperator)
-            {
-                dictNameAndOperator[serverUser.Name] = serverUser;
-                serverUser.SetManager(this);
-            }
+            var serverUser = new ServerUser(iuser);
+            Register(serverUser);
         }
         #endregion
 

@@ -140,7 +140,7 @@ namespace EntityOrientedCommunication.Client
             var routeInfos = MailRouteInfo.Parse(letter.Recipient);
             if (routeInfos == null)
             {
-                throw new Exception($"cannot deliver letter '{letter.Header}', the '{nameof(letter.Recipient)}' of which is not in a valid format.");
+                throw new Exception($"cannot deliver letter '{letter.Title}', the '{nameof(letter.Recipient)}' of which is not in a valid format.");
             }
 
             var teleRouteInfos = new List<MailRouteInfo>(routeInfos.Count);

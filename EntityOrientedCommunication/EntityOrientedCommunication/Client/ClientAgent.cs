@@ -91,7 +91,7 @@ namespace EntityOrientedCommunication.Client
             User.Name = username;
             User.SetPassword(password);
             ClientName = username;
-            if (Phase > ConeectionPhase.P1Connected) Phase = ConeectionPhase.P1Connected;  // relogin
+            if (Phase > ConeectionPhase.P1Connected) Phase = ConeectionPhase.P1Connected;  // re-login
 
             bOnWorking = true;
 
@@ -107,7 +107,7 @@ namespace EntityOrientedCommunication.Client
                     if (--timeout == 0)
                     {
                         bOnWorking = false;
-                        throw new TimeoutException("登陆超时");
+                        throw new TimeoutException("login timeout");
                     }
                 }
             }
@@ -124,7 +124,7 @@ namespace EntityOrientedCommunication.Client
 
                 if (!reply.HasFlag(StatusCode.Ok))
                 {
-                    throw new Exception($"注销失败，错误信息：{(reply as TMText).Text}");
+                    throw new Exception($"failed to logout，detail：{(reply as TMText).Text}");
                 }
             }
         }

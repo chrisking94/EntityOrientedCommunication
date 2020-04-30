@@ -9,9 +9,9 @@ using EOCServer;
 namespace EntityOrientedCommunication.Server
 {
     /// <summary>
-    /// has more functinalities than EOCServer
+    /// has more functinalities than 'User'
     /// </summary>
-    internal class ServerEOCUser : EOCUser
+    internal class ServerUser : User
     {
         #region data
         #region property
@@ -28,12 +28,12 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region constructor
-        public ServerEOCUser(string name, string detail = "") : base(name, detail)
+        public ServerUser(string name, string detail = "") : base(name, detail)
         {
             PostOffice = new ServerPostOffice(this);
         }
 
-        public ServerEOCUser(IUser staff)
+        public ServerUser(IUser staff)
         {
             ID = staff.ID;
             Name = staff.Name;

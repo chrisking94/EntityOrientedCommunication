@@ -40,7 +40,7 @@ namespace TAPACSTest
 
             public void Pickup(TMLetter letter)
             {
-                Console.WriteLine($"{letter.Title}");
+                Console.WriteLine($"--------------------------{letter.Title}");
             }
         }
 
@@ -49,7 +49,7 @@ namespace TAPACSTest
             
             var agent1 = TAPAClient.Agent;
             agent1.Login("user1", "", 10000);
-            var agent2 = new ClientLoginAgent(TAPAClient.DefaultIP, TAPAClient.DefaultPort);
+            var agent2 = new ClientAgent(TAPAClient.DefaultIP, TAPAClient.DefaultPort);
             agent2.Login("user2", "", 10000);
 
             var objA = new ObjectA();

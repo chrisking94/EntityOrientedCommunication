@@ -12,27 +12,28 @@ namespace EntityOrientedCommunication.Server
     public class Server
     {
         #region property
-        public string Name;
+        public string Name { get; }
 
-        public ServerUserManager UserManager { get; private set; }
+        public ServerUserManager UserManager { get; }
 
-        public readonly TimeBlock Now;
+        public TimeBlock Now { get; }
 
-        public string serverIp { get; private set; }
+        public string IP { get; }
 
-        public int serverPort { get; private set; }
+        public int Port { get; }
 
-        public readonly ClientAgentSimulator LocalClient;
+        /// <summary>
+        /// the user name of this local client is 'server'
+        /// </summary>
+        public ClientAgentSimulator LocalClient { get; }
         #endregion
 
         #region field
         private HashSet<ServerLoginAgent> loginAgents;
         private Socket socket;
         private Thread listenThread;
-        private Thread transactionThread;  // 事件处理线程
         private Logger logger;
-        private const uint idBaffle = 100;  // 前100个id预留做特殊用途
-        private List<ServerTransaction> transactionList;
+        private TransactionPool transactionPool;
         private bool isBlocked;  // block server
         private string blockMessage;
         #endregion
@@ -45,13 +46,23 @@ namespace EntityOrientedCommunication.Server
 
         public Server(string name, string ip, int port)
         {
-            this.serverIp = ip;
-            this.serverPort = port;
+            this.Name = name;
+            this.IP = ip;
+            this.Port = port;
 
-            Now = new TimeBlock();
+            this.UserManager = new ServerUserManager(this);
+            this.Now = new TimeBlock();
+            this.LocalClient = new ClientAgentSimulator();
 
+            // register local client user
+            this.UserManager.Register(this.LocalClient.ServerSimulator.SUser);
+        }
+        #endregion
+
+        #region interface
+        public Server Run()
+        {
             // initialze simple data members
-            Name = "TServer";
             var maxConnections = 300;
             loginAgents = new HashSet<ServerLoginAgent>();
             var logfolder = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\TAPALogs\\";
@@ -61,8 +72,7 @@ namespace EntityOrientedCommunication.Server
                 Directory.CreateDirectory(logfolder);
             }
             logger = new Logger(Name);
-            transactionList = new List<ServerTransaction>(8);
-            LocalClient = new ClientAgentSimulator();
+            transactionPool = new TransactionPool();
 
             // configure ThreadPool
             var nWorkerThreads = 100;
@@ -71,40 +81,37 @@ namespace EntityOrientedCommunication.Server
             Console.WriteLine($"thread pool: {nWorkerThreads} worker threads, {nCompletionPortThreads} completion port threads.");
 
             // user management system
-            UserManager = new ServerUserManager(this);
-            Console.WriteLine("user management system, OK.");
+            Console.WriteLine($"{this.UserManager.Count} user(s) registered.");
 
-            // run the 'Transaction' thread，register some transactions
-            transactionThread = new Thread(__transaction);
-            transactionThread.IsBackground = true;
-            transactionThread.Start();
-            Register(new ServerTransaction("intelligently reconfigure loggers", 1000, Logger.IntelliUpdateConfiguration));  // reconfigure logger
-            Register(new ServerTransaction("connection monitor", 1000, Transaction_ConnectionMonitor));
+            // transaction pool, listen error event, register some transactions
+            transactionPool.TransactionErrorEvent += TransactionErrorHandler;
+            transactionPool.Register(Logger.IntelliUpdateConfiguration, 1000, "intelligently reconfigure loggers");
+            transactionPool.Register(Transaction_AgentsMonitor, 1000, "connection monitor");
 
             // configure socket
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            var ipAddr = IPAddress.Parse(serverIp.Trim());
-            var point = new IPEndPoint(ipAddr, serverPort);
+            var ipAddr = IPAddress.Parse(IP.Trim());
+            var point = new IPEndPoint(ipAddr, this.Port);
             socket.Bind(point);
             socket.Listen(maxConnections);
-            Console.WriteLine($"socket@{serverIp}:{serverPort}, OK.");
+            Console.WriteLine($"socket@{IP}:{this.Port}, OK.");
 
             // create socket listener thread
             listenThread = new Thread(__listen);
             listenThread.IsBackground = true;
             listenThread.Start();
 
-            logger.Write(LogType.PR, $"{this.Name}@{ipAddr}:{serverPort} is initilized.");
+            logger.Write(LogType.PR, $"{this.Name}@{ipAddr}:{this.Port} is initilized.");
+
+            return this;
         }
 
-        public void Close()
+        public void Stop()
         {
+            transactionPool.Destroy();
             listenThread.Abort();
             socket.Close();
         }
-        #endregion
-
-        #region interface
         #endregion
 
         #region private
@@ -131,14 +138,6 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        private void Register(ServerTransaction transaction)
-        {
-            lock (transactionList)
-            {
-                transactionList.Add(transaction);
-            }
-        }
-
         internal string GenToken(string username)
         {
             var randPart = (new Random()).Next(100000, int.MaxValue).ToString();
@@ -157,44 +156,15 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        private void __transaction()
+        private void TransactionErrorHandler(object sender, TransactionErrorArgs args)
         {
-            var ms = 1;
-
-            for (; ; )
-            {
-                lock (transactionList)
-                {
-                    for (var i = 0; i < transactionList.Count; ++i)
-                    {
-                        var transaction = transactionList[i];
-
-                        if (ms % transaction.Interval == 0 || transaction.EmergencyDo)  // cycle
-                        {
-                            try
-                            {
-                                transaction.Do();
-                            }
-                            catch (Exception ex)
-                            {
-                                logger.Fatal($"error occurred when executing transaction '{transaction.Name}'", ex);
-                                isBlocked = true;
-                                blockMessage = $"tansaction has encountered an unrecoverable error, server has stopped running, please contact the server administrator for help.";
-                                System.Environment.Exit(-1);
-                            }
-                        }
-                    }
-                }
-
-                Thread.Sleep(1);  // 1ms
-                if (++ms == int.MaxValue / 2)
-                {
-                    ms = 1;
-                }
-            }
+            logger.Fatal($"error occurred when executing transaction '{args.transaction.Name}'", args.exception);
+            isBlocked = true;
+            blockMessage = $"tansaction has encountered an unrecoverable error, server has stopped running, please contact the server administrator for help.";
+            System.Environment.Exit(-1);
         }
 
-        private void Transaction_ConnectionMonitor()
+        private void Transaction_AgentsMonitor()
         {
             List<ServerLoginAgent> deadList;
             lock (loginAgents)

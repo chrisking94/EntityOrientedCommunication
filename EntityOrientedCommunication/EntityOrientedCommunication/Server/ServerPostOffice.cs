@@ -39,7 +39,7 @@ namespace EntityOrientedCommunication.Server
         internal LetterInfo(LetterInfo src, MailRouteInfo newRecipInfo)
         {
             this.letter = new TMLetter(newRecipInfo.ToLiteral(), src.letter.Sender,
-                        src.letter.Header, src.letter.Content, src.letter.LetterType);
+                        src.letter.Title, src.letter.Content, src.letter.LetterType);
             this.sender = src.sender;
             this.recipient = newRecipInfo;
             this.timeStamp = src.timeStamp;  // hold timestamp
@@ -57,13 +57,16 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region field
-        private ServerEOCUser owner;
+        private ServerUser owner;
 
         private InitializedDictionary<LetterType, List<LetterInfo>> dictlLetterTypeAndInBox;
 
-        IMailDispatcher dispatcher;
+        private IMailDispatcher dispatcher;
 
-        ServerUserManager operatorManager => owner.Manager;
+        /// <summary>
+        /// mutex on operating with field 'dispatcher'
+        /// </summary>
+        private Mutex dispatcherMutex;
 
         private List<string> registeredReceiverEntityNames = new List<string>(1);
 
@@ -72,9 +75,10 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region constructor
-        public ServerPostOffice(ServerEOCUser owner)
+        public ServerPostOffice(ServerUser owner)
         {
             this.owner = owner;
+            this.dispatcherMutex = new Mutex();
 
             dictlLetterTypeAndInBox = new InitializedDictionary<LetterType, List<LetterInfo>>(
                 t => new List<LetterInfo>(1), 2);
@@ -139,29 +143,20 @@ namespace EntityOrientedCommunication.Server
         public void Activate(IMailDispatcher dispatcher)
         {
             this.IsActivated = true;
-            if (this.dispatcher != null)
-            {
-                lock (this.dispatcher)
-                {
-                    this.dispatcher = dispatcher;
-                }
-            }
-            else
-            {
-                this.dispatcher = dispatcher;
-            }
+
+            dispatcherMutex.WaitOne();
+            this.dispatcher = dispatcher;
+            dispatcherMutex.ReleaseMutex();
+
             RestartPopingThread();
         }
 
         public void Deactivate()
         {
-            if (dispatcher != null)
-            {
-                lock (dispatcher)
-                {
-                    this.dispatcher = null;
-                }
-            }
+            dispatcherMutex.WaitOne();
+            this.dispatcher = null;
+            dispatcherMutex.ReleaseMutex();
+
             registeredReceiverEntityNames.Clear();
             DiscardRealTimeLetters();
         }
@@ -269,13 +264,12 @@ namespace EntityOrientedCommunication.Server
                     letterInfos.AddRange(this.Pop(LetterType.Emergency, registeredReceiverEntityNames));
                 }
                 // pop
-                lock (dispatcher)
+                dispatcherMutex.WaitOne();
+                foreach (var info in letterInfos.OrderBy(info => info.timeStamp))
                 {
-                    foreach (var info in letterInfos.OrderBy(info => info.timeStamp))
-                    {
-                        dispatcher.Dispatch(info.letter);
-                    }
+                    dispatcher.Dispatch(info.letter);
                 }
+                dispatcherMutex.ReleaseMutex();
 
                 Thread.Sleep(1);
             }

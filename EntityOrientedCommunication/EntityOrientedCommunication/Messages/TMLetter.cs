@@ -32,7 +32,7 @@ namespace EntityOrientedCommunication
         #region data
         #region property
         [JsonProperty]
-        public string Header;
+        public string Title;
 
         [JsonProperty]
         public string Recipient { get; set; }
@@ -54,10 +54,10 @@ namespace EntityOrientedCommunication
         [JsonConstructor]
         protected TMLetter() { }
 
-        public TMLetter(string recipient, string sender, string header,
+        public TMLetter(string recipient, string sender, string title,
             object content, LetterType type = LetterType.Normal)
         {
-            Header = header;
+            Title = title;
             Recipient = recipient;
             Sender = sender;
             Object = content;
@@ -68,7 +68,7 @@ namespace EntityOrientedCommunication
 
         public TMLetter(TMLetter copyFrom) : base(copyFrom)
         {
-            this.Header = copyFrom.Header;
+            this.Title = copyFrom.Title;
             this.Recipient = copyFrom.Recipient;
             this.Sender = copyFrom.Sender;
             
@@ -79,7 +79,7 @@ namespace EntityOrientedCommunication
         #region interface
         public override string ToString()
         {
-            return Format("TLtr", $"[{Header}] {Sender} -> {Recipient}");
+            return Format("TLtr", $"[{Title}] {Sender} -> {Recipient}");
         }
         #endregion
 

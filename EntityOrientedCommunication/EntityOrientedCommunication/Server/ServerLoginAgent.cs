@@ -22,7 +22,7 @@ namespace EntityOrientedCommunication.Server
     {
         #region data
         #region property
-        public ServerEOCUser SOperator => User as ServerEOCUser;
+        public ServerUser SOperator => User as ServerUser;
         #endregion
 
         #region field

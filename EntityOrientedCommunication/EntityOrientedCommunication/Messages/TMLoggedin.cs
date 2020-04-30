@@ -28,7 +28,7 @@ namespace EntityOrientedCommunication.Messages
 
         #region field
         [JsonProperty]
-        public EOCUser User;
+        public User User;
 
         [JsonProperty]
         public string ServerName;
@@ -38,7 +38,7 @@ namespace EntityOrientedCommunication.Messages
         #region constructor
         [JsonConstructor]
         protected TMLoggedin() { }
-        public TMLoggedin(TMLogin toReply, string serverName, EOCUser @operator, string token) : 
+        public TMLoggedin(TMLogin toReply, string serverName, User @operator, string token) : 
             base(toReply, token)
         {
             User = @operator.Copy();

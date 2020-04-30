@@ -67,6 +67,8 @@ namespace EntityOrientedCommunication.Server
                 Console.WriteLine($"添加了{testUCount}个测试账户");
             }
 
+            server?.Run();
+
             // resource utilization monitor
             var name = Process.GetCurrentProcess().ProcessName;
             var cpuCounter = new PerformanceCounter("Process", "% Processor Time", name);
@@ -76,8 +78,8 @@ namespace EntityOrientedCommunication.Server
                 Console.Title = string.Format("{0}  {1}@{2}:{3}  CPU: {4:F2}%  RAM: {5}",
                     System.Environment.CurrentDirectory,
                     server.Name,
-                    server.serverIp,
-                    server.serverPort,
+                    server.IP,
+                    server.Port,
                     cpuCounter.NextValue(),
                     StringFormatter.ByteCountToString((int)ramCounter.NextValue()));
                 Thread.Sleep(1000);

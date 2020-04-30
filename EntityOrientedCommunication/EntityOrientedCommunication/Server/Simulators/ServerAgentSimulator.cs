@@ -16,7 +16,7 @@ namespace EntityOrientedCommunication.Server
 {
    internal sealed class ServerAgentSimulator : IMailDispatcher  // connect client to server through memory
     {
-        public ServerEOCUser SUser { get; private set; }
+        public ServerUser SUser { get; private set; }
 
         public string ClientName => SUser.Name;
 
@@ -26,7 +26,7 @@ namespace EntityOrientedCommunication.Server
         {
             this.client = client;
 
-            this.SUser = new ServerEOCUser(client.ClientName, "system.server");
+            this.SUser = new ServerUser(client.ClientName, "system.server");
             this.SUser.IsOnline = true;  // change opeartor's status to online
             this.SUser.PostOffice.Activate(this);  // activate post office
         }

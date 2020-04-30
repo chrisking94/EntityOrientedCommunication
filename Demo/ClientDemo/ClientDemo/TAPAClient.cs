@@ -19,12 +19,12 @@ namespace ClientDemo
     public static class TAPAClient
     {
         #region data
-        private static ClientLoginAgent _agent;
-        public static ClientLoginAgent Agent  // lazy creation
+        private static ClientAgent _agent;
+        public static ClientAgent Agent  // lazy creation
         {
             get
             {
-                if (_agent is null) _agent = new ClientLoginAgent(DefaultIP, DefaultPort);
+                if (_agent is null) _agent = new ClientAgent(DefaultIP, DefaultPort);
                 return _agent;
             }
         }

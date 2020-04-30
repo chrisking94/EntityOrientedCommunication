@@ -25,7 +25,7 @@ namespace EntityOrientedCommunication.Messages
         [JsonConstructor]
         protected TMLogin() { }
 
-        public TMLogin(EOCUser opr) : base(2)  // special Id
+        public TMLogin(User opr) : base(2)  // special Id
         {
             Username = opr.Name;
             Password = opr.Password;

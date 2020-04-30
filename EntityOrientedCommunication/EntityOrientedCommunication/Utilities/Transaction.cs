@@ -13,23 +13,6 @@ using System.Diagnostics;
 
 namespace EntityOrientedCommunication.Utilities
 {
-    public class TransactionErrorArgs : EventArgs
-    {
-        public string ErrorMessage => $"transaction '{transaction.Name}': {exception.Message}";
-
-        public readonly Transaction transaction;
-
-        public readonly Exception exception;
-
-        public TransactionErrorArgs(Transaction transaction, Exception exception)
-        {
-            this.transaction = transaction;
-            this.exception = exception;
-        }
-    }
-
-    public delegate void TransactionErrorEventHandler(object sender, TransactionErrorArgs args);
-
     public class Transaction : CycleUpdater
     {
         #region data
@@ -38,9 +21,9 @@ namespace EntityOrientedCommunication.Utilities
         #endregion
 
         #region field
-        public TransactionErrorEventHandler TransactionErrorEvent;
-
         internal readonly Action action;
+
+        private TransactionPool pool;
         #endregion
         #endregion
 
@@ -51,6 +34,11 @@ namespace EntityOrientedCommunication.Utilities
             this.Name = name;
 
             this.Register();
+        }
+
+        internal void SetPool(TransactionPool pool)
+        {
+            this.pool = pool;
         }
         #endregion
 
@@ -63,7 +51,7 @@ namespace EntityOrientedCommunication.Utilities
             }
             catch (Exception ex)
             {
-                this.TransactionErrorEvent?.Invoke(this, new TransactionErrorArgs(this, ex));
+                this.pool?.OnError(this, ex);
 
                 this.Unregister();  // stop running when error occurred
             }
@@ -74,7 +62,7 @@ namespace EntityOrientedCommunication.Utilities
         public override void Destroy()
         {
             base.Destroy();
-            this.TransactionErrorEvent = null;
+            this.pool = null;
         }
         #endregion
     }

@@ -12,7 +12,7 @@ using EOCServer;
 namespace EntityOrientedCommunication
 {
     [JsonObject(MemberSerialization.OptIn)]
-    public class EOCUser : IUser
+    public class User : IUser
     {
         #region property
         [JsonProperty]
@@ -33,11 +33,11 @@ namespace EntityOrientedCommunication
 
         #region constructor
         [JsonConstructor]
-        public EOCUser()
+        public User()
         {
         }
 
-        protected EOCUser(string name, string detail = "")
+        protected User(string name, string detail = "")
         {
             Name = name;
             Detail = detail;
@@ -56,7 +56,7 @@ namespace EntityOrientedCommunication
             return this.Password == password;
         }
 
-        public void Update(EOCUser opr)
+        public void Update(User opr)
         {
             Name = opr.Name;
             ID = opr.ID;
@@ -68,9 +68,9 @@ namespace EntityOrientedCommunication
         /// the password is not copied
         /// </summary>
         /// <returns></returns>
-        public EOCUser Copy()
+        public User Copy()
         {
-            var opr = new EOCUser();
+            var opr = new User();
 
             opr.Update(this);
 

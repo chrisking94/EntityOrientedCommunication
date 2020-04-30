@@ -11,8 +11,27 @@ using System.Threading.Tasks;
 
 namespace EntityOrientedCommunication.Utilities
 {
+    public class TransactionErrorArgs : EventArgs
+    {
+        public string ErrorMessage => $"transaction '{transaction.Name}': {exception.Message}";
+
+        public readonly Transaction transaction;
+
+        public readonly Exception exception;
+
+        public TransactionErrorArgs(Transaction transaction, Exception exception)
+        {
+            this.transaction = transaction;
+            this.exception = exception;
+        }
+    }
+
+    public delegate void TransactionErrorEventHandler(object sender, TransactionErrorArgs args);
+
     public class TransactionPool
     {
+        public TransactionErrorEventHandler TransactionErrorEvent;
+
         #region data
         #region property
         #endregion
@@ -43,6 +62,7 @@ namespace EntityOrientedCommunication.Utilities
         {
             var transaction = new Transaction(action, interval, name);
 
+            transaction.SetPool(this);
             this.name2Trans.Add(name, transaction);
 
             return transaction;
@@ -58,6 +78,11 @@ namespace EntityOrientedCommunication.Utilities
                 transactin.Destroy();
             }
             this.name2Trans = null;
+        }
+
+        internal void OnError(Transaction transaction, Exception ex)
+        {
+            this.TransactionErrorEvent?.Invoke(this, new TransactionErrorArgs(transaction, ex));
         }
         #endregion
 
