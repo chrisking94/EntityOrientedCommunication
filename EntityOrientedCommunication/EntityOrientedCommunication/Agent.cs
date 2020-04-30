@@ -233,7 +233,7 @@ namespace EntityOrientedCommunication
 
         protected TCounter SetWaitFlag(TMessage msg, int timeout)
         {
-            var tc = new TCounter(msg, timeout, this);
+            var tc = new TCounter(msg, timeout);
             lock (dictMsgIdAndTCounter) dictMsgIdAndTCounter[msg.ID] = tc;
             return tc;
         }
@@ -542,8 +542,9 @@ namespace EntityOrientedCommunication
                 lock (dictMsgIdAndTCounter) msgIdAndTCounterPairs = dictMsgIdAndTCounter.ToArray();
                 foreach (var kv in msgIdAndTCounterPairs)
                 {
-                    if (kv.Value.Decrease(threadInterval))  // request timeout
+                    if (kv.Value.Decrease(threadInterval) || !this.IsConnected)  // request timeout
                     {
+                        kv.Value.CountDown = 0;  // set countdown to 'timeout'
                         lock (timeoutTCQ)
                         {
                             timeoutTCQ.Enqueue(kv.Value);

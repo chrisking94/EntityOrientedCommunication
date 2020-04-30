@@ -39,7 +39,7 @@ namespace EntityOrientedCommunication.Server
         internal LetterInfo(LetterInfo src, MailRouteInfo newRecipInfo)
         {
             this.letter = new TMLetter(newRecipInfo.ToLiteral(), src.letter.Sender,
-                        src.letter.Title, src.letter.Content, src.letter.LetterType);
+                        src.letter.Title, src.letter.Content, src.letter.LetterType, src.letter.Serial);
             this.sender = src.sender;
             this.recipient = newRecipInfo;
             this.timeStamp = src.timeStamp;  // hold timestamp
@@ -215,7 +215,11 @@ namespace EntityOrientedCommunication.Server
 
         private List<LetterInfo> Pop(LetterType letterType, List<string> receiverTypeFullNames)
         {
-            var list = dictlLetterTypeAndInBox[letterType];
+            List<LetterInfo> list;
+            lock (dictlLetterTypeAndInBox)
+            {
+                list = dictlLetterTypeAndInBox[letterType].ToList();
+            }
             var popInfos = new List<LetterInfo>();
 
             foreach (var letterInfo in list)
@@ -260,6 +264,7 @@ namespace EntityOrientedCommunication.Server
                 lock (registeredReceiverEntityNames)
                 {
                     letterInfos.AddRange(this.Pop(LetterType.RealTime, registeredReceiverEntityNames));
+                    letterInfos.AddRange(this.Pop(LetterType.RealTimeGet, registeredReceiverEntityNames));
                     letterInfos.AddRange(this.Pop(LetterType.Normal, registeredReceiverEntityNames));
                     letterInfos.AddRange(this.Pop(LetterType.Emergency, registeredReceiverEntityNames));
                 }

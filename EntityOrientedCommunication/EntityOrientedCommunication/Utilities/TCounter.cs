@@ -33,14 +33,11 @@ namespace EntityOrientedCommunication.Utilities
         /// </summary>
         public bool IsTimeOut => CountDown <= 0;
 
-        private Agent agent;
-
-        internal TCounter(TMessage msg, int timeout, Agent agent)
+        internal TCounter(TMessage msg, int timeout)
         {
             RequestMsg = msg;
             CountDown = timeout;
             IsReplied = false;
-            this.agent = agent;
         }
         
         internal void SetReply(TMessage reply)
@@ -56,14 +53,7 @@ namespace EntityOrientedCommunication.Utilities
         /// <returns></returns>
         internal bool Decrease(int nStep)
         {
-            if (agent.IsConnected)
-            {
-                CountDown -= nStep;
-            }
-            else
-            {
-                CountDown = 0;  // timeout
-            }
+            CountDown -= nStep;
 
             return CountDown <= 0;
         }

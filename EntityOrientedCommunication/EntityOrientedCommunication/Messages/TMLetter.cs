@@ -21,6 +21,7 @@ namespace EntityOrientedCommunication
         RealTime,  // letter would be discarded if receiver is not online
         Retard,  // letter will be received only when recipient pulls them
         Emergency,  // an error will be reported if recipient is not on line
+        RealTimeGet,  // letter would be discarded if any of the recipients is not online, and an error will be reported to the sender, the receiver must reply a message to the sender
     }
 
     /// <summary>
@@ -44,6 +45,12 @@ namespace EntityOrientedCommunication
 
         [JsonProperty]
         public LetterType LetterType { get; set; }
+
+        /// <summary>
+        /// serial is created by ClientMailBox
+        /// </summary>
+        [JsonProperty]
+        internal string Serial { get; private set; }
         #endregion
 
         #region field
@@ -55,14 +62,14 @@ namespace EntityOrientedCommunication
         protected TMLetter() { }
 
         public TMLetter(string recipient, string sender, string title,
-            object content, LetterType type = LetterType.Normal)
+            object content, LetterType type, string serial)
         {
             Title = title;
             Recipient = recipient;
             Sender = sender;
             Object = content;
             LetterType = type;
-
+            this.Serial = serial;
             Status = StatusCode.Letter;
         }
 
@@ -71,7 +78,7 @@ namespace EntityOrientedCommunication
             this.Title = copyFrom.Title;
             this.Recipient = copyFrom.Recipient;
             this.Sender = copyFrom.Sender;
-            
+            this.Serial = copyFrom.Serial;
             this.LetterType = copyFrom.LetterType;
         }
         #endregion

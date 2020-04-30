@@ -112,6 +112,14 @@ namespace EntityOrientedCommunication.Server
             allReceiverInfos = MailRouteInfo.Format(allReceiverInfos);
             var notExistsUserRouteInfos = allReceiverInfos.Where(info => !this.Contains(info.UserName)).ToList();
 
+            if (letter.LetterType == LetterType.RealTimeGet)
+            {  // check recipient
+                if (allReceiverInfos.Count > 1)
+                {
+                    return $"letter of type '{nameof(LetterType.RealTimeGet)}' should not have multiple recipients.";
+                }
+            }
+
             if (notExistsUserRouteInfos.Count > 0)
             {
                 return $"user '{string.Join("; ", notExistsUserRouteInfos.Select(info => info.UserName).ToArray())}' not exists，faild to send letter";  // operation failed

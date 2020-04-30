@@ -28,9 +28,10 @@ namespace TAPACSTest
         {
             public string EntityName => "ObjA";
 
-            public void Pickup(TMLetter letter)
+            public object Pickup(TMLetter letter)
             {
-                Console.WriteLine($"{letter.Title}");
+                Console.WriteLine($"{letter.Content}");
+                return null;
             }
         }
 
@@ -38,9 +39,12 @@ namespace TAPACSTest
         {
             public string EntityName => "ObjB";
 
-            public void Pickup(TMLetter letter)
+            public object Pickup(TMLetter letter)
             {
                 Console.WriteLine($"--------------------------{letter.Title}");
+                return null;
+
+                return "this message is from B, the item has been received";
             }
         }
 
@@ -58,9 +62,8 @@ namespace TAPACSTest
             var objB = new ObjectB();
             var box2 = agent2.PostOffice.Register(objB);
 
-            Thread.Sleep(1000);
 
-            box1.Send("ObjB@user2", "hello objB", null);
+            var obj = box1.Get("ObjB@user2", "hello objB", null);
 
 
             Console.ReadKey();

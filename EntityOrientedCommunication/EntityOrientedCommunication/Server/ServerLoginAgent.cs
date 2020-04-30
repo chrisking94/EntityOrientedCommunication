@@ -22,7 +22,7 @@ namespace EntityOrientedCommunication.Server
     {
         #region data
         #region property
-        public ServerUser SOperator => User as ServerUser;
+        public ServerUser SUser => User as ServerUser;
         #endregion
 
         #region field
@@ -42,7 +42,7 @@ namespace EntityOrientedCommunication.Server
 
             GetControl(ThreadType.Listen).Start();
 
-            logger.Write(LogType.PR, $"客户端 {TeleClientName} 已连接");
+            logger.Write(LogType.PR, $"client {TeleClientName} has connected.");
         }
         #endregion
 
@@ -66,7 +66,7 @@ namespace EntityOrientedCommunication.Server
 
                 if (hasLoggedIn)
                 {
-                    msg = new TMError(msg, $"'{login.Username}' 已登录，禁止重复登录。", ErrorCode.RedundantLogin);
+                    msg = new TMError(msg, $"'{login.Username}' has logged in，replicated logins are forbidden.", ErrorCode.RedundantLogin);
                 }
                 else if (server.UserManager.Contains(login.Username))
                 {
@@ -90,12 +90,12 @@ namespace EntityOrientedCommunication.Server
                     }
                     else
                     {
-                        msg = new TMError(msg, $"密码或用户名错误", ErrorCode.IncorrectUsernameOrPassword);
+                        msg = new TMError(msg, $"incorrect username/password.", ErrorCode.IncorrectUsernameOrPassword);
                     }
                 }
                 else
                 {
-                    msg = new TMError(msg, $"用户 {login.Username} 未注册", ErrorCode.UnregisteredUser);
+                    msg = new TMError(msg, $"user '{login.Username}' is not registered.", ErrorCode.UnregisteredUser);
                 }
             }
             else if (msg.HasFlag(StatusCode.Logout))
@@ -104,9 +104,9 @@ namespace EntityOrientedCommunication.Server
 
                 msg = new TMessage(msg, StatusCode.Ok);
             }
-            else if (SOperator == null || !SOperator.IsOnline)
+            else if (SUser == null || !SUser.IsOnline)
             {
-                msg = new TMError(msg, "请先登陆");
+                msg = new TMError(msg, "please login first.");
             }
             else if (msg.HasFlag(StatusCode.Letter))
             {
@@ -115,43 +115,28 @@ namespace EntityOrientedCommunication.Server
                     try
                     {
                         var pull = msg as TMObject<ObjectPatternSet>;
-                        SOperator.PostOffice.Pull(pull.Object);
+                        SUser.PostOffice.Pull(pull.Object);
                         msg = new TMessage(msg, StatusCode.Ok);
                     }
                     catch (Exception ex)
                     {
-                        msg = new TMError(msg, $"匹配信件时遇到错误：{ex.Message}");
+                        msg = new TMError(msg, $"unable to perform patterset match：{ex.Message}");
                     }
                 }
                 else
                 {
                     var letter = msg as TMLetter;
-                    var bSend = true;
 
-                    if (bSend)
+                    var error = server.UserManager.Deliver(letter);
+
+                    if (error != null)  // error
                     {
-                        string error = null;
-                        //string cmd;
-                        //CommandLine.Resolve(letter.Title, out letter.Title, out cmd);  // title # cmd
-
-                        if (error == null)
-                        {
-                            error = server.UserManager.Deliver(letter);
-                        }  // else error
-
-                        if (error == null)
-                        {
-                            // process addition command in letter's title
-                            //error = cmder.Execute(cmd, letter);  // command is not supported in this version
-                        }
-
-                        if (error != null)// error
-                        {
-                            msg = new TMError(msg, error);
-                        }
+                        msg = new TMError(msg, error);
                     }
-
-                    if (!msg.HasFlag(StatusCode.Denied)) msg = new TMessage(msg, StatusCode.Ok);
+                    else
+                    {
+                        msg = new TMessage(msg, StatusCode.Ok);
+                    }
                 }
             }
             else if (msg.HasFlag(StatusCode.Register))
@@ -160,14 +145,14 @@ namespace EntityOrientedCommunication.Server
                 {
                     var typeFullName = (msg as TMText).Text;
 
-                    SOperator.PostOffice.Register(typeFullName);
+                    SUser.PostOffice.Register(typeFullName);
 
                     msg = new TMessage(msg, StatusCode.Ok);
                 }
             }
             else
             {
-                msg = new TMError(msg, $"当前请求对 '{nameof(ServerLoginAgent)}' 无效", ErrorCode.InvalidOperation);
+                msg = new TMError(msg, $"current request is not supported by this server.", ErrorCode.InvalidOperation);
             }
         }
 
@@ -180,15 +165,12 @@ namespace EntityOrientedCommunication.Server
         {
             if (msg.HasFlag(StatusCode.Command))  // client refused a command
             {
-                Response(new TMError(GetEnvelope(), $"客户端执行服务器 '{msg.ID}' 号命令超时，已断开连接"));
+                Response(new TMError(GetEnvelope(), $"the client did not response command '{msg.ID}' in time, the connection was cut off."));
                 Destroy();
             }
             else if (msg.HasFlag(StatusCode.Letter))
             {
-                //// resend when failed
-                //var letter = msg as TMLetter;
-                //++letter.Trials;
-                //SOperator.MailBox.Push(letter);
+                // pass
             }
         }
 
@@ -201,7 +183,7 @@ namespace EntityOrientedCommunication.Server
                 var msg = exp.Tag as TMessage;
                 if (msg.HasFlag(StatusCode.Request))
                 {
-                    Response(new TMText(exp.Tag as TMessage, $"处理请求 '{msg.ID}' 时遇到错误：{exp.InnerException.Message}", StatusCode.Denied));
+                    Response(new TMText(exp.Tag as TMessage, $"error occurred when process message '{msg.ID}'：{exp.InnerException.Message}", StatusCode.Denied));
                 }
             }
             else  // disconnect when fatal error occurs
@@ -221,19 +203,19 @@ namespace EntityOrientedCommunication.Server
         {
             Token = null;
             server.Remove(this);
-            if (SOperator != null)
+            if (SUser != null)
             {
-                SOperator.PostOffice.Deactivate();  // deactivate mailbox
-                SOperator.IsOnline = false;
+                SUser.PostOffice.Deactivate();  // deactivate mailbox
+                SUser.IsOnline = false;
             }
         }
 
-        protected override void OnThreadListenAborted()  // listen报错
+        protected override void OnThreadListenAborted()  // listen thread on aborting
         {
             Destroy();
         }
 
-        protected override void OnConnectionTimeout()  // 连接超时
+        protected override void OnConnectionTimeout()  // connection timeout
         {
             Destroy();
         }

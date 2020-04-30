@@ -28,6 +28,7 @@ namespace EntityOrientedCommunication.Mail
         /// receive a new coming letter
         /// </summary>
         /// <param name="letter"></param>
-        void Pickup(TMLetter letter);
+        /// <returns>the item which will be sent to the sender after picking up, null if nothing to return</returns>
+        object Pickup(TMLetter letter);
     }
 }
