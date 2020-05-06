@@ -119,14 +119,7 @@ namespace EntityOrientedCommunication.Server
         {
             lock (loginAgents)
             {
-                if (loginAgents.Contains(loginAgent))
-                {
-                    loginAgents.Remove(loginAgent);
-                }
-                //else
-                //{
-                //    logger.Error($"connection '{loginAgent}' not found.");
-                //}
+                loginAgents.Remove(loginAgent);
             }
         }
 

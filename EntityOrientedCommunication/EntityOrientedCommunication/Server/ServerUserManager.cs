@@ -82,67 +82,6 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        /// <summary>
-        /// push the letter into corresponding postoffice
-        /// </summary>
-        /// <param name="letter"></param>
-        /// <returns>error message, null if there is no error</returns>
-        public string Deliver(EMLetter letter)
-        {
-            var allReceiverInfos = new List<MailRouteInfo>();
-            var sInfo = MailRouteInfo.Parse(letter.Sender)[0];
-
-            foreach (var rInfo in MailRouteInfo.Parse(letter.Recipient))
-            {
-                if (rInfo.UserName.ToLower() == "all")  // to all,  broadcast
-                {
-                    foreach (var oprName in server.UserManager.GetAllOperatorNames())
-                    {
-                        if (oprName != sInfo.UserName)  // sender is not included
-                        {
-                            allReceiverInfos.Add(new MailRouteInfo(oprName, rInfo.ReceiverEntityNames));
-                        }
-                    }
-                }
-                else
-                {
-                    allReceiverInfos.Add(rInfo);
-                }
-            }
-            allReceiverInfos = MailRouteInfo.Format(allReceiverInfos);
-            var notExistsUserRouteInfos = allReceiverInfos.Where(info => !this.Contains(info.UserName)).ToList();
-
-            if (letter.LetterType == LetterType.EmergencyGet)
-            {  // check recipient
-                if (allReceiverInfos.Count > 1)
-                {
-                    return $"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.";
-                }
-            }
-
-            if (notExistsUserRouteInfos.Count > 0)
-            {
-                return $"user '{string.Join("; ", notExistsUserRouteInfos.Select(info => info.UserName).ToArray())}' not exists，faild to send letter";  // operation failed
-            }
-
-            if (letter.LetterType == LetterType.Emergency)
-            {  // check receiver status
-                var offlineOprRouteInfos = allReceiverInfos.Where(info => !this.GetOperator(info.UserName).IsOnline).ToList();
-                if (offlineOprRouteInfos.Count > 0)
-                {
-                    return $"user '{string.Join(",", offlineOprRouteInfos.Select(o => o.UserName).ToArray())}' is not online，falid to send emergency letter";
-                }
-            }
-
-            foreach (var rInfo in allReceiverInfos)
-            {
-                var recipientOpr = this.GetOperator(rInfo.UserName);
-                recipientOpr.PostOffice.Push(letter, sInfo, rInfo);
-            }
-
-            return null;  // succeeded
-        }
-
         internal void Register(ServerUser serverUser)
         {
             lock (dictNameAndOperator)
@@ -160,6 +99,88 @@ namespace EntityOrientedCommunication.Server
         {
             var serverUser = new ServerUser(iuser);
             Register(serverUser);
+        }
+        #endregion
+
+        #region EOC
+        /// <summary>
+        /// push the letter into corresponding postoffice
+        /// </summary>
+        /// <param name="letter"></param>
+        /// <returns>error message, null if there is no error</returns>
+        public string Deliver(EMLetter letter)
+        {
+            var allRecipientInfos = new List<MailRouteInfo>();
+            var sInfo = MailRouteInfo.Parse(letter.Sender)[0];
+
+            foreach (var rInfo in MailRouteInfo.Parse(letter.Recipient))
+            {
+                if (rInfo.UserName.ToLower() == "all")  // to all,  broadcast
+                {
+                    foreach (var oprName in server.UserManager.GetAllOperatorNames())
+                    {
+                        if (oprName != sInfo.UserName)  // sender is not included
+                        {
+                            allRecipientInfos.Add(new MailRouteInfo(oprName, rInfo.ReceiverEntityNames));
+                        }
+                    }
+                }
+                else
+                {
+                    allRecipientInfos.Add(rInfo);
+                }
+            }
+            allRecipientInfos = MailRouteInfo.Format(allRecipientInfos);
+            var notExistsUserRouteInfos = allRecipientInfos.Where(info => !this.Contains(info.UserName)).ToList();
+
+            if (letter.LetterType == LetterType.EmergencyGet)
+            {  // check recipient
+                if (allRecipientInfos.Count > 1)
+                {
+                    return $"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.";
+                }
+            }
+
+            if (notExistsUserRouteInfos.Count > 0)
+            {
+                return $"user '{string.Join("; ", notExistsUserRouteInfos.Select(info => info.UserName).ToArray())}' not exists，faild to send letter";  // operation failed
+            }
+
+            if (letter.LetterType == LetterType.Emergency ||
+                letter.LetterType == LetterType.EmergencyGet)
+            {  // check receiver status
+                var offlineOprRouteInfos = new List<MailRouteInfo>(allRecipientInfos.Count);
+                foreach (var recipientInfo in allRecipientInfos)
+                {
+                    var opr = this.GetOperator(recipientInfo.UserName);
+                    if (opr == null)
+                    {
+                        offlineOprRouteInfos.Add(new MailRouteInfo(recipientInfo));
+                    }
+                    else
+                    {
+                        var routeInfo = new MailRouteInfo(recipientInfo.UserName,
+                            recipientInfo.ReceiverEntityNames.Where(ren => !opr.PostOffice.IsEntityOnline(ren)).ToList()
+                            );
+                        if (routeInfo.ReceiverEntityNames.Count > 0)
+                        {
+                            offlineOprRouteInfos.Add(routeInfo);
+                        }
+                    }
+                }
+                if (offlineOprRouteInfos.Count > 0)
+                {
+                    return $"entity '{MailRouteInfo.ToLiteral(offlineOprRouteInfos)}' is not online, falid to send emergency letter.";
+                }
+            }
+
+            foreach (var rInfo in allRecipientInfos)
+            {
+                var recipientOpr = this.GetOperator(rInfo.UserName);
+                recipientOpr.PostOffice.Push(letter, sInfo, rInfo);
+            }
+
+            return null;  // succeeded
         }
         #endregion
 

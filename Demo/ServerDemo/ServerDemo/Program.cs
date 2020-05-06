@@ -67,6 +67,9 @@ namespace EntityOrientedCommunication.Server
                 Console.WriteLine($"添加了{testUCount}个测试账户");
             }
 
+            //var entity = new ServerEntityA();
+            //server?.LocalClient?.PostOffice.Register(entity);
+
             server?.Run();
 
             // resource utilization monitor

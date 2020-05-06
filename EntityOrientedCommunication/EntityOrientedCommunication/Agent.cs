@@ -199,7 +199,7 @@ namespace EntityOrientedCommunication
             SendMessage(msg);
             if (!tc.WaitReply())
             {
-                throw new TimeoutException($"{msg} request timeout");
+                throw new TimeoutException($"request timeout: {msg}");
             }
             return tc.ResponseMsg;
         }

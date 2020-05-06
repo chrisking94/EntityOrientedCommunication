@@ -33,6 +33,12 @@ namespace EntityOrientedCommunication.Mail
             this.ReceiverEntityNames = receiverTypeFullNames;
         }
 
+        public MailRouteInfo(MailRouteInfo copyFrom)
+        {
+            this.UserName = copyFrom.UserName;
+            this.ReceiverEntityNames = new List<string>(copyFrom.ReceiverEntityNames);
+        }
+
         /// <summary>
         /// type1@Tom;type2@Marry;type3, type4@Jerry
         /// </summary>

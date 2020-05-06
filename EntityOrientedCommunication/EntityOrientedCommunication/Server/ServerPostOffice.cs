@@ -140,6 +140,15 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
+        public bool IsEntityOnline(string entityName)
+        {
+            if (!IsActivated) return false;
+            lock (this.registeredReceiverEntityNames)
+            {
+                return this.registeredReceiverEntityNames.Contains(entityName);
+            }
+        }
+
         public void Activate(IMailDispatcher dispatcher)
         {
             this.IsActivated = true;
