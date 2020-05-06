@@ -58,6 +58,7 @@
     <Compile Include="Client\ClientMailBox.cs" />
     <Compile Include="Client\ClientPostOffice.cs" />
     <Compile Include="Client\IClientMailDispatcher.cs" />
+    <Compile Include="Facilities\ReaderWriterLockSlimExtensions.cs" />
     <Compile Include="IniFile.cs" />
     <Compile Include="Server\IUser.cs" />
     <Compile Include="Server\Server.cs" />
@@ -85,24 +86,24 @@
     <Compile Include="Messages\EMLogin.cs" />
     <Compile Include="Messages\EMObject.cs" />
     <Compile Include="Messages\EMText.cs" />
-    <Compile Include="Utilities\CycleUpdater.cs" />
-    <Compile Include="Utilities\InitializedDictionary.cs" />
-    <Compile Include="Utilities\JsonList.cs" />
-    <Compile Include="Utilities\ObjectMarker.cs" />
-    <Compile Include="Utilities\IObjectPattern.cs" />
-    <Compile Include="Utilities\ObjectPatternSet.cs" />
-    <Compile Include="Utilities\OPSingleProperty.cs" />
-    <Compile Include="Utilities\OPSinglePropertyFunction.cs" />
-    <Compile Include="Utilities\StringFormatter.cs" />
-    <Compile Include="Utilities\TCounter.cs" />
-    <Compile Include="Utilities\ThreadControl.cs" />
-    <Compile Include="Utilities\TimeBlock.cs" />
+    <Compile Include="Facilities\CycleUpdater.cs" />
+    <Compile Include="Facilities\InitializedDictionary.cs" />
+    <Compile Include="Facilities\JsonList.cs" />
+    <Compile Include="Facilities\ObjectMarker.cs" />
+    <Compile Include="Facilities\IObjectPattern.cs" />
+    <Compile Include="Facilities\ObjectPatternSet.cs" />
+    <Compile Include="Facilities\OPSingleProperty.cs" />
+    <Compile Include="Facilities\OPSinglePropertyFunction.cs" />
+    <Compile Include="Facilities\StringFormatter.cs" />
+    <Compile Include="Facilities\TCounter.cs" />
+    <Compile Include="Facilities\ThreadControl.cs" />
+    <Compile Include="Facilities\TimeBlock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="User.cs" />
-    <Compile Include="Utilities\Transaction.cs" />
-    <Compile Include="Utilities\TransactionPool.cs" />
-    <Compile Include="Utilities\TypeExtensions.cs" />
+    <Compile Include="Facilities\Transaction.cs" />
+    <Compile Include="Facilities\TransactionPool.cs" />
+    <Compile Include="Facilities\TypeExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="NLog.config">

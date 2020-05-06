@@ -33,7 +33,7 @@ namespace EntityOrientedCommunication.Server
         #region constructor
         public ServerLoginAgent(Socket socket, Server server)
         {
-            this.socket = socket;
+            this.RestSocket(socket);
             this.server = server;
             ClientName = server.Name;
             TeleClientName = socket.RemoteEndPoint.ToString();

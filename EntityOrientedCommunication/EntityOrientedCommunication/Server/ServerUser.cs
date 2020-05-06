@@ -49,6 +49,12 @@ namespace EntityOrientedCommunication.Server
         {
             this.manager = manager;
         }
+
+        internal void UpdateServerUserInfo(IUser user)
+        {
+            base.Update(user);
+            this.SetPassword(user.Password);  // update password
+        }
         #endregion
 
         #region private

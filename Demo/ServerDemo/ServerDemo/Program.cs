@@ -62,7 +62,7 @@ namespace EntityOrientedCommunication.Server
                     var uname = $"user{i}";
                     var user = new UserInfo(uname);
                     user.NickName = $"测试用户{i}";
-                    server.UserManager.Register(user);
+                    server.UserManager.Update(user);
                 }
                 Console.WriteLine($"添加了{testUCount}个测试账户");
             }

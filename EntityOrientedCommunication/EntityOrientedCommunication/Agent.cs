@@ -35,17 +35,27 @@ namespace EntityOrientedCommunication
     {
         #region data
         #region property
-        public virtual bool IsConnected => socket == null ? false : socket.Connected;
+        public bool IsConnected
+        {
+            get
+            {
+                rwlsSocket.EnterReadLock();
+                var bConnected = socket == null ? false : socket.Connected; ;
+                rwlsSocket.ExitReadLock();
+
+                return bConnected;
+            }
+        }
 
         /// <summary>
         /// name of local client
         /// </summary>
-        public virtual string ClientName { get; protected set; } 
+        public string ClientName { get; protected set; }
 
         /// <summary>
         /// name of client on remote computer
         /// </summary>
-        public virtual string TeleClientName { get; protected set; }
+        public string TeleClientName { get; protected set; }
 
         /// <summary>
         /// current connection phase
@@ -61,7 +71,8 @@ namespace EntityOrientedCommunication
         #region field
         private const byte dogFoodFlag = 0xdf;
 
-        protected Socket socket;
+        private Socket socket;
+        protected readonly ReaderWriterLockSlim rwlsSocket = new ReaderWriterLockSlim();  // the lock for field 'socket' of this agent
 
         private int bufferSize = 65535;
         private byte[] rbuffer;  // reception buffer
@@ -156,20 +167,34 @@ namespace EntityOrientedCommunication
 
         private void CloseSocket()
         {
+            RestSocket(null);
+        }
+
+        protected void RestSocket(Socket newSocket)
+        {
+            rwlsSocket.EnterUpgradeableReadLock();  // enter upgrade lock
+
+            // dispose the old socket
             if (socket != null)
             {
-                lock (socket)
+                rwlsSocket.EnterWriteLock();  // enter write lock
+                try
                 {
-                    // close socket
-                    if (socket.Connected)
+                    if (socket.Connected)  // close socket
                     {
                         socket.Disconnect(false);
                     }
                     socket.Close();
                 }
-
-                //socket = null;
+                finally
+                {
+                    rwlsSocket.ExitWriteLock();  // exit write lock
+                }
             }
+
+            // upgrade field to new socket
+            socket = newSocket;
+            rwlsSocket.ExitUpgradeableReadLock();  // exit upgrade lock
         }
 
         protected ThreadControl GetControl(ThreadType threadType)
@@ -312,34 +337,29 @@ namespace EntityOrientedCommunication
 
         /// <summary>
         /// send raw bytes through socket
-        /// <para>attention: only 'SendBytes(byte[])' is granted to invoke this method, other method should not invoke this method, to avoid some latent risk</para>
+        /// <para>attention: only 'SendBytes(byte[])' is granted to invoke this method, other method should not touch this method to avoid some latent risk</para>
         /// </summary>
         /// <param name="bytes"></param>
         /// <param name="offset"></param>
         /// <param name="size"></param>
         private void SendRaw(byte[] bytes, int offset, int size)
         {
+            rwlsSocket.EnterReadLock();  // field access lock
             try
             {
-                for (var count = 0; offset < size;)
+                for (var count = 0; offset < size && socket.Connected;)
                 {
-                    lock (socket)
-                    {
-                        if (socket.Connected)
-                        {
-                            count = socket.Send(bytes, offset, size - offset, SocketFlags.None);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
+                    count = socket.Send(bytes, offset, size - offset, SocketFlags.None);
                     offset += count;
                 }
             }
             catch (SocketException se)
             {
                 logger.Write(LogType.ER, se.Message);
+            }
+            finally
+            {
+                rwlsSocket.ExitReadLock();
             }
         }
 
@@ -578,19 +598,23 @@ namespace EntityOrientedCommunication
         /// <param name="control"></param>
         private void __threadListen(ThreadControl control)
         {
-            try
+            logger.Debug($"{nameof(__threadListen)}() on duty.");
+
+            var count = 1;
+            int k = 0, l = 0;
+            uint msgLen = 0, verifyLen = 0;
+            var lenBuff = new byte[sizeof(uint)];
+            var slotBackup = slot;
+
+            socket.SendBufferSize = this.bufferSize;
+
+            while (!control.SafelyTerminating)
             {
-                logger.Debug($"{nameof(__threadListen)}() on duty.");
-
-                var count = 1;
-                int k = 0, l = 0;
-                uint msgLen = 0, verifyLen = 0;
-                var lenBuff = new byte[sizeof(uint)];
-                var slotBackup = slot;
-
-                socket.SendBufferSize = this.bufferSize;
-
-                while (!control.SafelyTerminating)
+                /*******************************
+                 * receive bytes through socket
+                 * *****************************/
+                rwlsSocket.EnterReadLock();
+                try
                 {
                     var result = socket.BeginReceive(rbuffer, 0, rbuffer.Length, SocketFlags.None, x => x = null, null);  // async reception，to realize 'SafelyTermination'
                     while (!control.SafelyTerminating && !result.IsCompleted)  // wait for completion
@@ -599,93 +623,101 @@ namespace EntityOrientedCommunication
                     }
                     if (control.SafelyTerminating || !socket.Connected) break;  // termination signal detected, stop listening
                     count = socket.EndReceive(result);
-                    for (var j = 0; j < count;)  // deal with the bytes received in rbuffer
-                    {
-                        if (msgLen == 0)
-                        {
-                            lenBuff[l] = rbuffer[j];
-                            ++j;  // point to the 1st byte of content
-                            if (++l == lenBuff.Length)
-                            {
-                                l = 0;
-                                msgLen = BitConverter.ToUInt32(lenBuff, 0);
-                                if (verifyLen != 0)  // need validation
-                                {
-                                    if (verifyLen == msgLen)  // validatin OK
-                                    {
-                                        watchDog = 0;  // feed local dog, reset the timer
-                                        if (msgLen == 1)  // 系统命令
-                                        {
-                                            if (slot[0] == dogFoodFlag)  // dog food
-                                            {
-                                                // pass
-                                            }
-                                        }
-                                        else
-                                        {
-                                            var msg = EMessage.FromBytes(slot, 0, k);
+                }
+                catch (SocketException se)
+                {
+                    logger.Error($"{se.Message}");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    logger.Fatal("fatal error occurred in __threadListen.", ex);
+                    Catch(new TException(ex));
+                    break;
+                }
+                finally
+                {
+                    rwlsSocket.ExitReadLock();
+                }
 
-                                            lock (inMsgQueue) inMsgQueue.Enqueue(msg);
-                                            ThreadPool.QueueUserWorkItem(_processTask, inMsgQueue);
+                /*****************************
+                 * process the received bytes
+                 * ***************************/
+                for (var j = 0; j < count;)  // deal with the bytes received in rbuffer
+                {
+                    if (msgLen == 0)
+                    {
+                        lenBuff[l] = rbuffer[j];
+                        ++j;  // point to the 1st byte of content
+                        if (++l == lenBuff.Length)
+                        {
+                            l = 0;
+                            msgLen = BitConverter.ToUInt32(lenBuff, 0);
+                            if (verifyLen != 0)  // need validation
+                            {
+                                if (verifyLen == msgLen)  // validatin OK
+                                {
+                                    watchDog = 0;  // feed local dog, reset the timer
+                                    if (msgLen == 1)  // system command code
+                                    {
+                                        if (slot[0] == dogFoodFlag)  // dog food
+                                        {
+                                            // pass
                                         }
-                                        msgLen = 0;
                                     }
                                     else
                                     {
-                                        Catch(new TException("transmission error, please reconnect!"));
+                                        var msg = EMessage.FromBytes(slot, 0, k);
+
+                                        lock (inMsgQueue) inMsgQueue.Enqueue(msg);
+                                        ThreadPool.QueueUserWorkItem(_processTask, inMsgQueue);
                                     }
-                                    verifyLen = 0;
-                                    if (slot.Length != slotSize)
-                                    {
-                                        slot = slotBackup;
-                                    }
+                                    msgLen = 0;
                                 }
                                 else
                                 {
-                                    if (msgLen > slotSize)
-                                    {
-                                        slot = new byte[msgLen];  // super slot
-                                    }
+                                    Catch(new TException("transmission error, please reconnect!"));
                                 }
-                                k = 0;
+                                verifyLen = 0;
+                                if (slot.Length != slotSize)
+                                {
+                                    slot = slotBackup;
+                                }
                             }
+                            else
+                            {
+                                if (msgLen > slotSize)
+                                {
+                                    slot = new byte[msgLen];  // super slot
+                                }
+                            }
+                            k = 0;
                         }
-                        else
+                    }
+                    else
+                    {
+                        int n = (int)(msgLen - k);
+                        if (n + j > count)
                         {
-                            int n = (int)(msgLen - k);
-                            if (n + j > count)
-                            {
-                                n = count - j;
-                            }
-                            Array.Copy(rbuffer, j, slot, k, n);
-                            k += n;
-                            j += n;
-                            if (k == msgLen)
-                            {
-                                verifyLen = msgLen;
-                                msgLen = 0;
-                            }
+                            n = count - j;
+                        }
+                        Array.Copy(rbuffer, j, slot, k, n);
+                        k += n;
+                        j += n;
+                        if (k == msgLen)
+                        {
+                            verifyLen = msgLen;
+                            msgLen = 0;
                         }
                     }
                 }
             }
-            catch (SocketException se)
-            {
-                logger.Error($"{se.Message}");
-            }
-            catch (Exception ex)
-            {
-                logger.Fatal("fatal error occurred in __threadListen.", ex);
-                Catch(new TException(ex));
-            }
-            finally
-            {
-                control.SetAbortedFlags();
 
-                OnThreadListenAborted();
+            control.SetAbortedFlags();
 
-                logger.Debug($"{nameof(__threadListen)}() aborted.");
-            }
+            OnThreadListenAborted();
+
+            logger.Debug($"{nameof(__threadListen)}() aborted.");
         }
         #endregion
     }

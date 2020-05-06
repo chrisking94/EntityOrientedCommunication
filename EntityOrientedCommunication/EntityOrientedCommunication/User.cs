@@ -56,7 +56,7 @@ namespace EntityOrientedCommunication
             return this.Password == password;
         }
 
-        public void Update(User opr)
+        public void Update(IUser opr)
         {
             Name = opr.Name;
             ID = opr.ID;

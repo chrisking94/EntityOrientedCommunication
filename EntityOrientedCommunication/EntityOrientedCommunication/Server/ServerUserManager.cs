@@ -18,7 +18,7 @@ namespace EntityOrientedCommunication.Server
         #region field
         private Dictionary<string, ServerUser> dictName2User;
 
-        private ReaderWriterLock rwlDictName2User;
+        private ReaderWriterLockSlim rwlsDictName2User;
 
         private Server server;
         #endregion
@@ -28,7 +28,7 @@ namespace EntityOrientedCommunication.Server
         public ServerUserManager(Server server)
         {
             dictName2User = new Dictionary<string, ServerUser>(16);
-            rwlDictName2User = new ReaderWriterLock();
+            rwlsDictName2User = new ReaderWriterLockSlim();
 
             this.server = server;
         }
@@ -37,9 +37,9 @@ namespace EntityOrientedCommunication.Server
         #region interface
         public bool Contains(string name)
         {
-            rwlDictName2User.AcquireReaderLock();
+            rwlsDictName2User.EnterReadLock();
             var bContains = dictName2User.ContainsKey(name);
-            rwlDictName2User.ReleaseReaderLock();
+            rwlsDictName2User.ExitReadLock();
 
             return bContains;
         }
@@ -48,9 +48,9 @@ namespace EntityOrientedCommunication.Server
         {
             ServerUser user;
 
-            rwlDictName2User.AcquireReaderLock();
+            rwlsDictName2User.EnterReadLock();
             dictName2User.TryGetValue(name, out user);
-            rwlDictName2User.ReleaseReaderLock();
+            rwlsDictName2User.ExitReadLock();
 
             return user;
         }
@@ -65,7 +65,7 @@ namespace EntityOrientedCommunication.Server
         {
             ServerUser user;
 
-            rwlDictName2User.AcquireReaderLock();
+            rwlsDictName2User.EnterReadLock();
             if (dictName2User.TryGetValue(name, out user))
             {
                 if (user.Password != password)
@@ -73,37 +73,48 @@ namespace EntityOrientedCommunication.Server
                     user = null;  // password not matched
                 }
             }
-            rwlDictName2User.ReleaseReaderLock();
+            rwlsDictName2User.ExitReadLock();
 
             return user;
         }
 
         public List<string> GetAllUserNames()
         {
-            rwlDictName2User.AcquireReaderLock();
+            rwlsDictName2User.EnterReadLock();
             var allUsers = dictName2User.Values.Select(s => s.Name).ToList();
-            rwlDictName2User.ReleaseReaderLock();
+            rwlsDictName2User.ExitReadLock();
 
             return allUsers;
         }
 
         internal void Register(ServerUser serverUser)
         {
-            rwlDictName2User.AcquireWriterLock();
+            rwlsDictName2User.EnterWriteLock();
             dictName2User[serverUser.Name] = serverUser;
-            rwlDictName2User.ReleaseWriterLock();
+            rwlsDictName2User.ExitWriteLock();
 
             serverUser.SetManager(this);
         }
 
         /// <summary>
-        /// register an user
+        /// update user info, if the specified user does not exist(identified by Username), then a new user will be created
+        /// <para>attention: only 1 thread could invoke this method at the same time</para>
         /// </summary>
         /// <param name="opr"></param>
-        public void Register(IUser iuser)
+        public void Update(IUser iuser)
         {
-            var serverUser = new ServerUser(iuser);
-            Register(serverUser);
+            rwlsDictName2User.EnterUpgradeableReadLock();
+            if (dictName2User.ContainsKey(iuser.Name))
+            {
+                var oldUser = dictName2User[iuser.Name];
+                oldUser.UpdateServerUserInfo(iuser);
+            }
+            else
+            {
+                var newUser = new ServerUser(iuser);
+                Register(newUser);
+            }
+            rwlsDictName2User.ExitUpgradeableReadLock();
         }
         #endregion
 

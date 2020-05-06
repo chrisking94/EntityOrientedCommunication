@@ -52,10 +52,8 @@ namespace EntityOrientedCommunication.Client
         {
             this.Now = new TimeBlock();
 
-            // login
             TeleClientName = "";
             EndPoint = new DnsEndPoint(serverIpOrUrl, port);
-            InitSocket();
 
             this.postOffice = new ClientPostOffice(this);
 
@@ -77,16 +75,6 @@ namespace EntityOrientedCommunication.Client
             {
                 Logout();
             }
-            if (socket != null)
-            {
-                lock (socket)
-                {
-                    if (!IsConnected)
-                    {
-                        InitSocket();
-                    }
-                }
-            }
 
             User.Name = username;
             User.SetPassword(password);
@@ -107,7 +95,7 @@ namespace EntityOrientedCommunication.Client
                     if (--timeout == 0)
                     {
                         bOnWorking = false;
-                        throw new TimeoutException("login timeout");
+                        throw new TimeoutException("login timeout.");
                     }
                 }
             }
@@ -124,7 +112,7 @@ namespace EntityOrientedCommunication.Client
 
                 if (!reply.HasFlag(StatusCode.Ok))
                 {
-                    throw new Exception($"failed to logout，detail：{(reply as EMText).Text}");
+                    throw new Exception($"failed to logout, detail：{(reply as EMText).Text}");
                 }
             }
         }
@@ -172,7 +160,7 @@ namespace EntityOrientedCommunication.Client
 
                     ClientAgentEvent?.Invoke(this, new ClientAgentEventArgs(
                         ClientAgentEventType.Error,
-                        $"unable to register entity '{mailBox.EntityName}'，detail：{error.Text}"));
+                        $"unable to register entity '{mailBox.EntityName}', detail：{error.Text}"));
                 }
             }
         }
@@ -200,34 +188,11 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region private
-        private void InitSocket()
-        {
-            if (socket != null)
-            {
-                lock (socket)
-                {
-                    try
-                    {
-                        socket.Close();
-                    }
-                    catch
-                    {
-
-                    }
-                }
-            }
-            socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.ExclusiveAddressUse = false;
-        }
-
         private void Connect()
         {
             if (Phase < ConeectionPhase.P1Connected)  // not connected
             {
-                if (socket == null || socket.IsBound)
-                {
-                    InitSocket();
-                }
+                var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
                 // create a new thread to perform socket connection
                 string errorMessage = null;
@@ -240,14 +205,14 @@ namespace EntityOrientedCommunication.Client
                     catch (SocketException se)
                     {
                         errorMessage = se.Message;
-                        // check exception error code
-                        if (se.SocketErrorCode == SocketError.ConnectionRefused)
-                        {
-                            logger.Info(se.Message);
-                        }
+                        // log errors
+                        logger.Error(se.Message);
 
-                        ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.Error, se.Message));
+                        if (se.SocketErrorCode != SocketError.ConnectionRefused)
+                        {  // ignore some kind of errors
+                            ClientAgentEvent?.Invoke(this,
+                                new ClientAgentEventArgs(ClientAgentEventType.Error, se.Message));
+                        }
                     }
                 });
                 connectionThread.IsBackground = true;
@@ -260,17 +225,18 @@ namespace EntityOrientedCommunication.Client
                     if (tc % 1000 == 0)
                     {
                         ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.Connecting | ClientAgentEventType.Prompt, $"connecting to {EndPoint}, {tc / 1000}s"));
+                            new ClientAgentEventArgs(ClientAgentEventType.Connecting | ClientAgentEventType.Prompt, $"connecting to {EndPoint}, {tc / 1000}s."));
                     }
                 }
 
                 // succeeded
                 if (socket.Connected)
                 {
+                    base.RestSocket(socket);
                     GetControl(ThreadType.Listen).Start();
                     Phase = ConeectionPhase.P1Connected;
                     ClientAgentEvent?.Invoke(this,
-                        new ClientAgentEventArgs(ClientAgentEventType.Connected | ClientAgentEventType.Prompt, $"connected to {TeleClientName}"));
+                        new ClientAgentEventArgs(ClientAgentEventType.Connected | ClientAgentEventType.Prompt, $"connected to {TeleClientName}."));
                 }
                 else  // failed
                 {
@@ -299,7 +265,7 @@ namespace EntityOrientedCommunication.Client
                 while (!tc.IsReplied && !tc.IsTimeOut)
                 {
                     ClientAgentEvent?.Invoke(this,
-                        new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Prompt, $"logging in, {tc.CountDown / 1000}s"));
+                        new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Prompt, $"logging in, {tc.CountDown / 1000}s."));
                     Thread.Sleep(1000);
                 }
                 if (tc.IsReplied)
@@ -336,7 +302,7 @@ namespace EntityOrientedCommunication.Client
                 else
                 {
                     ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Error, "login timout"));
+                            new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Error, "login timout."));
                 }
             }
         }
@@ -395,7 +361,7 @@ namespace EntityOrientedCommunication.Client
             base.Destroy();
             Phase = ConeectionPhase.P0Start;
             ClientAgentEvent?.Invoke(this,
-                new ClientAgentEventArgs(ClientAgentEventType.Disconnected | ClientAgentEventType.Prompt, $"{this} was destroyed"));
+                new ClientAgentEventArgs(ClientAgentEventType.Disconnected | ClientAgentEventType.Prompt, $"{this} was destroyed."));
             postOffice.Destroy();
             postOffice = null;
 
@@ -413,7 +379,7 @@ namespace EntityOrientedCommunication.Client
         {
             Phase = ConeectionPhase.P0Start;  // reconnect
             ClientAgentEvent?.Invoke(this,
-                new ClientAgentEventArgs(ClientAgentEventType.Connection | ClientAgentEventType.Error, "connection time out"));
+                new ClientAgentEventArgs(ClientAgentEventType.Connection | ClientAgentEventType.Error, "connection timeout."));
         }
         #endregion
     }
