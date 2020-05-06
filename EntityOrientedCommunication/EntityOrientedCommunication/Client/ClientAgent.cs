@@ -13,7 +13,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using EntityOrientedCommunication.Utilities;
+using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Messages;
 using EntityOrientedCommunication.Mail;

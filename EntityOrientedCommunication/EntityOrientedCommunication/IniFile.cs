@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.IO;
-using EntityOrientedCommunication.Utilities;
+using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication
 {

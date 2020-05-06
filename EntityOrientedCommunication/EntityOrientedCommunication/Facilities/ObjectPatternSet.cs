@@ -13,7 +13,7 @@ using System.Diagnostics;
 using EntityOrientedCommunication;
 using Newtonsoft.Json;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     public enum PatternMatchType
     {

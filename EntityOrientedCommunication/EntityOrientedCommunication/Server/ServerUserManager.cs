@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication.Mail;
 using EOCServer;
 
@@ -10,11 +12,13 @@ namespace EntityOrientedCommunication.Server
     {
         #region data
         #region property
-        public int Count => dictNameAndOperator.Count;
+        public int Count => dictName2User.Count;
         #endregion
 
         #region field
-        private Dictionary<string, ServerUser> dictNameAndOperator;
+        private Dictionary<string, ServerUser> dictName2User;
+
+        private ReaderWriterLock rwlDictName2User;
 
         private Server server;
         #endregion
@@ -23,7 +27,8 @@ namespace EntityOrientedCommunication.Server
         #region constructor
         public ServerUserManager(Server server)
         {
-            dictNameAndOperator = new Dictionary<string, ServerUser>(16);
+            dictName2User = new Dictionary<string, ServerUser>(16);
+            rwlDictName2User = new ReaderWriterLock();
 
             this.server = server;
         }
@@ -32,22 +37,22 @@ namespace EntityOrientedCommunication.Server
         #region interface
         public bool Contains(string name)
         {
-            lock (dictNameAndOperator)
-            {
-                return dictNameAndOperator.ContainsKey(name);
-            }
+            rwlDictName2User.AcquireReaderLock();
+            var bContains = dictName2User.ContainsKey(name);
+            rwlDictName2User.ReleaseReaderLock();
+
+            return bContains;
         }
 
-        internal ServerUser GetOperator(string name)
+        internal ServerUser GetUser(string name)
         {
-            ServerUser opr = null;
+            ServerUser user;
 
-            lock (dictNameAndOperator)
-            {
-                dictNameAndOperator.TryGetValue(name, out opr);
-            }
+            rwlDictName2User.AcquireReaderLock();
+            dictName2User.TryGetValue(name, out user);
+            rwlDictName2User.ReleaseReaderLock();
 
-            return opr;
+            return user;
         }
 
         /// <summary>
@@ -56,39 +61,39 @@ namespace EntityOrientedCommunication.Server
         /// <param name="name"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        internal ServerUser GetOperator(string name, string password)
+        internal ServerUser GetUser(string name, string password)
         {
-            ServerUser opr = null;
+            ServerUser user;
 
-            lock (dictNameAndOperator)
+            rwlDictName2User.AcquireReaderLock();
+            if (dictName2User.TryGetValue(name, out user))
             {
-                if (dictNameAndOperator.TryGetValue(name, out opr))
+                if (user.Password != password)
                 {
-                    if (opr.Password != password)
-                    {
-                        opr = null;  // password not matched
-                    }
+                    user = null;  // password not matched
                 }
             }
+            rwlDictName2User.ReleaseReaderLock();
 
-            return opr;
+            return user;
         }
 
-        public IEnumerable<string> GetAllOperatorNames()
+        public List<string> GetAllUserNames()
         {
-            lock (dictNameAndOperator)
-            {
-                return dictNameAndOperator.Values.Select(s => s.Name);
-            }
+            rwlDictName2User.AcquireReaderLock();
+            var allUsers = dictName2User.Values.Select(s => s.Name).ToList();
+            rwlDictName2User.ReleaseReaderLock();
+
+            return allUsers;
         }
 
         internal void Register(ServerUser serverUser)
         {
-            lock (dictNameAndOperator)
-            {
-                dictNameAndOperator[serverUser.Name] = serverUser;
-                serverUser.SetManager(this);
-            }
+            rwlDictName2User.AcquireWriterLock();
+            dictName2User[serverUser.Name] = serverUser;
+            rwlDictName2User.ReleaseWriterLock();
+
+            serverUser.SetManager(this);
         }
 
         /// <summary>
@@ -117,7 +122,7 @@ namespace EntityOrientedCommunication.Server
             {
                 if (rInfo.UserName.ToLower() == "all")  // to all,  broadcast
                 {
-                    foreach (var oprName in server.UserManager.GetAllOperatorNames())
+                    foreach (var oprName in server.UserManager.GetAllUserNames())
                     {
                         if (oprName != sInfo.UserName)  // sender is not included
                         {
@@ -152,7 +157,7 @@ namespace EntityOrientedCommunication.Server
                 var offlineOprRouteInfos = new List<MailRouteInfo>(allRecipientInfos.Count);
                 foreach (var recipientInfo in allRecipientInfos)
                 {
-                    var opr = this.GetOperator(recipientInfo.UserName);
+                    var opr = this.GetUser(recipientInfo.UserName);
                     if (opr == null)
                     {
                         offlineOprRouteInfos.Add(new MailRouteInfo(recipientInfo));
@@ -176,7 +181,7 @@ namespace EntityOrientedCommunication.Server
 
             foreach (var rInfo in allRecipientInfos)
             {
-                var recipientOpr = this.GetOperator(rInfo.UserName);
+                var recipientOpr = this.GetUser(rInfo.UserName);
                 recipientOpr.PostOffice.Push(letter, sInfo, rInfo);
             }
 

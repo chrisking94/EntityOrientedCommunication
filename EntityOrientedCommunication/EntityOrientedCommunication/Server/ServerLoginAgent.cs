@@ -13,7 +13,7 @@ using System.Diagnostics;
 using EntityOrientedCommunication;
 using System.Net.Sockets;
 using EntityOrientedCommunication.Mail;
-using EntityOrientedCommunication.Utilities;
+using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
@@ -70,7 +70,7 @@ namespace EntityOrientedCommunication.Server
                 }
                 else if (server.UserManager.Contains(login.Username))
                 {
-                    var opr = server.UserManager.GetOperator(login.Username, login.Password);
+                    var opr = server.UserManager.GetUser(login.Username, login.Password);
 
                     if (opr != null)
                     {

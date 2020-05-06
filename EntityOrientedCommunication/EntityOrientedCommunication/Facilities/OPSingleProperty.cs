@@ -14,7 +14,7 @@ using EntityOrientedCommunication;
 using Newtonsoft.Json;
 using System.Reflection;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     /// <summary>
     /// match a single property/field

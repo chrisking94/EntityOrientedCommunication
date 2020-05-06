@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     public class TransactionErrorArgs : EventArgs
     {

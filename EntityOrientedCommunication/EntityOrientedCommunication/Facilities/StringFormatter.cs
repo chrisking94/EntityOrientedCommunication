@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     public static class StringFormatter
     {

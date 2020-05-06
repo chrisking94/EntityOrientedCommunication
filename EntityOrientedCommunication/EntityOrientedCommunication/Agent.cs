@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Collections;
 using Newtonsoft.Json;
-using EntityOrientedCommunication.Utilities;
+using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication

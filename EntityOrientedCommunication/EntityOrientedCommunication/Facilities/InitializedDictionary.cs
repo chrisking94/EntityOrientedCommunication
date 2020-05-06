@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     /// <summary>
     /// any key exists in this kind of dictionary logically

@@ -11,7 +11,7 @@ using System.Threading;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Messages;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     /// <summary>
     /// countdown timer for message request

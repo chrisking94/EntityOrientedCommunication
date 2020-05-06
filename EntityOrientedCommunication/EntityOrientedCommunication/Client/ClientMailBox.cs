@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Messages;
-using EntityOrientedCommunication.Utilities;
+using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication.Client
 {

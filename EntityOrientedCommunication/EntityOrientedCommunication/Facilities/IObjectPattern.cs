@@ -5,7 +5,7 @@
  * create time	：8/1/2019 5:05:17 PM
  * ============================================================================================*/
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     public interface IObjectPattern
     {

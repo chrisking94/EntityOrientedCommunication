@@ -8,7 +8,7 @@ using System.Diagnostics;
 using EntityOrientedCommunication;
 using System.IO;
 using System.Threading;
-using EntityOrientedCommunication.Utilities;
+using EntityOrientedCommunication.Facilities;
 using ServerDemo;
 
 namespace EntityOrientedCommunication.Server

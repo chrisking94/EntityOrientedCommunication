@@ -13,7 +13,7 @@ using System.Diagnostics;
 using EntityOrientedCommunication;
 using System.Threading;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     /// <summary>
     /// 'Update()' method of this class's instance will be invoked repeatedly in specified interval

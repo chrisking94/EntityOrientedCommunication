@@ -15,7 +15,7 @@ using EntityOrientedCommunication;
 using Newtonsoft.Json;
 using System.Reflection;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     /// <summary>
     /// 通过属性类型所带的函数来判断是否匹配

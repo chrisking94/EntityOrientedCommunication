@@ -15,7 +15,7 @@ using EntityOrientedCommunication;
 using Newtonsoft.Json;
 using System.Collections;
 
-namespace EntityOrientedCommunication.Utilities
+namespace EntityOrientedCommunication.Facilities
 {
     /// <summary>
     /// to solve the serilization and deserilization problem of value type items in List&lt;object&gt;

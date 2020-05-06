@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using System.IO.Compression;
 using System.IO;
-using EntityOrientedCommunication.Utilities;
+using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication.Messages
 {
