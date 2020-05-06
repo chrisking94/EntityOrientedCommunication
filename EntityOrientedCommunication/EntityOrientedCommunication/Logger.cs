@@ -109,7 +109,7 @@ namespace EntityOrientedCommunication
             var errMsg = $"{msg}\r\n----{ex.Message}\r\n{ex.StackTrace}";
             Write(LogType.FT, errMsg);
         }
-        public virtual void Write(LogType type, TMessage msg)
+        public virtual void Write(LogType type, EMessage msg)
         {
             Write(type, msg.ToString());
         }

@@ -12,7 +12,7 @@ namespace EntityOrientedCommunication.Messages
     /// used to transfer a simple literal string
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMText: TMessage
+    public class EMText: EMessage
     {
         #region field
         [JsonProperty]
@@ -21,25 +21,25 @@ namespace EntityOrientedCommunication.Messages
 
         #region constructor
         [JsonConstructor]
-        protected TMText() { }
+        protected EMText() { }
 
-        protected TMText(string text)
+        protected EMText(string text)
         {
             Text = text;
         }
 
-        public TMText(Envelope envelope, string text) : base(envelope)
+        public EMText(Envelope envelope, string text) : base(envelope)
         {
             Text = text;
         }
 
-        public TMText(TMessage toBeReplied, string text) : base(toBeReplied)
+        public EMText(EMessage toBeReplied, string text) : base(toBeReplied)
         {
             Text = text;
             Status = toBeReplied.Status;
         }
 
-        public TMText(TMessage toBeReplied, string text, StatusCode status) : base(toBeReplied)
+        public EMText(EMessage toBeReplied, string text, StatusCode status) : base(toBeReplied)
         {
             Text = text;
             Status = status;
@@ -49,7 +49,7 @@ namespace EntityOrientedCommunication.Messages
         #region interface
         public override string ToString()
         {
-            return Format("TTxt", Text);
+            return Format("ETxt", Text);
         }
         #endregion
     }

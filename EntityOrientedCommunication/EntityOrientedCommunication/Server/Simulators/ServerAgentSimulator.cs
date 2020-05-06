@@ -31,12 +31,12 @@ namespace EntityOrientedCommunication.Server
             this.SUser.PostOffice.Activate(this);  // activate post office
         }
 
-        public void Dispatch(TMLetter letter)
+        public void Dispatch(EMLetter letter)
         {
             client.ProcessRequest(letter);  // send to client through memory
         }
 
-        public void ProcessRequest(TMLetter letter)  // letter request only
+        public void ProcessRequest(EMLetter letter)  // letter request only
         {
             this.SUser.Manager.Deliver(letter);
         }

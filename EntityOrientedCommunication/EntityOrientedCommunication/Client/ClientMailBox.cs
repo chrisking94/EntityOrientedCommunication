@@ -50,7 +50,7 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region interface
-        internal void Receive(TMLetter letter)
+        internal void Receive(EMLetter letter)
         {
             var waitHandle = this.PopWaitHandler(letter);
 
@@ -64,7 +64,7 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
-        public void Send(TMLetter letter)
+        public void Send(EMLetter letter)
         {
             postoffice.Send(letter);
         }
@@ -72,23 +72,35 @@ namespace EntityOrientedCommunication.Client
         /// <summary>
         /// the letter will be delivered to local machine if the 'username' part of recipient is set to 'localhost'
         /// </summary>
-        /// <param name="letter"></param>
-        public void Send(string recipient, string header, object content, LetterType letterType = LetterType.Normal)
+        /// <param name="recipient"></param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <param name="letterType"></param>
+        public void Send(string recipient, string title, object content, LetterType letterType = LetterType.Normal)
         {
-            var letter = new TMLetter(recipient, mailAdress, header, content, letterType, CreateSerialNumber());
+            var letter = new EMLetter(recipient, mailAdress, title, content, letterType, CreateSerialNumber());
             postoffice.Send(letter);
         }
 
-        public object Get(string recipient, string header, object content, int timeout = 2000)
+        /// <summary>
+        /// send a letter to the remote entity and wait for reply, the reply message will not be pass to the 'Pickup' method of 'receiver',
+        /// <para>its content will be passed to the invoking position as return value</para>
+        /// </summary>
+        /// <param name="recipient">target entity route information, there should be only 1 entity in the recipient route info</param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <param name="timeout">unit: ms</param>
+        /// <returns></returns>
+        public object Get(string recipient, string title, object content, int timeout = int.MaxValue)
         {
             // simple check
             var routeInfos = MailRouteInfo.Parse(recipient);
             if (routeInfos.Count > 1)
             {
-                throw new Exception($"letter of type '{nameof(LetterType.RealTimeGet)}' should not have multiple recipients.");
+                throw new Exception($"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.");
             }
 
-            var letter = new TMLetter(recipient, mailAdress, header, content, LetterType.RealTimeGet, CreateSerialNumber());
+            var letter = new EMLetter(recipient, mailAdress, title, content, LetterType.EmergencyGet, CreateSerialNumber());
             var tCounter = this.CreateWaitHandler(letter, timeout);
             postoffice.Send(letter);
 
@@ -102,10 +114,10 @@ namespace EntityOrientedCommunication.Client
 
                 if (tCounter.IsReplied)
                 {
-                    var responseLetter = tCounter.ResponseMsg as TMLetter;
+                    var responseLetter = tCounter.ResponseMsg as EMLetter;
                     if (responseLetter.Title == "error")
                     {
-                        throw new Exception($"an error has been reported by the remote entity: {responseLetter.Content}");
+                        throw new Exception($"an error has been reported by '{responseLetter.Sender}': {responseLetter.Content}");
                     }
                     return responseLetter.Content;
                 }
@@ -117,9 +129,15 @@ namespace EntityOrientedCommunication.Client
             throw new Exception($"get failed, no response from the remote entity.");
         }
 
-        public void Reply(TMLetter letter, string title, object content)
+        /// <summary>
+        /// reply a letter, the 'LetterType' of the reply letter is same with the <paramref name="toReply"/> letter
+        /// </summary>
+        /// <param name="toReply"></param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        public void Reply(EMLetter toReply, string title, object content)
         {
-            Send(letter.Sender, title, content, LetterType.Normal);
+            Send(toReply.Sender, title, content, toReply.LetterType);
         }
 
         internal void Destroy()
@@ -136,7 +154,7 @@ namespace EntityOrientedCommunication.Client
             return $"{this.mailAdress}{this._serialCounter++}";
         }
 
-        private TCounter PopWaitHandler(TMLetter letter)  // null if no handler for this letter
+        private TCounter PopWaitHandler(EMLetter letter)  // null if no handler for this letter
         {
             lock (dictSerial2TCounter)
             {
@@ -150,7 +168,7 @@ namespace EntityOrientedCommunication.Client
             return null;
         }
 
-        private TCounter CreateWaitHandler(TMLetter letter, int timeout)
+        private TCounter CreateWaitHandler(EMLetter letter, int timeout)
         {
             TCounter tCounter;
             lock (dictSerial2TCounter)
@@ -164,24 +182,24 @@ namespace EntityOrientedCommunication.Client
 
         private void _processPickupLetter(object obj)
         {
-            var letter = obj as TMLetter;
+            var letter = obj as EMLetter;
             var feedbackTitle = $"RE:{letter.Title}";
             var feedback = receiver.Pickup(letter);
             var feedbackType = letter.LetterType;
 
-            if (letter.LetterType == LetterType.RealTimeGet)  // must return a value to the sender
+            if (letter.LetterType == LetterType.EmergencyGet)  // must return a value to the sender
             {
                 if (feedback == null)
                 {
                     feedbackTitle = "error";
-                    feedback = $"recipient '{letter.Recipient}' has no response to letter of title '{letter.Title}'";
+                    feedback = $"entity '{this.EntityName}' did not response anything after picking up letter '{letter.Title}'";
                 }
                 feedbackType = LetterType.RealTime;  // change letter type
             }
 
             if (feedback != null)
             {
-                this.Send(new TMLetter(letter.Sender, this.mailAdress, feedbackTitle, feedback, feedbackType, letter.Serial));
+                this.Send(new EMLetter(letter.Sender, this.mailAdress, feedbackTitle, feedback, feedbackType, letter.Serial));
             }
         }
         #endregion

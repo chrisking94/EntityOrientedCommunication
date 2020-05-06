@@ -13,7 +13,7 @@ namespace EntityOrientedCommunication.Messages
     /// <para>when the remote computer received this message, the object will be deserilized when it is accessed</para>
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMObject<T> : TMessage, IObject<T>
+    public class EMObject<T> : EMessage, IObject<T>
     {
         #region property
         /// <summary>
@@ -25,7 +25,19 @@ namespace EntityOrientedCommunication.Messages
             {
                 if (!bObjectRecovered)
                 {
-                    _object = Serializer.FromJson<T>(_objJson);
+                    var obj = Serializer.FromJson<T>(_objJson);
+                    if (obj is EnumCarrier ec)
+                    {
+                        this._object = (T)ec.ToEnum();
+                    }
+                    else if (obj is ArrayCarrier ac)
+                    {
+                        this._object = (T)(ac.ToArray() as object);
+                    }
+                    else
+                    {
+                        this._object = obj;
+                    }
                     bObjectRecovered = true;
                 }
 
@@ -86,19 +98,19 @@ namespace EntityOrientedCommunication.Messages
 
         #region constructor
         [JsonConstructor]
-        protected TMObject() { }
+        protected EMObject() { }
 
-        public TMObject(Envelope envelope, T @object) : base(envelope)
+        public EMObject(Envelope envelope, T @object) : base(envelope)
         {
             Object = @object;
         }
 
-        public TMObject(TMessage toreply, T @object) : base(toreply)
+        public EMObject(EMessage toreply, T @object) : base(toreply)
         {
             Object = @object;
         }
 
-        public TMObject(TMObject<T> copyFrom) : base(copyFrom)
+        public EMObject(EMObject<T> copyFrom) : base(copyFrom)
         {
             _objJson = copyFrom._objJson;
             _object = copyFrom._object;
@@ -115,7 +127,7 @@ namespace EntityOrientedCommunication.Messages
                 objStr = Object.GetType().FullName;
             }
 
-            return Format("TObj", $"{objStr}");
+            return Format("EObj", $"{objStr}");
         }
         #endregion
     }

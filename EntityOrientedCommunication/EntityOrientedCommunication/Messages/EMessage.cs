@@ -37,7 +37,7 @@ namespace EntityOrientedCommunication.Messages
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMessage
+    public class EMessage
     {
         #region property
         [JsonProperty]
@@ -56,25 +56,25 @@ namespace EntityOrientedCommunication.Messages
 
         #region constructor
         [JsonConstructor]
-        protected TMessage() { }
+        protected EMessage() { }
 
-        internal TMessage(uint id)
+        internal EMessage(uint id)
         {
             ID = id;
         }
 
-        public TMessage(TMessage copyFrom)
+        public EMessage(EMessage copyFrom)
         {
             ID = copyFrom.ID;
             Status = copyFrom.Status;
         }
 
-        public TMessage(TMessage toReply, StatusCode status): this(toReply)
+        public EMessage(EMessage toReply, StatusCode status): this(toReply)
         {
             Status = status;
         }
 
-        public TMessage(Envelope envelope, StatusCode status = StatusCode.None)
+        public EMessage(Envelope envelope, StatusCode status = StatusCode.None)
         {
             ID = envelope.ID;
             Status = status;
@@ -101,7 +101,7 @@ namespace EntityOrientedCommunication.Messages
             }
         }
 
-        public static TMessage FromBytes(byte[] bytes, int index, int count)
+        public static EMessage FromBytes(byte[] bytes, int index, int count)
         {
             using (var ms = new MemoryStream(bytes, index, count))
             {
@@ -110,7 +110,7 @@ namespace EntityOrientedCommunication.Messages
                     using (var sr = new StreamReader(gzip, Encoding.ASCII))
                     {
                         var json = sr.ReadToEnd();
-                        var msg = Serializer.FromJson<TMessage>(json);
+                        var msg = Serializer.FromJson<EMessage>(json);
                         msg.size = bytes.Length;
                         return msg;
                     }
@@ -130,7 +130,7 @@ namespace EntityOrientedCommunication.Messages
 
         public override string ToString()
         {
-            return Format("TMsg");
+            return Format("EMsg");
         }
         #endregion
 

@@ -69,8 +69,8 @@ namespace EntityOrientedCommunication
         private int slotSize;
         private int watchDog = 0;  // watch dog time counter, unit: ms
         protected readonly int timeout = 10000;  // request timeout milliseconds
-        private Queue<TMessage> inMsgQueue;  // reception message queue
-        private Queue<TMessage> outMsgQueue;  // delivery message queue
+        private Queue<EMessage> inMsgQueue;  // reception message queue
+        private Queue<EMessage> outMsgQueue;  // delivery message queue
         private Queue<TCounter> timeoutTCQ;  // request timeout message queue
         /// <summary>
         /// special id: 2-login
@@ -97,8 +97,8 @@ namespace EntityOrientedCommunication
             slotSize = bufferSize << 1;
             slot = new byte[slotSize];
             sendMutex = new Mutex();
-            inMsgQueue = new Queue<TMessage>(32);
-            outMsgQueue = new Queue<TMessage>(32);
+            inMsgQueue = new Queue<EMessage>(32);
+            outMsgQueue = new Queue<EMessage>(32);
             timeoutTCQ = new Queue<TCounter>(32);
             logger = new Logger("@@@");
             dictThreadTypeAndControl = new Dictionary<ThreadType, ThreadControl>()
@@ -191,7 +191,7 @@ namespace EntityOrientedCommunication
         /// <param name="msg"></param>
         /// <param name="timeout">use this.timeout when -1, else use the 'timeout' parameter inputed into this function</param>
         /// <returns></returns>
-        protected TMessage Request(StatusCode status, TMessage msg, int timeout = -1)
+        protected EMessage Request(StatusCode status, EMessage msg, int timeout = -1)
         {
             msg.Status |= status | StatusCode.Request;
             if (timeout == -1) timeout = this.timeout;
@@ -211,7 +211,7 @@ namespace EntityOrientedCommunication
         /// <param name="msg"></param>
         /// <param name="timeout"></param>
         /// <returns>the time counter for the request 'msg'</returns>
-        protected TCounter AsyncRequest(StatusCode status, TMessage msg, int timeout = -1)
+        protected TCounter AsyncRequest(StatusCode status, EMessage msg, int timeout = -1)
         {
             msg.Status |= status | StatusCode.Request;
             if (timeout == -1) timeout = this.timeout;
@@ -225,13 +225,13 @@ namespace EntityOrientedCommunication
         /// response to a request
         /// </summary>
         /// <param name="msg"></param>
-        protected void Response(TMessage msg)
+        protected void Response(EMessage msg)
         {
             msg.Status |= StatusCode.Response;
             SendMessage(msg);
         }
 
-        protected TCounter SetWaitFlag(TMessage msg, int timeout)
+        protected TCounter SetWaitFlag(EMessage msg, int timeout)
         {
             var tc = new TCounter(msg, timeout);
             lock (dictMsgIdAndTCounter) dictMsgIdAndTCounter[msg.ID] = tc;
@@ -265,7 +265,7 @@ namespace EntityOrientedCommunication
         /// append 'msg' to the delivery queue
         /// </summary>
         /// <param name="msg"></param>
-        protected void SendMessage(TMessage msg)
+        protected void SendMessage(EMessage msg)
         {
             lock (outMsgQueue)
             {
@@ -278,11 +278,11 @@ namespace EntityOrientedCommunication
         /// send 'msg' through socket
         /// </summary>
         /// <param name="msg"></param>
-        private void Send(TMessage msg)
+        private void Send(EMessage msg)
         {
             if (msg.Status == StatusCode.None)
             {
-                throw new Exception($"{msg.GetType().Name}.{nameof(TMessage.Status)} can't be None");
+                throw new Exception($"{msg.GetType().Name}.{nameof(EMessage.Status)} can't be None");
             }
 
             // pre-processing
@@ -349,26 +349,26 @@ namespace EntityOrientedCommunication
         /// <para>warning：do not block this method, otherwise program might encounter a connection timeout error, because the response is not sent to remote agent in time</para>
         /// </summary>
         /// <param name="msg"></param>
-        protected abstract void ProcessRequest(ref TMessage msg);
+        protected abstract void ProcessRequest(ref EMessage msg);
 
         /// <summary>
         /// process the response message came from the remote agent
         /// </summary>
         /// <param name="requestMsg"></param>
         /// <param name="responseMsg"></param>
-        protected abstract void ProcessResponse(TMessage requestMsg, TMessage responseMsg);
+        protected abstract void ProcessResponse(EMessage requestMsg, EMessage responseMsg);
 
         /// <summary>
         /// process the request messages which are timeout
         /// </summary>
         /// <param name="requestMsg"></param>
-        protected abstract void ProcessTimeoutRequest(TMessage requestMsg);
+        protected abstract void ProcessTimeoutRequest(EMessage requestMsg);
 
         /// <summary>
         /// this method will be invoked before the impending message transmission
         /// </summary>
         /// <param name="msg"></param>
-        protected virtual void PreprocessOutMessage(ref TMessage msg)
+        protected virtual void PreprocessOutMessage(ref EMessage msg)
         {
             // pass
         }
@@ -377,7 +377,7 @@ namespace EntityOrientedCommunication
         /// this method will be invoked when the new arrived message is dequeued from in message queue
         /// </summary>
         /// <param name="msg"></param>
-        protected virtual void PreprocessInMessage(ref TMessage msg)
+        protected virtual void PreprocessInMessage(ref EMessage msg)
         {
             // pass
         }
@@ -413,7 +413,7 @@ namespace EntityOrientedCommunication
         /// <param name="state"></param>
         private void _processTask(object state)
         {
-            TMessage msg = null;
+            EMessage msg = null;
 
             try
             {
@@ -512,7 +512,7 @@ namespace EntityOrientedCommunication
 
             var feedCycle = Math.Min(1000, this.timeout >> 1);  // the cycle of dog feeding, unit: ms
             var feedTCounter = 0;
-            var msg = new TMessage(0);
+            var msg = new EMessage(0);
             var foodBag = new[] { dogFoodFlag };
             var threadInterval = 1;  // watch dog scan cycle, ms
 
@@ -623,7 +623,7 @@ namespace EntityOrientedCommunication
                                         }
                                         else
                                         {
-                                            var msg = TMessage.FromBytes(slot, 0, k);
+                                            var msg = EMessage.FromBytes(slot, 0, k);
 
                                             lock (inMsgQueue) inMsgQueue.Enqueue(msg);
                                             ThreadPool.QueueUserWorkItem(_processTask, inMsgQueue);

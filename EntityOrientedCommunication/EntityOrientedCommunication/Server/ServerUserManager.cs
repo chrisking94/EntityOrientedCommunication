@@ -87,7 +87,7 @@ namespace EntityOrientedCommunication.Server
         /// </summary>
         /// <param name="letter"></param>
         /// <returns>error message, null if there is no error</returns>
-        public string Deliver(TMLetter letter)
+        public string Deliver(EMLetter letter)
         {
             var allReceiverInfos = new List<MailRouteInfo>();
             var sInfo = MailRouteInfo.Parse(letter.Sender)[0];
@@ -112,11 +112,11 @@ namespace EntityOrientedCommunication.Server
             allReceiverInfos = MailRouteInfo.Format(allReceiverInfos);
             var notExistsUserRouteInfos = allReceiverInfos.Where(info => !this.Contains(info.UserName)).ToList();
 
-            if (letter.LetterType == LetterType.RealTimeGet)
+            if (letter.LetterType == LetterType.EmergencyGet)
             {  // check recipient
                 if (allReceiverInfos.Count > 1)
                 {
-                    return $"letter of type '{nameof(LetterType.RealTimeGet)}' should not have multiple recipients.";
+                    return $"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.";
                 }
             }
 

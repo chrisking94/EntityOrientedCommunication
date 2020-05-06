@@ -18,9 +18,9 @@ namespace EntityOrientedCommunication.Utilities
     /// </summary>
     public class TCounter
     {
-        public TMessage RequestMsg { get; private set; }
+        public EMessage RequestMsg { get; private set; }
 
-        public TMessage ResponseMsg { get; private set; }
+        public EMessage ResponseMsg { get; private set; }
 
         public int CountDown { get; set; }  // unit: ms
 
@@ -33,21 +33,22 @@ namespace EntityOrientedCommunication.Utilities
         /// </summary>
         public bool IsTimeOut => CountDown <= 0;
 
-        internal TCounter(TMessage msg, int timeout)
+        internal TCounter(EMessage msg, int timeout)
         {
             RequestMsg = msg;
             CountDown = timeout;
             IsReplied = false;
         }
         
-        internal void SetReply(TMessage reply)
+        internal void SetReply(EMessage reply)
         {
             ResponseMsg = reply;
             CountDown = int.MaxValue;
             IsReplied = true;
         }
+
         /// <summary>
-        /// invoked by watch dog，return true when timeout
+        /// return true when timeout
         /// </summary>
         /// <param name="nStep"></param>
         /// <returns></returns>

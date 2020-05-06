@@ -13,6 +13,10 @@ namespace EntityOrientedCommunication.Mail
 {
     public interface IMailDispatcher
     {
-        void Dispatch(TMLetter letter);
+        /// <summary>
+        /// it should be a synchronized dispatch
+        /// </summary>
+        /// <param name="letter"></param>
+        void Dispatch(EMLetter letter);
     }
 }

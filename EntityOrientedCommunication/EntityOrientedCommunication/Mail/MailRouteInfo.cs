@@ -119,6 +119,11 @@ namespace EntityOrientedCommunication.Mail
         {
             return string.Join(";", infos.Select(info => info.ToLiteral()));
         }
+
+        public override string ToString()
+        {
+            return $"route: {this.ToLiteral()}";
+        }
         #endregion
 
         #region private

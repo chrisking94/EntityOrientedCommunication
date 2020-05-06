@@ -16,7 +16,7 @@ namespace EntityOrientedCommunication.Messages
     /// login succeed message
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMLoggedin : TMText, IObject<DateTime>
+    public class EMLoggedin : EMText, IObject<DateTime>
     {
         #region data
         #region property
@@ -37,8 +37,8 @@ namespace EntityOrientedCommunication.Messages
 
         #region constructor
         [JsonConstructor]
-        protected TMLoggedin() { }
-        public TMLoggedin(TMLogin toReply, string serverName, User @operator, string token) : 
+        protected EMLoggedin() { }
+        public EMLoggedin(EMLogin toReply, string serverName, User @operator, string token) : 
             base(toReply, token)
         {
             User = @operator.Copy();
@@ -50,7 +50,7 @@ namespace EntityOrientedCommunication.Messages
         #region interface
         public override string ToString()
         {
-            return Format("TLgd", $"token={Text}");
+            return Format("ELgd", $"token={Text}");
         }
         #endregion
     }

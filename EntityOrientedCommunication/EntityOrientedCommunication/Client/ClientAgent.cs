@@ -120,11 +120,11 @@ namespace EntityOrientedCommunication.Client
         {
             if (Phase >= ConeectionPhase.P2LoggedIn)
             {
-                var reply = Request(StatusCode.Logout, new TMessage(GetEnvelope()));
+                var reply = Request(StatusCode.Logout, new EMessage(GetEnvelope()));
 
                 if (!reply.HasFlag(StatusCode.Ok))
                 {
-                    throw new Exception($"failed to logout，detail：{(reply as TMText).Text}");
+                    throw new Exception($"failed to logout，detail：{(reply as EMText).Text}");
                 }
             }
         }
@@ -135,13 +135,13 @@ namespace EntityOrientedCommunication.Client
         /// <param name="dateTime"></param>
         public void Synchronize(DateTime dateTime)
         {
-            var smg = new TMObject<DateTime>(GetEnvelope(), dateTime);
+            var smg = new EMObject<DateTime>(GetEnvelope(), dateTime);
             Request(StatusCode.Time | StatusCode.Push, smg);
         }
         #endregion
 
         #region EOC
-        void IMailDispatcher.Dispatch(TMLetter letter)  // dispatch the local letter to server
+        void IMailDispatcher.Dispatch(EMLetter letter)  // dispatch the local letter to server
         {
             CheckLogin();
 
@@ -151,7 +151,7 @@ namespace EntityOrientedCommunication.Client
 
             if (reply.HasFlag(StatusCode.Denied))
             {
-                throw new TException((reply as TMText).Text);
+                throw new TException((reply as EMText).Text);
             }
         }
 
@@ -159,7 +159,7 @@ namespace EntityOrientedCommunication.Client
         {
             if (IsLoggedIn)
             {
-                var msg = new TMText(GetEnvelope(), mailBox.EntityName);
+                var msg = new EMText(GetEnvelope(), mailBox.EntityName);
                 var reply = Request(StatusCode.Register | StatusCode.Entity, msg);
 
                 if (reply.HasFlag(StatusCode.Ok))
@@ -168,7 +168,7 @@ namespace EntityOrientedCommunication.Client
                 }
                 else
                 {
-                    var error = reply as TMText;
+                    var error = reply as EMText;
 
                     ClientAgentEvent?.Invoke(this, new ClientAgentEventArgs(
                         ClientAgentEventType.Error,
@@ -185,16 +185,16 @@ namespace EntityOrientedCommunication.Client
         {
             CheckLogin();
 
-            var msg = new TMObject<ObjectPatternSet>(GetEnvelope(),
+            var msg = new EMObject<ObjectPatternSet>(GetEnvelope(),
                 new ObjectPatternSet(
-                    new OPSinglePropertyFunction(nameof(TMLetter.Status), nameof(Enum.HasFlag), letterStatus)
+                    new OPSinglePropertyFunction(nameof(EMLetter.Status), nameof(Enum.HasFlag), letterStatus)
                     ));
 
             var reply = Request(StatusCode.Pull | StatusCode.Letter, msg);
 
             if (reply.HasFlag(StatusCode.Denied))
             {
-                throw new Exception((reply as TMText).Text);
+                throw new Exception((reply as EMText).Text);
             }
         }
         #endregion
@@ -294,7 +294,7 @@ namespace EntityOrientedCommunication.Client
         {
             if (Phase < ConeectionPhase.P2LoggedIn && Phase >= ConeectionPhase.P1Connected)
             {
-                var msg = new TMLogin(User);
+                var msg = new EMLogin(User);
                 var tc = AsyncRequest(StatusCode.Login, msg);
                 while (!tc.IsReplied && !tc.IsTimeOut)
                 {
@@ -307,7 +307,7 @@ namespace EntityOrientedCommunication.Client
                     var echo = tc.ResponseMsg;
                     if (echo.Status.HasFlag(StatusCode.Ok))
                     {
-                        var loggedIn = echo as TMLoggedin;
+                        var loggedIn = echo as EMLoggedin;
                         User.Update(loggedIn.User);
                         TeleClientName = loggedIn.ServerName;
                         Token = loggedIn.Token;
@@ -320,7 +320,7 @@ namespace EntityOrientedCommunication.Client
                     }
                     else  // denied
                     {
-                        if (echo is TMError err)
+                        if (echo is EMError err)
                         {
                             if (err.Code == ErrorCode.IncorrectUsernameOrPassword ||
                                 err.Code == ErrorCode.UnregisteredUser ||
@@ -330,7 +330,7 @@ namespace EntityOrientedCommunication.Client
                             }
                         }
                         ClientAgentEvent?.Invoke(this,
-                            new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Error, (echo as TMText).Text));
+                            new ClientAgentEventArgs(ClientAgentEventType.LoggingIn | ClientAgentEventType.Error, (echo as EMText).Text));
                     }
                 }
                 else
@@ -350,11 +350,11 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
-        protected override void ProcessRequest(ref TMessage msg)
+        protected override void ProcessRequest(ref EMessage msg)
         {
             if (msg.HasFlag(StatusCode.Letter))
             {
-                postOffice.Pickup(msg as TMLetter);
+                postOffice.Pickup(msg as EMLetter);
             }
             else if (msg.HasFlag(StatusCode.Time | StatusCode.Push))
             {
@@ -364,15 +364,15 @@ namespace EntityOrientedCommunication.Client
                 }
             }
 
-            msg = new TMessage(msg, StatusCode.Ok);
+            msg = new EMessage(msg, StatusCode.Ok);
         }
 
-        protected override void ProcessResponse(TMessage requestMsg, TMessage responseMsg)
+        protected override void ProcessResponse(EMessage requestMsg, EMessage responseMsg)
         {
             // pass
         }
 
-        protected override void ProcessTimeoutRequest(TMessage msg)
+        protected override void ProcessTimeoutRequest(EMessage msg)
         {
             // pass
         }

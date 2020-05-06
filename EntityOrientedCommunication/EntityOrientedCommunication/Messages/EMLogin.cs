@@ -8,10 +8,10 @@ using Newtonsoft.Json;
 namespace EntityOrientedCommunication.Messages
 {
     /// <summary>
-    /// sent by client, request log into server
+    /// a kind of message sent by client, request log into server
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMLogin: TMessage
+    public class EMLogin: EMessage
     {
         #region property
         [JsonProperty]
@@ -23,9 +23,9 @@ namespace EntityOrientedCommunication.Messages
 
         #region constructor
         [JsonConstructor]
-        protected TMLogin() { }
+        protected EMLogin() { }
 
-        public TMLogin(User opr) : base(2)  // special Id
+        public EMLogin(User opr) : base(2)  // special ID
         {
             Username = opr.Name;
             Password = opr.Password;
@@ -35,7 +35,7 @@ namespace EntityOrientedCommunication.Messages
         #region interface
         public override string ToString()
         {
-            return Format("TLgi", $"{Username}");
+            return Format("ELgi", $"{Username}");
         }
         #endregion
     }

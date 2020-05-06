@@ -25,10 +25,10 @@ namespace EntityOrientedCommunication.Messages
     }
 
     /// <summary>
-    /// this class is used to report errors
+    /// this class is used by server to report errors
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMError : TMText
+    public class EMError : EMText
     {
         #region data
         #region property
@@ -42,15 +42,15 @@ namespace EntityOrientedCommunication.Messages
 
         #region constructor
         [JsonConstructor]
-        protected TMError() { }
+        protected EMError() { }
 
-        public TMError(Envelope envelope, string msg, ErrorCode code = ErrorCode.Default) : base(envelope, msg)
+        public EMError(Envelope envelope, string msg, ErrorCode code = ErrorCode.Default) : base(envelope, msg)
         {
             Status = StatusCode.Denied;
             Code = code;
         }
 
-        public TMError(TMessage toReply, string msg, ErrorCode code = ErrorCode.Default) : base(toReply, msg)
+        public EMError(EMessage toReply, string msg, ErrorCode code = ErrorCode.Default) : base(toReply, msg)
         {
             Status = StatusCode.Denied;
             Code = code;
@@ -60,7 +60,7 @@ namespace EntityOrientedCommunication.Messages
         #region interface
         public override string ToString()
         {
-            return Format("TErr", $"E{(int)Code}: {Text}");
+            return Format("EErr", $"E{(int)Code}: {Text}");
         }
         #endregion
 

@@ -20,7 +20,7 @@ namespace EntityOrientedCommunication.Server
 {
     internal class LetterInfo
     {
-        public readonly TMLetter letter;
+        public readonly EMLetter letter;
 
         public MailRouteInfo sender;
 
@@ -28,7 +28,7 @@ namespace EntityOrientedCommunication.Server
 
         public readonly DateTime timeStamp;
 
-        public LetterInfo(TMLetter letter, MailRouteInfo sender, MailRouteInfo recipient)
+        public LetterInfo(EMLetter letter, MailRouteInfo sender, MailRouteInfo recipient)
         {
             this.letter = letter;
             this.sender = sender;
@@ -38,7 +38,7 @@ namespace EntityOrientedCommunication.Server
 
         internal LetterInfo(LetterInfo src, MailRouteInfo newRecipInfo)
         {
-            this.letter = new TMLetter(newRecipInfo.ToLiteral(), src.letter.Sender,
+            this.letter = new EMLetter(newRecipInfo.ToLiteral(), src.letter.Sender,
                         src.letter.Title, src.letter.Content, src.letter.LetterType, src.letter.Serial);
             this.sender = src.sender;
             this.recipient = newRecipInfo;
@@ -90,7 +90,7 @@ namespace EntityOrientedCommunication.Server
         /// push the letter into this postoffice for transfering to remote computer
         /// </summary>
         /// <param name="info"></param>
-        public virtual void Push(TMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
+        public virtual void Push(EMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
         {
             var info = new LetterInfo(letter, senderInfo, recipientInfo);
 
@@ -99,7 +99,7 @@ namespace EntityOrientedCommunication.Server
                 if (!IsActivated) return;  // user is not on line, discard
                 lock (this.registeredReceiverEntityNames)
                 {
-                    if (!info.recipient.ReceiverEntityNames.Intersect(registeredReceiverEntityNames).Any())  // entity is not online
+                    if (!info.recipient.ReceiverEntityNames.Intersect(registeredReceiverEntityNames).Any())  // no entity in recipients is not online
                     {
                         return;  // discard
                     }
@@ -159,6 +159,14 @@ namespace EntityOrientedCommunication.Server
 
             registeredReceiverEntityNames.Clear();
             DiscardRealTimeLetters();
+        }
+
+        public void Destroy()
+        {
+            this.owner = null;
+            this.dispatcher = null;
+            this.dictlLetterTypeAndInBox = null;
+            this.currentPopingThread.stopped = true;  // stop the thread
         }
 
         public override string ToString()
@@ -264,7 +272,7 @@ namespace EntityOrientedCommunication.Server
                 lock (registeredReceiverEntityNames)
                 {
                     letterInfos.AddRange(this.Pop(LetterType.RealTime, registeredReceiverEntityNames));
-                    letterInfos.AddRange(this.Pop(LetterType.RealTimeGet, registeredReceiverEntityNames));
+                    letterInfos.AddRange(this.Pop(LetterType.EmergencyGet, registeredReceiverEntityNames));
                     letterInfos.AddRange(this.Pop(LetterType.Normal, registeredReceiverEntityNames));
                     letterInfos.AddRange(this.Pop(LetterType.Emergency, registeredReceiverEntityNames));
                 }

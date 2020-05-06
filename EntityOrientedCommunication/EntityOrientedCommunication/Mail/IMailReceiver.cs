@@ -29,6 +29,6 @@ namespace EntityOrientedCommunication.Mail
         /// </summary>
         /// <param name="letter"></param>
         /// <returns>the item which will be sent to the sender after picking up, null if nothing to return</returns>
-        object Pickup(TMLetter letter);
+        object Pickup(EMLetter letter);
     }
 }

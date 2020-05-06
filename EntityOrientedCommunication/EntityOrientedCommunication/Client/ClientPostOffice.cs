@@ -59,6 +59,22 @@ namespace EntityOrientedCommunication.Client
 
         #region interface
         /// <summary>
+        /// get a mailbox by entity name
+        /// </summary>
+        /// <param name="entityName"></param>
+        /// <returns></returns>
+        public ClientMailBox this[string entityName]
+        {
+            get
+            {
+                lock (this.dictEntityName2MailBox)
+                {
+                    return this.dictEntityName2MailBox[entityName];
+                }
+            }
+        }
+
+        /// <summary>
         /// register a 'ClientMailBox' box for 'receiver', one entity name can only be registered once
         /// <para>if the imminent receiver has same name with the old receiver in this office, then the old receiver will be destroyed and replaced</para>
         /// </summary>
@@ -106,7 +122,7 @@ namespace EntityOrientedCommunication.Client
         /// pickup a letter sent from remote postoffice
         /// </summary>
         /// <param name="letter"></param>
-        internal void Pickup(TMLetter letter)
+        internal void Pickup(EMLetter letter)
         {
             ClientMailBox mailBox = null;
 
@@ -135,7 +151,7 @@ namespace EntityOrientedCommunication.Client
         /// provide a send interface for every mailbox in this postoffice
         /// </summary>
         /// <param name="letter"></param>
-        internal void Send(TMLetter letter)
+        internal void Send(EMLetter letter)
         {
             var routeInfos = MailRouteInfo.Parse(letter.Recipient);
             if (routeInfos == null)
@@ -171,7 +187,7 @@ namespace EntityOrientedCommunication.Client
             if (localRouteInfo != null)
             {
                 // send to local-entity
-                var copy = new TMLetter(letter);
+                var copy = new EMLetter(letter);
                 copy.Recipient = localRouteInfo.ToLiteral();
                 Pickup(letter);
             }
@@ -184,7 +200,7 @@ namespace EntityOrientedCommunication.Client
         {
             lock (dictEntityName2MailBox)
             {
-                // tele-register a 
+                // tele-register
                 foreach (var reciver in this.dictEntityName2MailBox.Values)
                 {
                     this.dispatcher.Activate(reciver);

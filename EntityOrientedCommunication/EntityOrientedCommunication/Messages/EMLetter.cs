@@ -17,18 +17,34 @@ namespace EntityOrientedCommunication
 {
     public enum LetterType
     {
-        Normal,  // the letter is stored in the buffer box and will be sent out once receiver logs in
-        RealTime,  // letter would be discarded if receiver is not online
-        Retard,  // letter will be received only when recipient pulls them
-        Emergency,  // an error will be reported if recipient is not on line
-        RealTimeGet,  // letter would be discarded if any of the recipients is not online, and an error will be reported to the sender, the receiver must reply a message to the sender
+        /// <summary>
+        /// the letter is stored in the buffer box on server and will be sent out once receiver logs in
+        /// </summary>
+        Normal, 
+        /// <summary>
+        /// letter would be discarded when server receives it if receiver is not online
+        /// </summary>
+        RealTime,
+        /// <summary>
+        /// letter will be stored on the server till the recipients pull it
+        /// </summary>
+        Retard,
+        /// <summary>
+        /// an error will be reported by server if recipient is not on line
+        /// </summary>
+        Emergency,
+        /// <summary>
+        /// an error will be reported by server if recipient is not on line. there's only 1 recipient permitted for each 'EmergencyGet'.
+        /// <para>the difference between 'EmergencyGet' and 'Emergency' is that the recipient should emit a reply to the 'EmergencyGet' letter sender</para>
+        /// </summary>
+        EmergencyGet,
     }
 
     /// <summary>
-    /// EOC letter, the ID of which will be set at sending at transist time
+    /// EOC letter, the ID of which will be set before transmission
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class TMLetter : TMObject<object>
+    public class EMLetter : EMObject<object>
     {
         #region data
         #region property
@@ -59,9 +75,9 @@ namespace EntityOrientedCommunication
 
         #region constructor
         [JsonConstructor]
-        protected TMLetter() { }
+        protected EMLetter() { }
 
-        public TMLetter(string recipient, string sender, string title,
+        public EMLetter(string recipient, string sender, string title,
             object content, LetterType type, string serial)
         {
             Title = title;
@@ -73,7 +89,7 @@ namespace EntityOrientedCommunication
             Status = StatusCode.Letter;
         }
 
-        public TMLetter(TMLetter copyFrom) : base(copyFrom)
+        public EMLetter(EMLetter copyFrom) : base(copyFrom)
         {
             this.Title = copyFrom.Title;
             this.Recipient = copyFrom.Recipient;
@@ -86,7 +102,7 @@ namespace EntityOrientedCommunication
         #region interface
         public override string ToString()
         {
-            return Format("TLtr", $"[{Title}] {Sender} -> {Recipient}");
+            return Format("ELtr", $"[{Title}] {Sender} -> {Recipient}");
         }
         #endregion
 
