@@ -1,59 +1,42 @@
-﻿using ClientDemo;
-using EntityOrientedCommunication;
+﻿using EntityOrientedCommunication;
 using EntityOrientedCommunication.Client;
 using EntityOrientedCommunication.Mail;
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace TAPACSTest
 {
+    class ObjectA : IMailReceiver
+    {
+        public string EntityName => "ObjA";
+
+        public object Pickup(EMLetter letter)
+        {
+            Console.WriteLine($"{letter.Content}");
+            return null;
+        }
+    }
+
+    class ObjectB : IMailReceiver
+    {
+        public string EntityName => "ObjB";
+
+        public object Pickup(EMLetter letter)
+        {
+            Console.WriteLine($"--------------------------{letter.Title}");
+            //return null;
+
+            return "this message is from B, the item has been received";
+        }
+    }
+
     class Program
     {
-        private static void ClientEventListener(object sender, ClientAgentEventArgs args)
-        {
-            if(args.EventType.HasFlag(ClientAgentEventType.Error))
-            {
-                throw new Exception($"{args.Title}: {args.Message}");
-            }
-        }
-
-        private class ObjectA : IMailReceiver
-        {
-            public string EntityName => "ObjA";
-
-            public object Pickup(EMLetter letter)
-            {
-                Console.WriteLine($"{letter.Content}");
-                return null;
-            }
-        }
-
-        private class ObjectB : IMailReceiver
-        {
-            public string EntityName => "ObjB";
-
-            public object Pickup(EMLetter letter)
-            {
-                Console.WriteLine($"--------------------------{letter.Title}");
-                //return null;
-
-                return "this message is from B, the item has been received";
-            }
-        }
-
         static void Main(string[] args)
         {
             
-            var agent1 = TAPAClient.Agent;
+            var agent1 = new ClientAgent("127.0.0.1", 1350);
             agent1.Login("user1", "", 10000);
-            var agent2 = new ClientAgent(TAPAClient.DefaultIP, TAPAClient.DefaultPort);
+            var agent2 = new ClientAgent("127.0.0.1", 1350);
             agent2.Login("user2", "", 10000);
 
             var objA = new ObjectA();
