@@ -6,7 +6,7 @@ using EntityOrientedCommunication.Mail;
 
 namespace EntityOrientedCommunication.Client
 {
-    public interface IClientMailDispatcher : IMailDispatcher
+    internal interface IClientMailDispatcher : IMailDispatcher
     {
         string ClientName { get; }
         

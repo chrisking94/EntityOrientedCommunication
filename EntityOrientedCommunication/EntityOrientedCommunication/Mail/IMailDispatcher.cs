@@ -11,7 +11,7 @@ using System.Text;
 
 namespace EntityOrientedCommunication.Mail
 {
-    public interface IMailDispatcher
+    internal interface IMailDispatcher
     {
         /// <summary>
         /// it should be a synchronized dispatch

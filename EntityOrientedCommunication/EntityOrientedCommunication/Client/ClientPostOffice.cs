@@ -50,7 +50,7 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region constructor
-        public ClientPostOffice(IClientMailDispatcher dispatcher)
+        internal ClientPostOffice(IClientMailDispatcher dispatcher)
         {
             dictEntityName2MailBox = new Dictionary<string, ClientMailBox>(1);
             this.dispatcher = dispatcher;

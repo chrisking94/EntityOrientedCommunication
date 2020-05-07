@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using EntityOrientedCommunication.Messages;
+using EntityOrientedCommunication.Mail;
 
 namespace EntityOrientedCommunication
 {
@@ -44,12 +45,12 @@ namespace EntityOrientedCommunication
     /// EOC letter, the ID of which will be set before transmission
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EMLetter : EMObject<object>
+    internal class EMLetter : EMObject<object>, ILetter
     {
         #region data
         #region property
         [JsonProperty]
-        public string Title;
+        public string Title { get; set; }
 
         [JsonProperty]
         public string Recipient { get; set; }

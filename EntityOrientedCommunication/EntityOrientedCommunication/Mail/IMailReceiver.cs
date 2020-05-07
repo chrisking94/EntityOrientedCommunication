@@ -11,8 +11,9 @@ using System.Text;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using EntityOrientedCommunication.Messages;
+using EntityOrientedCommunication.Mail;
 
-namespace EntityOrientedCommunication.Mail
+namespace EntityOrientedCommunication
 {
     /// <summary>
     /// mail receiver
@@ -29,6 +30,6 @@ namespace EntityOrientedCommunication.Mail
         /// </summary>
         /// <param name="letter"></param>
         /// <returns>the item which will be sent to the sender after picking up, null if nothing to return</returns>
-        object Pickup(EMLetter letter);
+        object Pickup(ILetter letter);
     }
 }

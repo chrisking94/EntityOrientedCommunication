@@ -2,14 +2,14 @@
 <package>
   <metadata>
     <id>EntityOrientedCommunication</id>
-    <version>1.0.2</version>
+    <version>1.0.4</version>
     <title>$title$</title>
     <authors>chris</authors>
     <owners>$author$</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
+	<icon>EOC.png</icon>
     <projectUrl>https://github.com/chrisking94/EntityOrientedCommunication</projectUrl>
-    <iconUrl>EOC.png</iconUrl>
     <description>An easy to use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
     <releaseNotes>add 'Pickup' exception processing, add XML documentation.</releaseNotes>
     <copyright>Copyright (c) Railsmart 2020</copyright>

@@ -124,7 +124,7 @@ namespace EntityOrientedCommunication.Server
         /// </summary>
         /// <param name="letter"></param>
         /// <returns>error message, null if there is no error</returns>
-        public string Deliver(EMLetter letter)
+        internal string Deliver(EMLetter letter)
         {
             var allRecipientInfos = new List<MailRouteInfo>();
             var sInfo = MailRouteInfo.Parse(letter.Sender)[0];

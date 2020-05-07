@@ -17,7 +17,7 @@ namespace ServerDemo
     {
         public string EntityName => "entityA";
 
-        public object Pickup(EMLetter letter)
+        public object Pickup(ILetter letter)
         {
             throw new NotImplementedException();
         }

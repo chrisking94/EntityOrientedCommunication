@@ -64,11 +64,6 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
-        public void Send(EMLetter letter)
-        {
-            postoffice.Send(letter);
-        }
-
         /// <summary>
         /// the letter will be delivered to local machine if the 'username' part of recipient is set to 'localhost'
         /// </summary>
@@ -135,7 +130,7 @@ namespace EntityOrientedCommunication.Client
         /// <param name="toReply"></param>
         /// <param name="title"></param>
         /// <param name="content"></param>
-        public void Reply(EMLetter toReply, string title, object content)
+        public void Reply(ILetter toReply, string title, object content)
         {
             Send(toReply.Sender, title, content, toReply.LetterType);
         }
@@ -209,7 +204,7 @@ namespace EntityOrientedCommunication.Client
 
             if (feedback != null)
             {
-                this.Send(new EMLetter(letter.Sender, this.mailAdress, feedbackTitle, feedback, feedbackType, letter.Serial));
+                this.postoffice.Send(new EMLetter(letter.Sender, this.mailAdress, feedbackTitle, feedback, feedbackType, letter.Serial));
             }
         }
         #endregion
