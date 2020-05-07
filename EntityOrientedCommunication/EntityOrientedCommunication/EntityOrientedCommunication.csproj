@@ -13,6 +13,10 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -54,7 +58,6 @@
     <Compile Include="Client\ClientPostOffice.cs" />
     <Compile Include="Client\IClientMailDispatcher.cs" />
     <Compile Include="Facilities\ReaderWriterLockSlimExtensions.cs" />
-    <Compile Include="IniFile.cs" />
     <Compile Include="Mail\ILetter.cs" />
     <Compile Include="Server\IUser.cs" />
     <Compile Include="Server\Server.cs" />
@@ -72,7 +75,7 @@
     <Compile Include="Mail\IMailReceiver.cs" />
     <Compile Include="Mail\MailRouteInfo.cs" />
     <Compile Include="Messages\ArrayCarrier.cs" />
-    <Compile Include="Messages\EnumCarrier.cs" />
+    <Compile Include="Messages\ValueCarrier.cs" />
     <Compile Include="Messages\Envelope.cs" />
     <Compile Include="Messages\IObject.cs" />
     <Compile Include="Messages\EMError.cs" />

@@ -38,7 +38,7 @@ namespace EntityOrientedCommunication.Server
             ClientName = server.Name;
             TeleClientName = socket.RemoteEndPoint.ToString();
             logger = new Logger(TeleClientName);
-            Phase = ConeectionPhase.P1Connected;
+            Phase = ConnectionPhase.P1Connected;
 
             GetControl(ThreadType.Listen).Start();
 
@@ -82,7 +82,7 @@ namespace EntityOrientedCommunication.Server
                         msg.Status |= StatusCode.Command | StatusCode.Time | StatusCode.Push;  // sync time command
                         logger = new Logger(TeleClientName);
 
-                        Phase = ConeectionPhase.P2LoggedIn;
+                        Phase = ConnectionPhase.P2LoggedIn;
                         opr.PostOffice.Activate(this);  // activate mailbox
                         opr.IsOnline = true;
 

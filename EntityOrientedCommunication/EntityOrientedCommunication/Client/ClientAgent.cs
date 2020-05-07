@@ -31,7 +31,7 @@ namespace EntityOrientedCommunication.Client
 
         public EndPoint EndPoint { get; private set; }
 
-        public bool IsLoggedIn => Phase >= ConeectionPhase.P2LoggedIn;
+        public bool IsLoggedIn => Phase >= ConnectionPhase.P2LoggedIn;
 
         public ClientPostOffice PostOffice => postOffice;
 
@@ -79,7 +79,7 @@ namespace EntityOrientedCommunication.Client
             User.Name = username;
             User.SetPassword(password);
             ClientName = username;
-            if (Phase > ConeectionPhase.P1Connected) Phase = ConeectionPhase.P1Connected;  // re-login
+            if (Phase > ConnectionPhase.P1Connected) Phase = ConnectionPhase.P1Connected;  // re-login
 
             bOnWorking = true;
 
@@ -89,7 +89,7 @@ namespace EntityOrientedCommunication.Client
             }
             else
             {
-                while (Phase < ConeectionPhase.P2LoggedIn && bOnWorking)
+                while (Phase < ConnectionPhase.P2LoggedIn && bOnWorking)
                 {
                     Thread.Sleep(1);
                     if (--timeout == 0)
@@ -106,7 +106,7 @@ namespace EntityOrientedCommunication.Client
         /// </summary>
         public void Logout()
         {
-            if (Phase >= ConeectionPhase.P2LoggedIn)
+            if (Phase >= ConnectionPhase.P2LoggedIn)
             {
                 var reply = Request(StatusCode.Logout, new EMessage(GetEnvelope()));
 
@@ -190,7 +190,7 @@ namespace EntityOrientedCommunication.Client
         #region private
         private void Connect()
         {
-            if (Phase < ConeectionPhase.P1Connected)  // not connected
+            if (Phase < ConnectionPhase.P1Connected)  // not connected
             {
                 var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
@@ -234,7 +234,7 @@ namespace EntityOrientedCommunication.Client
                 {
                     base.RestSocket(socket);
                     GetControl(ThreadType.Listen).Start();
-                    Phase = ConeectionPhase.P1Connected;
+                    Phase = ConnectionPhase.P1Connected;
                     ClientAgentEvent?.Invoke(this,
                         new ClientAgentEventArgs(ClientAgentEventType.Connected | ClientAgentEventType.Prompt, $"connected to {TeleClientName}."));
                 }
@@ -258,7 +258,7 @@ namespace EntityOrientedCommunication.Client
 
         private void Login()
         {
-            if (Phase < ConeectionPhase.P2LoggedIn && Phase >= ConeectionPhase.P1Connected)
+            if (Phase < ConnectionPhase.P2LoggedIn && Phase >= ConnectionPhase.P1Connected)
             {
                 var msg = new EMLogin(User);
                 var tc = AsyncRequest(StatusCode.Login, msg);
@@ -278,7 +278,7 @@ namespace EntityOrientedCommunication.Client
                         TeleClientName = loggedIn.ServerName;
                         Token = loggedIn.Token;
                         logger.SetOwner(TeleClientName);
-                        Phase = ConeectionPhase.P2LoggedIn;
+                        Phase = ConnectionPhase.P2LoggedIn;
                         ClientAgentEvent?.Invoke(this,
                             new ClientAgentEventArgs(ClientAgentEventType.LoggedIn | ClientAgentEventType.Prompt, "login success!"));
 
@@ -350,7 +350,7 @@ namespace EntityOrientedCommunication.Client
 
         private void CheckLogin()
         {
-            if (Phase < ConeectionPhase.P2LoggedIn)
+            if (Phase < ConnectionPhase.P2LoggedIn)
             {
                 throw new InvalidOperationException("please login first!");
             }
@@ -359,7 +359,7 @@ namespace EntityOrientedCommunication.Client
         public override void Destroy()
         {
             base.Destroy();
-            Phase = ConeectionPhase.P0Start;
+            Phase = ConnectionPhase.P0Start;
             ClientAgentEvent?.Invoke(this,
                 new ClientAgentEventArgs(ClientAgentEventType.Disconnected | ClientAgentEventType.Prompt, $"{this} was destroyed."));
             postOffice.Destroy();
@@ -372,12 +372,12 @@ namespace EntityOrientedCommunication.Client
 
         protected override void OnThreadListenAborted()
         {
-            Phase = ConeectionPhase.P0Start;  // reconnect
+            Phase = ConnectionPhase.P0Start;  // reconnect
         }
 
         protected override void OnConnectionTimeout()
         {
-            Phase = ConeectionPhase.P0Start;  // reconnect
+            Phase = ConnectionPhase.P0Start;  // reconnect
             ClientAgentEvent?.Invoke(this,
                 new ClientAgentEventArgs(ClientAgentEventType.Connection | ClientAgentEventType.Error, "connection timeout."));
         }

@@ -21,7 +21,7 @@ namespace EntityOrientedCommunication
         Listen,
     }
 
-    public enum ConeectionPhase
+    public enum ConnectionPhase
     {
         P0Start,  // start
         P1Connected,  // server and client are successfully connected through TCP/IP
@@ -60,7 +60,7 @@ namespace EntityOrientedCommunication
         /// <summary>
         /// current connection phase
         /// </summary>
-        public ConeectionPhase Phase { get; protected set; }
+        public ConnectionPhase Phase { get; protected set; }
 
         /// <summary>
         /// true when watch dog thread is dead
@@ -146,7 +146,7 @@ namespace EntityOrientedCommunication
         /// wait for connection phase of this agent encounter the specified 'phase'
         /// </summary>
         /// <param name="ph"></param>
-        public void WaitTill(ConeectionPhase ph)
+        public void WaitTill(ConnectionPhase ph)
         {
             while (Phase < ph) Thread.Sleep(1);
         }

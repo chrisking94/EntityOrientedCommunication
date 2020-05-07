@@ -26,7 +26,7 @@ namespace EntityOrientedCommunication.Messages
                 if (!bObjectRecovered)
                 {
                     var obj = Serializer.FromJson<T>(_objJson);
-                    if (obj is EnumCarrier ec)
+                    if (obj is ValueCarrier ec)
                     {
                         this._object = (T)ec.ToEnum();
                     }
@@ -62,9 +62,13 @@ namespace EntityOrientedCommunication.Messages
             {
                 if (_objJson == null)
                 {
-                    if (this._object is Enum en)
+                    if (this._object is object obj && obj == null)  // null
                     {
-                        _objJson = Serializer.ToJson(new EnumCarrier(en));
+                        _objJson = Serializer.ToJson(_object);
+                    }
+                    else if (this._object.GetType().IsValueType)
+                    {
+                        _objJson = Serializer.ToJson(new ValueCarrier(this._object));
                     }
                     else if (this._object is Array arr)
                     {

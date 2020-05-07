@@ -10,31 +10,32 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using System.Reflection;
+using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication.Messages
 {
     /// <summary>
-    /// if a enum type item is serialized at a 'object pointer', then it can not be deserialized to the correct type
-    /// <para>this class carries the type information of the enum value, so it is able to convert the serialized enum value to it's original type</para>
+    /// if a value type item is serialized at an 'object pointer', then it can not be deserialized to the correct type
+    /// <para>this class carries the type information of the item, so it is able to convert the serialized item to it's original type correctly</para>
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EnumCarrier
+    public class ValueCarrier
     {
         #region field
         [JsonProperty]
         public Type Type;
 
         [JsonProperty]
-        public string Value;
+        public object Value;
         #endregion
 
         #region constructor
         [JsonConstructor]
-        protected EnumCarrier() { }
+        protected ValueCarrier() { }
 
-        public EnumCarrier(Enum obj)
+        public ValueCarrier(object obj)
         {
-            Value = obj.ToString();
+            Value = obj;
             Type = obj.GetType();
         }
         #endregion
@@ -42,12 +43,12 @@ namespace EntityOrientedCommunication.Messages
         #region interface
         public object ToEnum()
         {
-            return Enum.Parse(Type, Value);
+            return Type.Cast(Value);
         }
 
         public override string ToString()
         {
-            return Value;
+            return Value.ToString();
         }
         #endregion
     }
