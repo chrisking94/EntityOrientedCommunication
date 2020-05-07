@@ -26,6 +26,11 @@ namespace EntityOrientedCommunication.Server
         /// the user name of this local client is 'server'
         /// </summary>
         public ClientAgentSimulator LocalClient { get; }
+
+        /// <summary>
+        /// this property is set by server when some error occurred
+        /// </summary>
+        public string BlockMessage { get; private set; }
         #endregion
 
         #region field
@@ -34,8 +39,6 @@ namespace EntityOrientedCommunication.Server
         private Thread listenThread;
         private Logger logger;
         private TransactionPool transactionPool;
-        private bool isBlocked;  // block server
-        private string blockMessage;
         #endregion
 
         #region constructor
@@ -60,7 +63,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
-        public Server Run()
+        public void Run()
         {
             // initialze simple data members
             var maxConnections = 300;
@@ -102,8 +105,15 @@ namespace EntityOrientedCommunication.Server
             listenThread.Start();
 
             logger.Write(LogType.PR, $"{this.Name}@{ipAddr}:{this.Port} is initilized.");
+        }
 
-            return this;
+        /// <summary>
+        /// block/unblock server, pass message as null to unblock server, otherwise to block it.
+        /// </summary>
+        /// <param name="message"></param>
+        public void Block(string message)
+        {
+            this.BlockMessage = message;
         }
 
         public void Stop()
@@ -152,8 +162,7 @@ namespace EntityOrientedCommunication.Server
         private void TransactionErrorHandler(object sender, TransactionErrorArgs args)
         {
             logger.Fatal($"error occurred when executing transaction '{args.transaction.Name}'", args.exception);
-            isBlocked = true;
-            blockMessage = $"tansaction has encountered an unrecoverable error, server has stopped running, please contact the server administrator for help.";
+            this.Block($"tansaction has encountered an unrecoverable error, server has stopped running, please contact the server administrator for help.");
             System.Environment.Exit(-1);
         }
 

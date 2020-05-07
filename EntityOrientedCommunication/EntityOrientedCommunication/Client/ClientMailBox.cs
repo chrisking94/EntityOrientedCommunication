@@ -184,18 +184,28 @@ namespace EntityOrientedCommunication.Client
         {
             var letter = obj as EMLetter;
             var feedbackTitle = $"RE:{letter.Title}";
-            var feedback = receiver.Pickup(letter);
-            var feedbackType = letter.LetterType;
-
-            if (letter.LetterType == LetterType.EmergencyGet)  // must return a value to the sender
+            object feedback = null;
+            try
             {
-                if (feedback == null)
+                feedback = receiver.Pickup(letter);
+
+                if (letter.LetterType == LetterType.EmergencyGet)  // must return a value to the sender
                 {
-                    feedbackTitle = "error";
-                    feedback = $"entity '{this.EntityName}' did not response anything after picking up letter '{letter.Title}'";
+                    if (feedback == null)
+                    {
+                        feedbackTitle = "error";
+                        feedback = $"entity '{this.EntityName}' did not response anything after picking up letter '{letter.Title}'";
+                    }
                 }
-                feedbackType = LetterType.RealTime;  // change letter type
             }
+            catch (Exception ex)  // exception report
+            {
+                feedbackTitle = "error";
+                feedback = ex.Message;
+            }
+            var feedbackType = letter.LetterType;
+            if (feedbackType == LetterType.EmergencyGet) feedbackType = LetterType.RealTime;
+
 
             if (feedback != null)
             {
