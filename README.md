@@ -2,7 +2,7 @@
 A C/S framework library that allows object2object communication based on TCP/IP.
 
 ## 0.Quick Start
-Assume there are 2 objects **A** and **B** on different computers, now they need to send message to each other.
+Assume there are 2 objects **A** and **B** on different computers, now they need to send messages to each other.
 
 - - -
 
@@ -20,6 +20,7 @@ namespace ServerDemo
     {
         public static void Main(string[] args)
         {
+        	// create a server named 'EOCServerDemo' at 127.0.0.1:1350
             var server = new Server("EOCServerDemo", "127.0.0.1", 1350);
 
             // create 2 users without password
@@ -41,7 +42,7 @@ Now the code of server program is done, we will get a server execution file afte
 
 ### 0.2 Client Console
 
-Similiar to section 0.1, we need to create a client console application. Then declare a class that implements the interface named **IEntity** in the application.To make this quick start conciser, suppose the objects **A** and **B** are of same type named **SignalStation**.
+Similiar to section 0.1, we need to create a client console application firstly. Then declare a class that implements the interface named **IEntity** in the application. In order to make this quick start conciser, we suppose the objects **A** and **B** are of same type named **SignalStation**.
 
 ```c#
 using EntityOrientedCommunication;
@@ -68,7 +69,7 @@ namespace ClientDemo
 }
 ```
 
-Then code the **Mail(string[])** function of client program.
+Hitherto we have a class named **SignalStation** in the client console assembly, then code the **Mail(string[])** function of client program.
 
 ```c#
 using EntityOrientedCommunication.Client;

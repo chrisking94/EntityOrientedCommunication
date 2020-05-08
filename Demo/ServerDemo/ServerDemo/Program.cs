@@ -8,6 +8,7 @@ namespace ServerDemo
     {
         public static void Main(string[] args)
         {
+            // create a server named 'EOCServerDemo' at 127.0.0.1:1350
             var server = new Server("EOCServerDemo", "127.0.0.1", 1350);
 
             // create 2 users without password
