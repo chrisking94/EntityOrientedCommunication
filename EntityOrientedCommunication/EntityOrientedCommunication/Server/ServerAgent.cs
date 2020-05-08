@@ -70,21 +70,21 @@ namespace EntityOrientedCommunication.Server
                 }
                 else if (server.UserManager.Contains(login.Username))
                 {
-                    var opr = server.UserManager.GetUser(login.Username, login.Password);
+                    var user = server.UserManager.GetUser(login.Username, login.Password);
 
-                    if (opr != null)
+                    if (user != null)
                     {
                         TeleClientName = login.Username;
                         this.logger.SetOwner(TeleClientName);  // reset owner of logger
-                        User = opr;
+                        User = user;
                         Token = server.GenToken(TeleClientName);
-                        msg = new EMLoggedin(login, ClientName, opr, Token);
+                        msg = new EMLoggedin(login, ClientName, user, Token);
                         msg.Status |= StatusCode.Command | StatusCode.Time | StatusCode.Push;  // sync time command
                         logger = new Logger(TeleClientName);
 
                         Phase = ConnectionPhase.P2LoggedIn;
-                        opr.PostOffice.Activate(this);  // activate mailbox
-                        opr.IsOnline = true;
+                        user.PostOffice.Activate(this);  // activate mailbox
+                        user.IsOnline = true;
 
                         (msg as EMLoggedin).Object = server.Now;  // set sync time
                     }
@@ -98,15 +98,15 @@ namespace EntityOrientedCommunication.Server
                     msg = new EMError(msg, $"user '{login.Username}' is not registered.", ErrorCode.UnregisteredUser);
                 }
             }
+            else if (SUser == null || !SUser.IsOnline)
+            {
+                msg = new EMError(msg, "please login first.");
+            }
             else if (msg.HasFlag(StatusCode.Logout))
             {
                 Logout();
 
                 msg = new EMessage(msg, StatusCode.Ok);
-            }
-            else if (SUser == null || !SUser.IsOnline)
-            {
-                msg = new EMError(msg, "please login first.");
             }
             else if (msg.HasFlag(StatusCode.Letter))
             {
@@ -153,6 +153,19 @@ namespace EntityOrientedCommunication.Server
                     msg = new EMessage(msg, StatusCode.Ok);
                 }
             }
+            else if (msg.HasFlag(StatusCode.Time))
+            {
+                if (msg.HasFlag(StatusCode.Push))  // renew time
+                {
+                    var objMsg = msg as IObject<DateTime>;
+                    // update server time
+                    this.server.Now.Set(objMsg.Object);
+                    // broadcast
+                    server.BroadCast(msg);
+
+                    msg = new EMessage(msg, StatusCode.Ok);
+                }
+            }
             else
             {
                 msg = new EMError(msg, $"current request is not supported by this server.", ErrorCode.InvalidOperation);
@@ -186,7 +199,7 @@ namespace EntityOrientedCommunication.Server
                 var msg = exp.Tag as EMessage;
                 if (msg.HasFlag(StatusCode.Request))
                 {
-                    Response(new EMText(exp.Tag as EMessage, $"error occurred when process message '{msg.ID}'：{exp.InnerException.Message}", StatusCode.Denied));
+                    Response(new EMError(exp.Tag as EMessage, $"error occurred when process message '{msg.ID}'：{exp.InnerException.Message}", ErrorCode.InvalidMessage));
                 }
             }
             else  // disconnect when fatal error occurs

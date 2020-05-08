@@ -38,7 +38,7 @@ namespace EntityOrientedCommunication.Server
 
         public void ProcessRequest(EMLetter letter)  // letter request only
         {
-            this.SUser.Manager.Deliver(letter);
+            this.SUser.MailCenter.Deliver(letter);
         }
     }
 }

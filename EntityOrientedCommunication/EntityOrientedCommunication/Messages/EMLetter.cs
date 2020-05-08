@@ -103,7 +103,7 @@ namespace EntityOrientedCommunication
         #region interface
         public override string ToString()
         {
-            return Format("ELtr", $"[{Title}] {Sender} -> {Recipient}");
+            return Format("ELtr", $"{LetterType}#[{Title}] {Sender} -> {Recipient}");
         }
         #endregion
 

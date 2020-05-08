@@ -236,7 +236,7 @@ namespace EntityOrientedCommunication
         /// <param name="msg"></param>
         /// <param name="timeout"></param>
         /// <returns>the time counter for the request 'msg'</returns>
-        protected TCounter AsyncRequest(StatusCode status, EMessage msg, int timeout = -1)
+        internal TCounter AsyncRequest(StatusCode status, EMessage msg, int timeout = -1)
         {
             msg.Status |= status | StatusCode.Request;
             if (timeout == -1) timeout = this.timeout;

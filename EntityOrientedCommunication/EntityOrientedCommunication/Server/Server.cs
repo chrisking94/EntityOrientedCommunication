@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.IO;
 using EntityOrientedCommunication.Facilities;
+using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
 {
@@ -146,6 +147,17 @@ namespace EntityOrientedCommunication.Server
             var randPart = (new Random()).Next(100000, int.MaxValue).ToString();
 
             return $"{username}{randPart}";
+        }
+
+        internal void BroadCast(EMessage msg)
+        {
+            lock (loginAgents)
+            {
+                foreach (var agent in loginAgents)
+                {
+                    agent.AsyncRequest(StatusCode.None, msg);
+                }
+            }
         }
 
         private void __listen()

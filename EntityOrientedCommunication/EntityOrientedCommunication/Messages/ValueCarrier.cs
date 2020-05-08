@@ -41,7 +41,7 @@ namespace EntityOrientedCommunication.Messages
         #endregion
 
         #region interface
-        public object ToEnum()
+        public object ToValue()
         {
             return Type.Cast(Value);
         }

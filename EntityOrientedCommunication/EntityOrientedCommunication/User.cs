@@ -35,6 +35,7 @@ namespace EntityOrientedCommunication
         [JsonConstructor]
         public User()
         {
+            Password = "";
         }
 
         protected User(string name, string detail = "")

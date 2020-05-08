@@ -96,7 +96,7 @@ namespace EntityOrientedCommunication.Server
             dictName2User[serverUser.Name] = serverUser;
             rwlsDictName2User.ExitWriteLock();
 
-            serverUser.SetManager(this);
+            serverUser.SetMailCenter(this);
         }
 
         /// <summary>

@@ -24,11 +24,11 @@ namespace EntityOrientedCommunication.Messages
         Unregister      = 0x00_00_0008,  // unregister a 'target'
         Login           = 0x00_00_0010,  // login to server
         Logout          = 0x00_00_0020,  // logout from server
-        Push            = 0x00_00_0020,  // push data to remote endpoint
-        Pull            = 0x00_00_0040,  // pull data from remote endpoint
-        Ok              = 0x00_00_0080,  // request acknowledged
-        Denied          = 0x00_00_0100,  // deny a request
-        NoAutoReply     = 0x00_00_0200,  // this flag is used to cancel auto reply
+        Push            = 0x00_00_0040,  // push data to remote endpoint
+        Pull            = 0x00_00_0080,  // pull data from remote endpoint
+        Ok              = 0x00_00_0100,  // request acknowledged
+        Denied          = 0x00_00_0200,  // deny a request
+        NoAutoReply     = 0x00_00_0400,  // this flag is used to cancel auto reply
 
         /* target */
         Letter          = 0x02_00_0000,  // EOC letter

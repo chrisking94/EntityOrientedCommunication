@@ -22,6 +22,7 @@ namespace EntityOrientedCommunication.Messages
         UnregisteredUser,
         InvalidOperation,
         ServerBlocked,
+        InvalidMessage,
     }
 
     /// <summary>

@@ -25,10 +25,10 @@ namespace EntityOrientedCommunication.Messages
             {
                 if (!bObjectRecovered)
                 {
-                    var obj = Serializer.FromJson<T>(_objJson);
-                    if (obj is ValueCarrier ec)
+                    var obj = Serializer.FromJson<object>(_objJson);
+                    if (obj is ValueCarrier vc)
                     {
-                        this._object = (T)ec.ToEnum();
+                        this._object = (T)vc.ToValue();
                     }
                     else if (obj is ArrayCarrier ac)
                     {
@@ -36,7 +36,7 @@ namespace EntityOrientedCommunication.Messages
                     }
                     else
                     {
-                        this._object = obj;
+                        this._object = (T)obj;
                     }
                     bObjectRecovered = true;
                 }
