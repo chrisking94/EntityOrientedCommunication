@@ -18,7 +18,7 @@ using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
 {
-    internal class ServerLoginAgent : LoginAgent, IMailDispatcher
+    internal class ServerAgent : LoginAgent, IMailDispatcher
     {
         #region data
         #region property
@@ -31,7 +31,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region constructor
-        public ServerLoginAgent(Socket socket, Server server)
+        public ServerAgent(Socket socket, Server server)
         {
             this.RestSocket(socket);
             this.server = server;
@@ -143,9 +143,12 @@ namespace EntityOrientedCommunication.Server
             {
                 if (msg.HasFlag(StatusCode.Entity))
                 {
-                    var typeFullName = (msg as EMText).Text;
+                    var entityNames = (msg as EMText).Text.Split(',');
 
-                    SUser.PostOffice.Register(typeFullName);
+                    foreach (var name in entityNames)
+                    {
+                        SUser.PostOffice.Register(name);
+                    }
 
                     msg = new EMessage(msg, StatusCode.Ok);
                 }

@@ -8,7 +8,10 @@ using EOCServer;
 
 namespace EntityOrientedCommunication.Server
 {
-    public class ServerUserManager
+    /// <summary>
+    /// user management, mail route
+    /// </summary>
+    public class ServerMailCenter
     {
         #region data
         #region property
@@ -25,7 +28,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region constructor
-        public ServerUserManager(Server server)
+        public ServerMailCenter(Server server)
         {
             dictName2User = new Dictionary<string, ServerUser>(16);
             rwlsDictName2User = new ReaderWriterLockSlim();

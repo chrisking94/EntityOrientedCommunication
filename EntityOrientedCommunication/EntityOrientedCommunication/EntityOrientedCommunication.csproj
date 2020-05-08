@@ -61,9 +61,9 @@
     <Compile Include="Mail\ILetter.cs" />
     <Compile Include="Server\IUser.cs" />
     <Compile Include="Server\Server.cs" />
-    <Compile Include="Server\ServerLoginAgent.cs" />
+    <Compile Include="Server\ServerAgent.cs" />
     <Compile Include="Server\ServerUser.cs" />
-    <Compile Include="Server\ServerUserManager.cs" />
+    <Compile Include="Server\ServerMailCenter.cs" />
     <Compile Include="Server\ServerPostOffice.cs" />
     <Compile Include="Server\Simulators\ClientAgentSimulator.cs" />
     <Compile Include="Server\Simulators\ServerAgentSimulator.cs" />

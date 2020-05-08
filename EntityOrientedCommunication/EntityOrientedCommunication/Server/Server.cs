@@ -14,7 +14,7 @@ namespace EntityOrientedCommunication.Server
         #region property
         public string Name { get; }
 
-        public ServerUserManager UserManager { get; }
+        public ServerMailCenter UserManager { get; }
 
         public TimeBlock Now { get; }
 
@@ -34,7 +34,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region field
-        private HashSet<ServerLoginAgent> loginAgents;
+        private HashSet<ServerAgent> loginAgents;
         private Socket socket;
         private Thread listenThread;
         private Logger logger;
@@ -53,7 +53,7 @@ namespace EntityOrientedCommunication.Server
             this.IP = ip;
             this.Port = port;
 
-            this.UserManager = new ServerUserManager(this);
+            this.UserManager = new ServerMailCenter(this);
             this.Now = new TimeBlock();
             this.LocalClient = new ClientAgentSimulator();
 
@@ -67,7 +67,7 @@ namespace EntityOrientedCommunication.Server
         {
             // initialze simple data members
             var maxConnections = 300;
-            loginAgents = new HashSet<ServerLoginAgent>();
+            loginAgents = new HashSet<ServerAgent>();
             var logfolder = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\TAPALogs\\";
             logfolder = "./logs/";
             if (!Directory.Exists(logfolder))
@@ -125,7 +125,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region private
-        internal void Remove(ServerLoginAgent loginAgent)
+        internal void Remove(ServerAgent loginAgent)
         {
             lock (loginAgents)
             {
@@ -133,7 +133,7 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        internal List<ServerLoginAgent> GetLoggedInAgents()
+        internal List<ServerAgent> GetLoggedInAgents()
         {
             lock (loginAgents)
             {
@@ -153,7 +153,7 @@ namespace EntityOrientedCommunication.Server
             for (; ; )
             {
                 // wait for new connection request from client
-                var agent = new ServerLoginAgent(socket.Accept(), this);
+                var agent = new ServerAgent(socket.Accept(), this);
 
                 loginAgents.Add(agent);  // managed by server
             }
@@ -168,7 +168,7 @@ namespace EntityOrientedCommunication.Server
 
         private void Transaction_AgentsMonitor()
         {
-            List<ServerLoginAgent> deadList;
+            List<ServerAgent> deadList;
             lock (loginAgents)
             {
                 deadList = loginAgents.Where(la => la.IsDead || !la.IsConnected).ToList();

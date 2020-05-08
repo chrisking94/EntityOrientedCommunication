@@ -200,11 +200,7 @@ namespace EntityOrientedCommunication.Client
         {
             lock (dictEntityName2MailBox)
             {
-                // tele-register
-                foreach (var reciver in this.dictEntityName2MailBox.Values)
-                {
-                    this.dispatcher.Activate(reciver);
-                }
+                this.dispatcher.Activate(dictEntityName2MailBox.Values.ToArray());
             }
         }
 

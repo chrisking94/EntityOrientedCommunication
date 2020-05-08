@@ -11,9 +11,9 @@ namespace EntityOrientedCommunication.Client
         string ClientName { get; }
         
         /// <summary>
-        /// activate a mailbox, nitify other mailboxes that this 'mailBox' is online
+        /// activate mailboxes, notify other mailboxes that these 'mailBoxes' are online
         /// </summary>
-        /// <param name="mailBox"></param>
-        void Activate(ClientMailBox mailBox);
+        /// <param name="mailBoxes"></param>
+        void Activate(params ClientMailBox[] mailBoxes);
     }
 }

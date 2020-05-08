@@ -69,9 +69,12 @@ namespace EntityOrientedCommunication.Server
             this.PostOffice.Pickup(letter);
         }
 
-        void IClientMailDispatcher.Activate(ClientMailBox mailBox)
+        void IClientMailDispatcher.Activate(params ClientMailBox[] mailBoxes)
         {
-            this.ServerSimulator.SUser.PostOffice.Register(mailBox.EntityName);
+            foreach (var mailBox in mailBoxes)
+            {
+                this.ServerSimulator.SUser.PostOffice.Register(mailBox.EntityName);
+            }
         }
         #endregion
     }

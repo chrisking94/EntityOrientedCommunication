@@ -62,7 +62,7 @@ namespace EntityOrientedCommunication.Messages
             {
                 if (_objJson == null)
                 {
-                    if (this._object is object obj && obj == null)  // null
+                    if (this._object == null)  // null
                     {
                         _objJson = Serializer.ToJson(_object);
                     }

@@ -21,7 +21,7 @@ using EntityOrientedCommunication.Mail;
 namespace EntityOrientedCommunication.Client
 {
     /// <summary>
-    /// implement the function of client login management
+    /// implement the function of client login management, provide full duplex communication
     /// </summary>
     public sealed class ClientAgent : LoginAgent, IClientMailDispatcher
     {
@@ -143,11 +143,12 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
-        void IClientMailDispatcher.Activate(ClientMailBox mailBox)  // activate a mailbox
+        void IClientMailDispatcher.Activate(params ClientMailBox[] mailBoxes)
         {
             if (IsLoggedIn)
             {
-                var msg = new EMText(GetEnvelope(), mailBox.EntityName);
+                var entityNames = string.Join(",", mailBoxes.Select(mb => mb.EntityName));
+                var msg = new EMText(GetEnvelope(), entityNames);
                 var reply = Request(StatusCode.Register | StatusCode.Entity, msg);
 
                 if (reply.HasFlag(StatusCode.Ok))
@@ -160,7 +161,7 @@ namespace EntityOrientedCommunication.Client
 
                     ClientAgentEvent?.Invoke(this, new ClientAgentEventArgs(
                         ClientAgentEventType.Error,
-                        $"unable to register entity '{mailBox.EntityName}', detail：{error.Text}"));
+                        $"unable to register entity '{entityNames}', detail：{error.Text}"));
                 }
             }
         }

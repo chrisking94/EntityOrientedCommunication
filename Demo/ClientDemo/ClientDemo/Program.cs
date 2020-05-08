@@ -9,7 +9,7 @@ namespace TAPACSTest
     {
         public string EntityName => "ObjA";
 
-        public object Pickup(EMLetter letter)
+        public object Pickup(ILetter letter)
         {
             Console.WriteLine($"{letter.Content}");
             return null;
@@ -20,7 +20,7 @@ namespace TAPACSTest
     {
         public string EntityName => "ObjB";
 
-        public object Pickup(EMLetter letter)
+        public object Pickup(ILetter letter)
         {
             Console.WriteLine($"--------------------------{letter.Title}");
             //return null;

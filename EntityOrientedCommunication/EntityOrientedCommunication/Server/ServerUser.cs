@@ -19,11 +19,11 @@ namespace EntityOrientedCommunication.Server
 
         public ServerPostOffice PostOffice { get; protected set; }
 
-        public ServerUserManager Manager => manager;
+        public ServerMailCenter Manager => manager;
         #endregion
 
         #region field
-        protected ServerUserManager manager;
+        protected ServerMailCenter manager;
         #endregion
         #endregion
 
@@ -45,7 +45,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
-        internal void SetManager(ServerUserManager manager)
+        internal void SetManager(ServerMailCenter manager)
         {
             this.manager = manager;
         }

@@ -289,7 +289,14 @@ namespace EntityOrientedCommunication.Server
                 dispatcherMutex.WaitOne();
                 foreach (var info in letterInfos.OrderBy(info => info.timeStamp))
                 {
-                    dispatcher.Dispatch(info.letter);
+                    try
+                    {
+                        dispatcher.Dispatch(info.letter);
+                    }
+                    catch
+                    {
+                        this.Push(info.letter, info.sender, info.recipient);  // try to resend
+                    }
                 }
                 dispatcherMutex.ReleaseMutex();
 
