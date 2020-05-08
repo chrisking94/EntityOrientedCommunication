@@ -107,8 +107,8 @@ Certainly the code block 1 and 2 could be put at two diffrenct applications, and
 
 The execution result of the client console seems like following.
 
-![](./.img/client_console_snapshot.png "Client console execution result")
+![](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/client_console_snapshot.png "Client console execution result")
 
 And similiar the server console is.
 
-![](./.img/server_console_snapshot.png "Server console execution result")
+![](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/server_console_snapshot.png "Server console execution result")
