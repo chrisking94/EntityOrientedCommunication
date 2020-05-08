@@ -106,10 +106,14 @@ namespace ClientDemo
 
 Certainly the code block 1 and 2 could be put at two diffrenct applications, and the two applications could run on different computers. Just make the agents point to same server if you want to connect the objects.
 
+- - -
+
+### 0.3 Execution results
+
 The execution result of the client console seems like following.
 
-![](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/client_console_snapshot.png "Client console execution result")
+![Client console execution result](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/client_console_snapshot.png "Client console execution result")
 
 And similiar the server console is.
 
-![](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/server_console_snapshot.png "Server console execution result")
+![Server console execution result](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/server_console_snapshot.png "Server console execution result")
