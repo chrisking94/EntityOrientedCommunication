@@ -57,6 +57,7 @@
     <Compile Include="Client\ClientMailBox.cs" />
     <Compile Include="Client\ClientPostOffice.cs" />
     <Compile Include="Client\IClientMailDispatcher.cs" />
+    <Compile Include="Facilities\QueueExtensions.cs" />
     <Compile Include="Facilities\ReaderWriterLockSlimExtensions.cs" />
     <Compile Include="Mail\ILetter.cs" />
     <Compile Include="Server\IUser.cs" />

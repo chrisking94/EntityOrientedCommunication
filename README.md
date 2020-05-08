@@ -60,7 +60,7 @@ namespace ClientDemo
             this.EntityName = name;
         }
 
-        public object Pickup(ILetter letter)
+        public object Pickup(ILetter letter)  // handle the incoming message
         {
             Console.WriteLine($"{this.EntityName} received message from {letter.Sender}: {letter.Title}, {letter.Content}");
             return null;

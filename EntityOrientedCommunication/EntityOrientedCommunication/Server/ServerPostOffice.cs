@@ -60,9 +60,7 @@ namespace EntityOrientedCommunication.Server
         #region field
         private ServerUser owner;
 
-        private InitializedDictionary<LetterType, List<LetterInfo>> dictlLetterTypeAndInBox;
-
-        private Queue<LetterInfo> popQ;
+        private List<LetterInfo> popList;
 
         private List<LetterInfo> retardList;
 
@@ -84,9 +82,8 @@ namespace EntityOrientedCommunication.Server
         {
             this.owner = owner;
             this.dispatcherMutex = new Mutex();
-            this.popQ = new Queue<LetterInfo>();
-            dictlLetterTypeAndInBox = new InitializedDictionary<LetterType, List<LetterInfo>>(
-                t => new List<LetterInfo>(1), 2);
+            this.popList = new List<LetterInfo>();
+            this.retardList = new List<LetterInfo>();
         }
         #endregion
 
@@ -94,7 +91,9 @@ namespace EntityOrientedCommunication.Server
         /// <summary>
         /// push the letter into this postoffice for transfering to remote computer
         /// </summary>
-        /// <param name="info"></param>
+        /// <param name="letter"></param>
+        /// <param name="senderInfo"></param>
+        /// <param name="recipientInfo"></param>
         public virtual void Push(EMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
         {
             var info = new LetterInfo(letter, senderInfo, recipientInfo);
@@ -111,9 +110,19 @@ namespace EntityOrientedCommunication.Server
                 }
             }
 
-            lock (dictlLetterTypeAndInBox)
+            if (info.letter.LetterType == LetterType.Retard)
             {
-                dictlLetterTypeAndInBox[info.letter.LetterType].Add(info);
+                lock (retardList)
+                {
+                    retardList.Add(info);  // append to retard list
+                }
+            }
+            else
+            {
+                lock (popList)  // append to pop queue
+                {
+                    popList.Add(info);
+                }
             }
         }
 
@@ -124,15 +133,28 @@ namespace EntityOrientedCommunication.Server
         public void Pull(string letterTitlePattern)
         {
             var regex = new Regex(letterTitlePattern);
-            lock (dictlLetterTypeAndInBox)
+            lock (retardList)
             {
-                foreach (var info in dictlLetterTypeAndInBox.Values.SelectMany(v => v))
+                var copyList = new List<LetterInfo>(retardList);  // copy list
+                retardList.Clear();  // reset
+
+                foreach (var info in copyList)
                 {
                     if (info.letter.LetterType == LetterType.Retard)
                     {
                         var bMatch = regex.IsMatch(info.letter.Title);
 
-                        if (bMatch) info.letter.LetterType = LetterType.Normal;  // set type to normal for sending
+                        if (bMatch)
+                        {
+                            lock (popList)
+                            {
+                                popList.Add(info);  // put into pop queue
+                            }
+                        }
+                        else  // none-match
+                        {
+                            retardList.Add(info);  // put back
+                        }
                     }
                 }
             }
@@ -180,32 +202,23 @@ namespace EntityOrientedCommunication.Server
         {
             this.owner = null;
             this.dispatcher = null;
-            this.dictlLetterTypeAndInBox = null;
+            this.popList = null;
+            this.retardList = null;
             this.currentPopingThread.stopped = true;  // stop the thread
         }
 
         public override string ToString()
         {
-            return $"{owner}'s postoffice，{dictlLetterTypeAndInBox.Values.Sum(v => v.Count)} unread.";
+            return $"{owner}'s postoffice，{popList.Count + retardList.Count} unread.";
         }
         #endregion
 
         #region private
         private void DiscardRealTimeLetters()
         {
-            lock (dictlLetterTypeAndInBox)
+            lock (popList)
             {
-                foreach (var kv in dictlLetterTypeAndInBox.ToArray())
-                {
-                    var rtype = kv.Key;
-                    var inBox = kv.Value;
-
-                    inBox.RemoveAll(l => l.letter.LetterType == LetterType.RealTime);
-                    if (inBox.Count == 0)
-                    {
-                        dictlLetterTypeAndInBox.Remove(rtype);
-                    }
-                }
+                popList.RemoveAll(info => info.letter.LetterType == LetterType.RealTime);
             }
         }
 
@@ -236,14 +249,15 @@ namespace EntityOrientedCommunication.Server
             currentPopingThread = new ThreadControl(__threadPop);
         }
 
-        private List<LetterInfo> Pop(LetterType letterType, List<string> receiverTypeFullNames)
+        private List<LetterInfo> Pop(List<string> receiverTypeFullNames)
         {
             List<LetterInfo> list;
-            lock (dictlLetterTypeAndInBox)
+            lock (popList)
             {
-                list = dictlLetterTypeAndInBox[letterType].ToList();
+                list = popList.ToList();  // copy
+                popList.Clear();
             }
-            var popInfos = new List<LetterInfo>();
+            var popedInfos = new List<LetterInfo>();
 
             foreach (var letterInfo in list)
             {
@@ -264,15 +278,23 @@ namespace EntityOrientedCommunication.Server
 
                 if (intersection.Count > 0)
                 {
-                    letterInfo.recipient = new MailRouteInfo(letterInfo.recipient.UserName, remain);
-                    var newRecipInfo = new MailRouteInfo(letterInfo.recipient.UserName, intersection);
+                    letterInfo.recipient = new MailRouteInfo(letterInfo.recipient.UserName, remain);  // change the recipient info to remain
+                    var newRecipInfo = new MailRouteInfo(letterInfo.recipient.UserName, intersection);  // create a new letter info with recipient of 'intersection'
                     var popInfo = new LetterInfo(letterInfo, newRecipInfo);
 
-                    popInfos.Add(popInfo);
+                    popedInfos.Add(popInfo);
+                }
+
+                if (remain.Count > 0)  // part of letter was not poped
+                {
+                    lock (popList)
+                    {
+                        popList.Add(letterInfo);  // put residue back
+                    }
                 }
             }
 
-            return popInfos;
+            return popedInfos;
         }
 
         private void __threadPop(object obj)  // mail poper
@@ -281,17 +303,14 @@ namespace EntityOrientedCommunication.Server
 
             while (IsActivated && !control.stopped)
             {
-                // mail management
-                List<LetterInfo> letterInfos = new List<LetterInfo>(8);
-
+                // pop
+                List<LetterInfo> letterInfos;
                 lock (registeredReceiverEntityNames)
                 {
-                    letterInfos.AddRange(this.Pop(LetterType.RealTime, registeredReceiverEntityNames));
-                    letterInfos.AddRange(this.Pop(LetterType.EmergencyGet, registeredReceiverEntityNames));
-                    letterInfos.AddRange(this.Pop(LetterType.Normal, registeredReceiverEntityNames));
-                    letterInfos.AddRange(this.Pop(LetterType.Emergency, registeredReceiverEntityNames));
+                    letterInfos = this.Pop(registeredReceiverEntityNames);
                 }
-                // pop
+
+                // dispatch
                 dispatcherMutex.WaitOne();
                 foreach (var info in letterInfos.OrderBy(info => info.timeStamp))
                 {
