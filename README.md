@@ -2,14 +2,14 @@
 A C/S framework library that allows object2object communication based on TCP/IP.
 
 ## 0.Quick Start
-Assume there are 2 objects **A** and **B** on different computers, now they need to communication with each other.
+Assume there are 2 objects **A** and **B** on different computers, now they need to send message to each other.
 
 - - -
 
 ### 0.1 Server Console
 Firstly we need to create a server console application, the code of the **Mail(string[])** is shown as follwing.
 
-<pre><code class='language-cs'>
+```c#
 using System.Threading;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Server;
@@ -33,7 +33,7 @@ namespace ServerDemo
         }
     }
 }
-</code></pre>
+```
 
 Now the code of server program is done, we will get a server execution file after the code is compiled, execute the file to run the server.
 
@@ -41,9 +41,9 @@ Now the code of server program is done, we will get a server execution file afte
 
 ### 0.2 Client Console
 
-Similiar to section 0.1, we need to create a client console application.Then declare a class that implements the interface named **IEntity** in the application.To make this quick start conciser, suppose the objects **A** and **B** are of same type named **SignalStation**.
+Similiar to section 0.1, we need to create a client console application. Then declare a class that implements the interface named **IEntity** in the application.To make this quick start conciser, suppose the objects **A** and **B** are of same type named **SignalStation**.
 
-<pre><code class='language-cs'>
+```c#
 using EntityOrientedCommunication;
 using System;
 
@@ -66,11 +66,11 @@ namespace ClientDemo
         }
     }
 }
-</code></pre>
+```
 
 Then code the **Mail(string[])** function of client program.
 
-<pre><code class='language-cs'>
+```c#
 using EntityOrientedCommunication.Client;
 using System;
 
@@ -101,14 +101,14 @@ namespace ClientDemo
         }
     }
 }
-</code></pre>
+```
 
-Certainly the code block 1 and 2 could be put at two diffrenct applications, and these two applications could run on different computers. Just make them point to the same server if you want to connect them.
+Certainly the code block 1 and 2 could be put at two diffrenct applications, and the two applications could run on different computers. Just make the agents point to same server if you want to connect the objects.
 
 The execution result of the client console seems like following.
 
-![](./.img/client_console_snapshot.png)
+![](./.img/client_console_snapshot.png "Client console execution result")
 
 And similiar the server console is.
 
-![](./.img/server_console_snapshot.png)
+![](./.img/server_console_snapshot.png "Server console execution result")
