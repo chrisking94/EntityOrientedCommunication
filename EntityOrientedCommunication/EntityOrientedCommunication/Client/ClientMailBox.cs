@@ -26,7 +26,7 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region field
-        private IMailReceiver receiver;
+        private IEntity receiver;
 
         private ClientPostOffice postoffice;
 
@@ -35,7 +35,7 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region constructor
-        internal ClientMailBox(IMailReceiver receiver, ClientPostOffice office)
+        internal ClientMailBox(IEntity receiver, ClientPostOffice office)
         {
             if (receiver.EntityName == null)
             {

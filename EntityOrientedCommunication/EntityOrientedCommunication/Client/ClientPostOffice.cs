@@ -80,7 +80,7 @@ namespace EntityOrientedCommunication.Client
         /// </summary>
         /// <param name="receiver"></param>
         /// <returns></returns>
-        public ClientMailBox Register(IMailReceiver receiver)
+        public ClientMailBox Register(IEntity receiver)
         {
             if (receiver.EntityName == null)
             {

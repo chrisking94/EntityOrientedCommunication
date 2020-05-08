@@ -15,7 +15,7 @@ namespace EntityOrientedCommunication.Server
         #region property
         public string Name { get; }
 
-        public ServerMailCenter UserManager { get; }
+        public ServerMailCenter MailCenter { get; }
 
         public TimeBlock Now { get; }
 
@@ -54,12 +54,12 @@ namespace EntityOrientedCommunication.Server
             this.IP = ip;
             this.Port = port;
 
-            this.UserManager = new ServerMailCenter(this);
+            this.MailCenter = new ServerMailCenter(this);
             this.Now = new TimeBlock();
             this.LocalClient = new ClientAgentSimulator();
 
             // register local client user
-            this.UserManager.Register(this.LocalClient.ServerSimulator.SUser);
+            this.MailCenter.Register(this.LocalClient.ServerSimulator.SUser);
         }
         #endregion
 
@@ -85,7 +85,7 @@ namespace EntityOrientedCommunication.Server
             Console.WriteLine($"thread pool: {nWorkerThreads} worker threads, {nCompletionPortThreads} completion port threads.");
 
             // user management system
-            Console.WriteLine($"{this.UserManager.Count} user(s) registered.");
+            Console.WriteLine($"{this.MailCenter.Count} user(s) registered.");
 
             // transaction pool, listen error event, register some transactions
             transactionPool.TransactionErrorEvent += TransactionErrorHandler;

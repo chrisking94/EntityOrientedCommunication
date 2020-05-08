@@ -167,17 +167,14 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// pull retard letters with determined StatusCode
+        /// pull retard letters which have the given pattern of title 
         /// </summary>
-        /// <param name="letterStatus"></param>
-        public void Pull(StatusCode letterStatus)
+        /// <param name="letterTitlePattern">regex pattern</param>
+        public void Pull(string letterTitlePattern)
         {
             CheckLogin();
 
-            var msg = new EMObject<ObjectPatternSet>(GetEnvelope(),
-                new ObjectPatternSet(
-                    new OPSinglePropertyFunction(nameof(EMLetter.Status), nameof(Enum.HasFlag), letterStatus)
-                    ));
+            var msg = new EMText(GetEnvelope(), letterTitlePattern);
 
             var reply = Request(StatusCode.Pull | StatusCode.Letter, msg);
 

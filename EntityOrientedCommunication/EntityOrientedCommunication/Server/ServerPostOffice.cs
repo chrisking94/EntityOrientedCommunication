@@ -15,6 +15,7 @@ using EntityOrientedCommunication.Mail;
 using System.Threading;
 using EntityOrientedCommunication.Messages;
 using EntityOrientedCommunication;
+using System.Text.RegularExpressions;
 
 namespace EntityOrientedCommunication.Server
 {
@@ -61,6 +62,10 @@ namespace EntityOrientedCommunication.Server
 
         private InitializedDictionary<LetterType, List<LetterInfo>> dictlLetterTypeAndInBox;
 
+        private Queue<LetterInfo> popQ;
+
+        private List<LetterInfo> retardList;
+
         private IMailDispatcher dispatcher;
 
         /// <summary>
@@ -79,7 +84,7 @@ namespace EntityOrientedCommunication.Server
         {
             this.owner = owner;
             this.dispatcherMutex = new Mutex();
-
+            this.popQ = new Queue<LetterInfo>();
             dictlLetterTypeAndInBox = new InitializedDictionary<LetterType, List<LetterInfo>>(
                 t => new List<LetterInfo>(1), 2);
         }
@@ -113,18 +118,19 @@ namespace EntityOrientedCommunication.Server
         }
 
         /// <summary>
-        /// change the type of letters which satisfies the specified pattern to 'Normal' for incoming transmission
+        /// change the 'LetterType' of letters whose title meets the specified pattern to 'Normal' to trigger transmission
         /// </summary>
-        /// <param name="patterns"></param>
-        public void Pull(ObjectPatternSet patterns)
+        /// <param name="letterTitlePattern"></param>
+        public void Pull(string letterTitlePattern)
         {
+            var regex = new Regex(letterTitlePattern);
             lock (dictlLetterTypeAndInBox)
             {
                 foreach (var info in dictlLetterTypeAndInBox.Values.SelectMany(v => v))
                 {
                     if (info.letter.LetterType == LetterType.Retard)
                     {
-                        var bMatch = patterns.All(info);
+                        var bMatch = regex.IsMatch(info.letter.Title);
 
                         if (bMatch) info.letter.LetterType = LetterType.Normal;  // set type to normal for sending
                     }
@@ -295,7 +301,10 @@ namespace EntityOrientedCommunication.Server
                     }
                     catch
                     {
-                        this.Push(info.letter, info.sender, info.recipient);  // try to resend
+                        if (info.letter.LetterType != LetterType.RealTime)  // ignore 'RealTime' failure
+                        {
+                            this.Push(info.letter, info.sender, info.recipient);  // try to resend
+                        }
                     }
                 }
                 dispatcherMutex.ReleaseMutex();

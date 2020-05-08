@@ -18,7 +18,7 @@ namespace EntityOrientedCommunication
     /// <summary>
     /// mail receiver
     /// </summary>
-    public interface IMailReceiver
+    public interface IEntity
     {
         /// <summary>
         /// use for routing, the route info is likes 'EntityName'@'UserName'

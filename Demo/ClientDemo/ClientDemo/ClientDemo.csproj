@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SignalStation.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\EntityOrientedCommunication\EntityOrientedCommunication\EntityOrientedCommunication.csproj">

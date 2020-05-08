@@ -11,7 +11,7 @@ namespace EntityOrientedCommunication.Server
     /// <summary>
     /// user management, mail route
     /// </summary>
-    public class ServerMailCenter
+    public sealed class ServerMailCenter
     {
         #region data
         #region property
@@ -24,6 +24,8 @@ namespace EntityOrientedCommunication.Server
         private ReaderWriterLockSlim rwlsDictName2User;
 
         private Server server;
+
+        private Router router;
         #endregion
         #endregion
 
@@ -34,6 +36,7 @@ namespace EntityOrientedCommunication.Server
             rwlsDictName2User = new ReaderWriterLockSlim();
 
             this.server = server;
+            this.router = new Router();
         }
         #endregion
 
@@ -122,6 +125,11 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region EOC
+        public void SetRouter(Router router)
+        {
+            this.router = router;
+        }
+
         /// <summary>
         /// push the letter into corresponding postoffice
         /// </summary>
@@ -129,26 +137,11 @@ namespace EntityOrientedCommunication.Server
         /// <returns>error message, null if there is no error</returns>
         internal string Deliver(EMLetter letter)
         {
-            var allRecipientInfos = new List<MailRouteInfo>();
             var sInfo = MailRouteInfo.Parse(letter.Sender)[0];
-
-            foreach (var rInfo in MailRouteInfo.Parse(letter.Recipient))
-            {
-                if (rInfo.UserName.ToLower() == "all")  // to all,  broadcast
-                {
-                    foreach (var oprName in server.UserManager.GetAllUserNames())
-                    {
-                        if (oprName != sInfo.UserName)  // sender is not included
-                        {
-                            allRecipientInfos.Add(new MailRouteInfo(oprName, rInfo.ReceiverEntityNames));
-                        }
-                    }
-                }
-                else
-                {
-                    allRecipientInfos.Add(rInfo);
-                }
-            }
+            // routing
+            rwlsDictName2User.EnterReadLock();
+            var allRecipientInfos = this.router.RouteRecipient(letter, this.dictName2User.Values);
+            rwlsDictName2User.ExitReadLock();
             allRecipientInfos = MailRouteInfo.Format(allRecipientInfos);
             var notExistsUserRouteInfos = allRecipientInfos.Where(info => !this.Contains(info.UserName)).ToList();
 

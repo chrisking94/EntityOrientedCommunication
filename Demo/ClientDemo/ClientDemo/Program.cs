@@ -1,54 +1,28 @@
-﻿using EntityOrientedCommunication;
-using EntityOrientedCommunication.Client;
-using EntityOrientedCommunication.Mail;
+﻿using EntityOrientedCommunication.Client;
 using System;
 
-namespace TAPACSTest
+namespace ClientDemo
 {
-    class ObjectA : IMailReceiver
-    {
-        public string EntityName => "ObjA";
-
-        public object Pickup(ILetter letter)
-        {
-            Console.WriteLine($"{letter.Content}");
-            return null;
-        }
-    }
-
-    class ObjectB : IMailReceiver
-    {
-        public string EntityName => "ObjB";
-
-        public object Pickup(ILetter letter)
-        {
-            Console.WriteLine($"--------------------------{letter.Title}");
-            //return null;
-
-            return "this message is from B, the item has been received";
-        }
-    }
-
     class Program
     {
         static void Main(string[] args)
         {
-            
-            var agent1 = new ClientAgent("127.0.0.1", 1350);
-            agent1.Login("user1", "", 10000);
+            /****** A@Mary START ******/  // Code block 1
+            var agent1 = new ClientAgent("127.0.0.1", 1350);  // create a client agent with specified server IP and port
+            agent1.Login("Mary", "", 10000);  // login with account 'Mary' without password
+            var objA = new SignalStation("A");  // create a 'SignalStation' instance named 'A'
+            var boxA = agent1.PostOffice.Register(objA);  // register a mailbox for 'A' to grant it to communicate with other entities
+            /****** A@Mary END ******/
+
+            /****** B@Tom START ******/  // Code block 2
             var agent2 = new ClientAgent("127.0.0.1", 1350);
-            agent2.Login("user2", "", 10000);
+            agent2.Login("Tom", "", 10000);
+            var objB = new SignalStation("B");
+            var boxB = agent2.PostOffice.Register(objB);
+            /****** B@Tom END ******/
 
-            var objA = new ObjectA();
-            var box1 = agent1.PostOffice.Register(objA);
-
-            var objB = new ObjectB();
-            var box2 = agent2.PostOffice.Register(objB);
-
-
-            //var obj = box1.Get("ObjB@user2", "hello objB", null);
-            var obj = box1.Get("entityA@server", "hello objB", null);
-
+            // 'B' send a message to 'A'
+            boxB.Send("A@Mary", "hello A!", "put the content here.");
 
             Console.ReadKey();
         }

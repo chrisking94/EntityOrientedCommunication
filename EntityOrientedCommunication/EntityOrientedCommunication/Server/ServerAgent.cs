@@ -68,9 +68,9 @@ namespace EntityOrientedCommunication.Server
                 {
                     msg = new EMError(msg, $"'{login.Username}' has logged in，replicated logins are forbidden.", ErrorCode.RedundantLogin);
                 }
-                else if (server.UserManager.Contains(login.Username))
+                else if (server.MailCenter.Contains(login.Username))
                 {
-                    var user = server.UserManager.GetUser(login.Username, login.Password);
+                    var user = server.MailCenter.GetUser(login.Username, login.Password);
 
                     if (user != null)
                     {
@@ -114,20 +114,20 @@ namespace EntityOrientedCommunication.Server
                 {
                     try
                     {
-                        var pull = msg as EMObject<ObjectPatternSet>;
-                        SUser.PostOffice.Pull(pull.Object);
+                        var pull = msg as EMText;
+                        SUser.PostOffice.Pull(pull.Text);
                         msg = new EMessage(msg, StatusCode.Ok);
                     }
                     catch (Exception ex)
                     {
-                        msg = new EMError(msg, $"unable to perform patterset match：{ex.Message}");
+                        msg = new EMError(msg, $"unable to perform pull action, detail：{ex.Message}");
                     }
                 }
                 else
                 {
                     var letter = msg as EMLetter;
 
-                    var error = server.UserManager.Deliver(letter);
+                    var error = server.MailCenter.Deliver(letter);
 
                     if (error != null)  // error
                     {
