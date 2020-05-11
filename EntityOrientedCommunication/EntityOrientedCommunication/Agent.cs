@@ -172,12 +172,11 @@ namespace EntityOrientedCommunication
 
         protected void RestSocket(Socket newSocket)
         {
-            rwlsSocket.EnterUpgradeableReadLock();  // enter upgrade lock
+            rwlsSocket.EnterWriteLock();  // enter write lock
 
             // dispose the old socket
             if (socket != null)
             {
-                rwlsSocket.EnterWriteLock();  // enter write lock
                 try
                 {
                     if (socket.Connected)  // close socket
@@ -186,15 +185,14 @@ namespace EntityOrientedCommunication
                     }
                     socket.Close();
                 }
-                finally
+                catch
                 {
-                    rwlsSocket.ExitWriteLock();  // exit write lock
+                    // pass
                 }
             }
-
             // upgrade field to new socket
             socket = newSocket;
-            rwlsSocket.ExitUpgradeableReadLock();  // exit upgrade lock
+            rwlsSocket.ExitWriteLock();  // exit write lock
         }
 
         protected ThreadControl GetControl(ThreadType threadType)
@@ -218,10 +216,7 @@ namespace EntityOrientedCommunication
         /// <returns></returns>
         protected EMessage Request(StatusCode status, EMessage msg, int timeout = -1)
         {
-            msg.Status |= status | StatusCode.Request;
-            if (timeout == -1) timeout = this.timeout;
-            var tc = SetWaitFlag(msg, timeout);
-            SendMessage(msg);
+            var tc = this.AsyncRequest(status, msg, timeout);
             if (!tc.WaitReply())
             {
                 throw new TimeoutException($"request timeout: {msg}");

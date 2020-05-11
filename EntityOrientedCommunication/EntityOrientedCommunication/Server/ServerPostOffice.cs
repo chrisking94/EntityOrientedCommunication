@@ -47,7 +47,7 @@ namespace EntityOrientedCommunication.Server
         }
     }
 
-    internal class ServerPostOffice
+    internal sealed class ServerPostOffice
     {
         #region data
         #region property
@@ -94,7 +94,7 @@ namespace EntityOrientedCommunication.Server
         /// <param name="letter"></param>
         /// <param name="senderInfo"></param>
         /// <param name="recipientInfo"></param>
-        public virtual void Push(EMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
+        internal void Push(EMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
         {
             var info = new LetterInfo(letter, senderInfo, recipientInfo);
 
@@ -110,19 +110,28 @@ namespace EntityOrientedCommunication.Server
                 }
             }
 
-            if (info.letter.LetterType == LetterType.Retard)
+            switch (info.letter.LetterType)
             {
-                lock (retardList)
-                {
-                    retardList.Add(info);  // append to retard list
-                }
-            }
-            else
-            {
-                lock (popList)  // append to pop queue
-                {
-                    popList.Add(info);
-                }
+                case LetterType.Retard:
+                    lock (retardList)
+                    {
+                        retardList.Add(info);  // append to retard list
+                    }
+                    break;
+                case LetterType.Emergency:
+                case LetterType.EmergencyGet:
+                    {
+                        this.dispatcherMutex.WaitOne();
+                        this.dispatcher.Dispatch(letter);  // online dispatch
+                        this.dispatcherMutex.ReleaseMutex();
+                    }
+                    break;
+                default:
+                    lock (popList)  // append to pop queue
+                    {
+                        popList.Add(info);
+                    }
+                    break;
             }
         }
 

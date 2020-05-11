@@ -21,7 +21,7 @@ namespace EntityOrientedCommunication
     public interface IEntity
     {
         /// <summary>
-        /// use for routing, the route info is likes 'EntityName'@'UserName'
+        /// used for routing, this property's value is significative only when registering the entity
         /// </summary>
         string EntityName { get; }
 

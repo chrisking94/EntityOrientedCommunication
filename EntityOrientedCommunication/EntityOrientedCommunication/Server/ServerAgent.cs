@@ -110,7 +110,7 @@ namespace EntityOrientedCommunication.Server
             }
             else if (msg.HasFlag(StatusCode.Letter))
             {
-                if (msg.HasFlag(StatusCode.Pull))
+                if (msg.HasFlag(StatusCode.Pull))  // pull retard letters
                 {
                     try
                     {
@@ -123,19 +123,18 @@ namespace EntityOrientedCommunication.Server
                         msg = new EMError(msg, $"unable to perform pull action, detail：{ex.Message}");
                     }
                 }
-                else
+                else  // push letter
                 {
                     var letter = msg as EMLetter;
 
-                    var error = server.MailCenter.Deliver(letter);
-
-                    if (error != null)  // error
+                    try
                     {
-                        msg = new EMError(msg, error);
-                    }
-                    else
-                    {
+                        server.MailCenter.Deliver(letter);
                         msg = new EMessage(msg, StatusCode.Ok);
+                    }
+                    catch (Exception ex)
+                    {
+                        msg = new EMError(msg, ex.Message);
                     }
                 }
             }

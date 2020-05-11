@@ -135,7 +135,7 @@ namespace EntityOrientedCommunication.Server
         /// </summary>
         /// <param name="letter"></param>
         /// <returns>error message, null if there is no error</returns>
-        internal string Deliver(EMLetter letter)
+        internal void Deliver(EMLetter letter)
         {
             var sInfo = MailRouteInfo.Parse(letter.Sender)[0];
             // routing
@@ -149,13 +149,13 @@ namespace EntityOrientedCommunication.Server
             {  // check recipient
                 if (allRecipientInfos.Count > 1)
                 {
-                    return $"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.";
+                    throw new Exception($"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.");
                 }
             }
 
             if (notExistsUserRouteInfos.Count > 0)
             {
-                return $"user '{string.Join("; ", notExistsUserRouteInfos.Select(info => info.UserName).ToArray())}' not exists，faild to send letter";  // operation failed
+                throw new Exception($"user '{string.Join("; ", notExistsUserRouteInfos.Select(info => info.UserName).ToArray())}' not exists，faild to send letter");  // operation failed
             }
 
             if (letter.LetterType == LetterType.Emergency ||
@@ -182,7 +182,7 @@ namespace EntityOrientedCommunication.Server
                 }
                 if (offlineOprRouteInfos.Count > 0)
                 {
-                    return $"entity '{MailRouteInfo.ToLiteral(offlineOprRouteInfos)}' is not online, falid to send emergency letter.";
+                    throw new Exception($"entity '{MailRouteInfo.ToLiteral(offlineOprRouteInfos)}' is not online, falid to send emergency letter.");
                 }
             }
 
@@ -191,8 +191,6 @@ namespace EntityOrientedCommunication.Server
                 var recipientOpr = this.GetUser(rInfo.UserName);
                 recipientOpr.PostOffice.Push(letter, sInfo, rInfo);
             }
-
-            return null;  // succeeded
         }
         #endregion
 

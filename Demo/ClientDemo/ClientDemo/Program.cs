@@ -22,7 +22,7 @@ namespace ClientDemo
             /****** B@Tom END ******/
 
             // 'B' send a message to 'A'
-            boxB.Send("A@Mary", "hello A!", "put the content here.");
+            boxB.Send("A@Mary", "hello A!", "put the content here.", EntityOrientedCommunication.LetterType.EmergencyGet);
 
             Console.ReadKey();
         }

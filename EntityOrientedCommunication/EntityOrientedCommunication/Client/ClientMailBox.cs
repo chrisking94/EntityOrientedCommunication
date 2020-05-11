@@ -199,7 +199,7 @@ namespace EntityOrientedCommunication.Client
                 feedback = ex.Message;
             }
             var feedbackType = letter.LetterType;
-            if (feedbackType == LetterType.EmergencyGet) feedbackType = LetterType.RealTime;
+            if (feedbackType == LetterType.EmergencyGet) feedbackType = LetterType.Normal;
 
 
             if (feedback != null)

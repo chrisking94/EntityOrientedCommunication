@@ -59,6 +59,10 @@ namespace EntityOrientedCommunication.Client
 
             this.transPool = new TransactionPool();
             this.transPool.Register(Transaction_ConnectionMonitor, 10, "ConnectionMonitor");
+            this.transPool.TransactionErrorEvent += (object sender, TransactionErrorArgs args) =>
+            {
+                throw new Exception($"transaction [{args.transaction.Name}]: {args.exception.Message}");
+            };
         }
         #endregion
 
