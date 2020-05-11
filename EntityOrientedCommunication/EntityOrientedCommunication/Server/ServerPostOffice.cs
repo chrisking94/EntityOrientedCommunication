@@ -118,14 +118,6 @@ namespace EntityOrientedCommunication.Server
                         retardList.Add(info);  // append to retard list
                     }
                     break;
-                case LetterType.Emergency:
-                case LetterType.EmergencyGet:
-                    {
-                        this.dispatcherMutex.WaitOne();
-                        this.dispatcher.Dispatch(letter);  // online dispatch
-                        this.dispatcherMutex.ReleaseMutex();
-                    }
-                    break;
                 default:
                     lock (popList)  // append to pop queue
                     {
@@ -327,11 +319,23 @@ namespace EntityOrientedCommunication.Server
                     {
                         dispatcher.Dispatch(info.letter);
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         if (info.letter.LetterType != LetterType.RealTime)  // ignore 'RealTime' failure
                         {
-                            this.Push(info.letter, info.sender, info.recipient);  // try to resend
+                            if (info.letter.LetterType == LetterType.Emergency ||  // report an error to sender if emergency letter was dispatched with failure
+                                info.letter.LetterType == LetterType.EmergencyGet)
+                            {
+                                this.owner.MailCenter.Deliver(new EMLetter(info.letter.Sender,
+                                    "ServerPostOffice@server", "error",
+                                    $"unable to dispatch emergency letter, detail: {ex.Message}",
+                                    LetterType.Normal,
+                                    info.letter.Serial));
+                            }
+                            else
+                            {
+                                this.Push(info.letter, info.sender, info.recipient);  // try to resend
+                            }
                         }
                     }
                 }

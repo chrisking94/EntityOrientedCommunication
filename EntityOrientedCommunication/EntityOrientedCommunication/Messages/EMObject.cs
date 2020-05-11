@@ -118,6 +118,7 @@ namespace EntityOrientedCommunication.Messages
         {
             _objJson = copyFrom._objJson;
             _object = copyFrom._object;
+            this.bObjectRecovered = copyFrom.bObjectRecovered;
         }
         #endregion
 

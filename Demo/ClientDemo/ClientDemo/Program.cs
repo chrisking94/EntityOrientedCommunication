@@ -7,6 +7,8 @@ namespace ClientDemo
     {
         static void Main(string[] args)
         {
+            __clientTest.__main__();
+
             /****** A@Mary START ******/  // Code block 1
             var agent1 = new ClientAgent("127.0.0.1", 1350);  // create a client agent with specified server IP and port
             agent1.Login("Mary", "", 10000);  // login with account 'Mary' without password

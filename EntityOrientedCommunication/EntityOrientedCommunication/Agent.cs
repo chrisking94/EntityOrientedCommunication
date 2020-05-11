@@ -100,7 +100,7 @@ namespace EntityOrientedCommunication
         /// </summary>
         protected Agent()
         {
-            ClientName = "";
+            ClientName = "localhost";
             TeleClientName = "";
 
             dictMsgIdAndTCounter = new Dictionary<uint, TCounter>(8);

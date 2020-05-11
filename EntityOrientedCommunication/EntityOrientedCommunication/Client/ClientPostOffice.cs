@@ -189,7 +189,7 @@ namespace EntityOrientedCommunication.Client
                 // send to local-entity
                 var copy = new EMLetter(letter);
                 copy.Recipient = localRouteInfo.ToLiteral();
-                Pickup(letter);
+                Pickup(copy);
             }
         }
 
