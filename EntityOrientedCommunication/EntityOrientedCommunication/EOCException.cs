@@ -18,7 +18,7 @@ namespace EntityOrientedCommunication
         MessageProcessingFailed,
     }
 
-    public class TException : Exception
+    public class EOCException : Exception
     {
         #region data
         #region property
@@ -32,13 +32,13 @@ namespace EntityOrientedCommunication
         #endregion
 
         #region constructor
-        public TException(Exception exp, TExceptionType exceptionType = TExceptionType.Default, object tag = null) : base("TException", exp)
+        public EOCException(Exception exp, TExceptionType exceptionType = TExceptionType.Default, object tag = null) : base("TException", exp)
         {
             this.ExpceptionType = exceptionType;
             this.Tag = tag;
         }
 
-        public TException(string msg, TExceptionType exceptionType = TExceptionType.Default) : base(msg)
+        public EOCException(string msg, TExceptionType exceptionType = TExceptionType.Default) : base(msg)
         {
             ExpceptionType = exceptionType;
         }

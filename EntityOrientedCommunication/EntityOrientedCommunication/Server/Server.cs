@@ -149,17 +149,6 @@ namespace EntityOrientedCommunication.Server
             return $"{username}{randPart}";
         }
 
-        internal void BroadCast(EMessage msg)
-        {
-            lock (loginAgents)
-            {
-                foreach (var agent in loginAgents)
-                {
-                    agent.AsyncRequest(StatusCode.None, msg);
-                }
-            }
-        }
-
         private void __listen()
         {
             for (; ; )

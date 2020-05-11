@@ -116,16 +116,6 @@ namespace EntityOrientedCommunication.Client
                 }
             }
         }
-
-        /// <summary>
-        /// set server time
-        /// </summary>
-        /// <param name="dateTime"></param>
-        public void Synchronize(DateTime dateTime)
-        {
-            var smg = new EMObject<DateTime>(GetEnvelope(), dateTime);
-            Request(StatusCode.Time | StatusCode.Push, smg);
-        }
         #endregion
 
         #region EOC
@@ -139,7 +129,7 @@ namespace EntityOrientedCommunication.Client
 
             if (reply.HasFlag(StatusCode.Denied))
             {
-                throw new TException((reply as EMText).Text);
+                throw new EOCException((reply as EMText).Text);
             }
         }
 
@@ -319,13 +309,6 @@ namespace EntityOrientedCommunication.Client
             if (msg.HasFlag(StatusCode.Letter))
             {
                 postOffice.Pickup(msg as EMLetter);
-            }
-            else if (msg.HasFlag(StatusCode.Time | StatusCode.Push))
-            {
-                if (msg is IObject<DateTime> dt)  // sync time
-                {
-                    this.Now.Set(dt.Object);
-                }
             }
 
             msg = new EMessage(msg, StatusCode.Ok);

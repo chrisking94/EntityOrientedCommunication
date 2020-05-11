@@ -153,19 +153,6 @@ namespace EntityOrientedCommunication.Server
                     msg = new EMessage(msg, StatusCode.Ok);
                 }
             }
-            else if (msg.HasFlag(StatusCode.Time))
-            {
-                if (msg.HasFlag(StatusCode.Push))  // renew time
-                {
-                    var objMsg = msg as IObject<DateTime>;
-                    // update server time
-                    this.server.Now.Set(objMsg.Object);
-                    // broadcast
-                    server.BroadCast(msg);
-
-                    msg = new EMessage(msg, StatusCode.Ok);
-                }
-            }
             else
             {
                 msg = new EMError(msg, $"current request is not supported by this server.", ErrorCode.InvalidOperation);
@@ -190,7 +177,7 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        protected override void Catch(TException exp)
+        protected override void Catch(EOCException exp)
         {
             logger.Write(LogType.FT, exp.InnerException.StackTrace);
 

@@ -406,7 +406,7 @@ namespace EntityOrientedCommunication
         /// some exceptions threw by agent are handled by this function
         /// </summary>
         /// <param name="exp"></param>
-        protected virtual void Catch(TException exp)
+        protected virtual void Catch(EOCException exp)
         {
             throw exp;
         }
@@ -514,11 +514,11 @@ namespace EntityOrientedCommunication
             {
                 if (msg == null)
                 {
-                    Catch(new TException(ex));
+                    Catch(new EOCException(ex));
                 }
                 else
                 {
-                    Catch(new TException(ex, TExceptionType.MessageProcessingFailed, msg));
+                    Catch(new EOCException(ex, TExceptionType.MessageProcessingFailed, msg));
                 }
             }
         }
@@ -632,7 +632,7 @@ namespace EntityOrientedCommunication
                 catch (Exception ex)
                 {
                     logger.Fatal("fatal error occurred in __threadListen.", ex);
-                    Catch(new TException(ex));
+                    Catch(new EOCException(ex));
                     break;
                 }
                 finally
@@ -676,7 +676,7 @@ namespace EntityOrientedCommunication
                                 }
                                 else
                                 {
-                                    Catch(new TException("transmission error, please reconnect!"));
+                                    Catch(new EOCException("transmission error, please reconnect!"));
                                 }
                                 verifyLen = 0;
                                 if (slot.Length != slotSize)
