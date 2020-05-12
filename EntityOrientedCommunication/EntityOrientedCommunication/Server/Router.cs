@@ -43,7 +43,7 @@ namespace EntityOrientedCommunication.Server
                         if (sUser.Name != sInfo.UserName &&  // sender is not included
                             sUser.IsOnline)  // online user only
                         {
-                            allRecipientInfos.Add(new MailRouteInfo(sUser.Name, rInfo.ReceiverEntityNames));
+                            allRecipientInfos.Add(new MailRouteInfo(sUser.Name, rInfo.EntityNames));
                         }
                     }
                 }

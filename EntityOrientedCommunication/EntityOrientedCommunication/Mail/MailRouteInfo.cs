@@ -22,62 +22,102 @@ namespace EntityOrientedCommunication.Mail
         #region field
         public readonly string UserName;
 
-        public List<string> ReceiverEntityNames { get; private set; }
+        public List<string> EntityNames { get; private set; }
         #endregion
         #endregion
 
         #region constructor
-        public MailRouteInfo(string username, List<string> receiverTypeFullNames)
+        public MailRouteInfo(string username, List<string> entityNames)
         {
             this.UserName = username;
-            this.ReceiverEntityNames = receiverTypeFullNames;
+            this.EntityNames = new List<string>(entityNames);
         }
 
         public MailRouteInfo(MailRouteInfo copyFrom)
         {
             this.UserName = copyFrom.UserName;
-            this.ReceiverEntityNames = new List<string>(copyFrom.ReceiverEntityNames);
+            this.EntityNames = new List<string>(copyFrom.EntityNames);
         }
 
         /// <summary>
-        /// type1@Tom;type2@Marry;type3, type4@Jerry
+        /// format: type1@Tom;type2@Marry;type3, type4@Jerry
         /// </summary>
         /// <param name="strInfo"></param>
         /// <returns></returns>
         public static List<MailRouteInfo> Parse(string strInfo)
         {
             var dictUser2Info = new Dictionary<string, MailRouteInfo>();
+            var sb = new StringBuilder(64);
+            var entityNames = new List<string>(10);
+            var userNames = new List<string>(10);
+            var parsingList = entityNames;
 
-            foreach (var line in strInfo.Split(';'))
+            for (var i = 0; i <= strInfo.Length; ++i)
             {
-                var sections = line.Split('@');
-                if (sections.Length == 2)
-                {
-                    var typeNames = ParseList(sections[0]);
+                var chr = i == strInfo.Length ? ';' : strInfo[i];  // sentinel
 
-                    foreach (var user in ParseList(sections[1]))
-                    {
-                        if(dictUser2Info.ContainsKey(user))
-                        {
-                            dictUser2Info[user].ReceiverEntityNames.AddRange(typeNames);
-                        }
-                        else
-                        {
-                            dictUser2Info[user] = new MailRouteInfo(user, typeNames);
-                        }
-                    }
-                }
-                else
+                switch(chr)
                 {
-                    return null;
+                    case ',':
+                        if (sb.Length > 0)
+                        {
+                            parsingList.Add(sb.ToString());
+                            sb.Clear();
+                        }
+                        break;
+                    case '@':  // entity@user
+                        if (sb.Length > 0)
+                        {
+                            parsingList.Add(sb.ToString());
+                            sb.Clear();
+                        }
+
+                        parsingList = userNames;  // switch to user-name mode
+                        break;
+                    case ';':  // a set of route info
+                        if (sb.Length > 0)
+                        {
+                            parsingList.Add(sb.ToString());
+                            sb.Clear();
+                        }
+
+                        // create rotue infos
+                        if (userNames.Count > 0 &&
+                            entityNames.Count > 0)
+                        {
+                            foreach (var user in userNames)
+                            {
+                                if (dictUser2Info.ContainsKey(user))
+                                {
+                                    dictUser2Info[user].EntityNames.AddRange(entityNames);
+                                }
+                                else
+                                {
+                                    dictUser2Info[user] = new MailRouteInfo(user, entityNames);
+                                }
+                            }
+                        }
+
+                        userNames.Clear();  // reset
+                        entityNames.Clear();  // reset
+                        parsingList = entityNames;  // switch to entity-name mode
+                        break;
+                    case ' ':  // white chars
+                    case '\t':
+                    case '\r':
+                    case '\n':
+                        break;  // ignore
+                    default:
+                        sb.Append(chr);
+                        break;
                 }
             }
 
             var list = dictUser2Info.Values.ToList();
 
-            foreach(var info in list)
+            foreach (var info in list)
             {
-                info.ReceiverEntityNames = info.ReceiverEntityNames.Distinct().ToList();
+                info.EntityNames = info.EntityNames.Distinct().ToList();
             }
 
             return list;
@@ -87,9 +127,14 @@ namespace EntityOrientedCommunication.Mail
         #region interface
         public string ToLiteral()
         {
-            return $"{string.Join(",", this.ReceiverEntityNames.ToArray())}@{this.UserName}";
+            return $"{string.Join(",", this.EntityNames.ToArray())}@{this.UserName}";
         }
 
+        /// <summary>
+        /// merge the duplicate route infos
+        /// </summary>
+        /// <param name="infos"></param>
+        /// <returns></returns>
         public static List<MailRouteInfo> Format(IEnumerable<MailRouteInfo> infos)
         {
             var dictUser2Info = new Dictionary<string, List<string>>();
@@ -98,11 +143,11 @@ namespace EntityOrientedCommunication.Mail
             {
                 if (dictUser2Info.ContainsKey(info.UserName))
                 {
-                    dictUser2Info[info.UserName].AddRange(info.ReceiverEntityNames);
+                    dictUser2Info[info.UserName].AddRange(info.EntityNames);
                 }
                 else
                 {
-                    var types = new List<string>(info.ReceiverEntityNames);
+                    var types = new List<string>(info.EntityNames);
                     dictUser2Info[info.UserName] = types;
                 }
             }
@@ -133,39 +178,6 @@ namespace EntityOrientedCommunication.Mail
         #endregion
 
         #region private
-        /// <summary>
-        /// list has a literal denotation likes 'a, b, c', the whitespaces are ignored.
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        private static List<string> ParseList(string str)
-        {
-            var sb = new StringBuilder(256);
-            var itemList = new List<string>();
-
-            for (var i = 0; i <= str.Length; ++i)
-            {
-                var ch = i == str.Length ? ',' : str[i];  // sentinel
-                if (char.IsWhiteSpace(ch))  // ignore
-                {
-                    // pass
-                }
-                else if (ch == ',')  // split
-                {
-                    if (sb.Length > 0)
-                    {
-                        itemList.Add(sb.ToString());
-                        sb = new StringBuilder(256);
-                    }
-                }
-                else
-                {
-                    sb.Append(ch);
-                }
-            }
-
-            return itemList;
-        }
         #endregion
     }
 }

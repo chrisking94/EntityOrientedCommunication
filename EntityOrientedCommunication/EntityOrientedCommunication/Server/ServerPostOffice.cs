@@ -65,12 +65,12 @@ namespace EntityOrientedCommunication.Server
                 List<string> offlineEntities;
                 lock (this.registeredReceiverEntityNames)
                 {
-                    offlineEntities = recipientInfo.ReceiverEntityNames.Except(registeredReceiverEntityNames).ToList();
+                    offlineEntities = recipientInfo.EntityNames.Except(registeredReceiverEntityNames).ToList();
                 }
 
                 if (letter.HasFlag(StatusCode.Post))  // Post
                 {
-                    if (offlineEntities.Count < recipientInfo.ReceiverEntityNames.Count)  // if any entity is online
+                    if (offlineEntities.Count < recipientInfo.EntityNames.Count)  // if any entity is online
                     {
                         this.Dispatch(letter, recipientInfo);
                     }
@@ -155,6 +155,10 @@ namespace EntityOrientedCommunication.Server
             copy.Recipient = recipient.ToLiteral();
 
             this.dispatcherMutex.WaitOne();
+            if (this.dispatcher == null)
+            {
+                throw new Exception($"unable to dispatch letter '{letter.Title}' to '{letter.Recipient}', the dispatcher was offline.");
+            }
             var result = this.dispatcher.Dispatch(copy);
             this.dispatcherMutex.ReleaseMutex();
 

@@ -67,7 +67,7 @@ namespace EntityOrientedCommunication
         private const byte dogFoodFlag = 0xdf;
 
         private Socket socket;
-        protected readonly ReaderWriterLockSlim rwlsSocket = new ReaderWriterLockSlim();  // the lock for field 'socket' of this agent
+        protected readonly ReaderWriterLockSlim rwlsSocket = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);  // the lock for field 'socket' of this agent
 
         private int bufferSize = 65535;
         private byte[] rbuffer;  // reception buffer
@@ -535,7 +535,6 @@ namespace EntityOrientedCommunication
                         {
                             watchDog = -1;  // time out flag
 
-                            control.AsyncSafeAbort();
                             GetControl(ThreadType.Listen).SafeAbort();
                             OnConnectionTimeout();
                             logger.Error($"{this} connection timeout.");

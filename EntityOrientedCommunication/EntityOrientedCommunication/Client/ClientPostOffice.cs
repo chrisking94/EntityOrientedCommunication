@@ -140,7 +140,7 @@ namespace EntityOrientedCommunication.Client
             var replies = new List<EMLetter>(1);
             var routeInfo = MailRouteInfo.Parse(letter.Recipient)[0];
 
-            foreach (var entityName in routeInfo.ReceiverEntityNames)
+            foreach (var entityName in routeInfo.EntityNames)
             {
                 rwlsDictName2MailBox.EnterReadLock();
                 if (dictName2MailBox.TryGetValue(entityName, out mailBox))
