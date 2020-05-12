@@ -52,41 +52,26 @@ namespace EntityOrientedCommunication.Client
         #region interface
         internal EMLetter Receive(EMLetter letter)
         {
-            var feedbackTitle = $"RE:{letter.Title}";
-            object feedback = null;
+            LetterContent feedback;
+
             try
             {
                 feedback = receiver.Pickup(letter);
-
-                if (letter.HasFlag(StatusCode.Get))  // must return a value to the sender
-                {
-                    if (feedback == null)
-                    {
-                        feedbackTitle = "error";
-                        feedback = $"entity '{this.EntityName}' did not response anything after picking up letter '{letter.Title}'";
-                    }
-                }
             }
             catch (Exception ex)  // exception report
             {
-                feedbackTitle = "error";
-                feedback = ex.Message;
+                feedback = new LetterContent("error", ex.Message, TransmissionMode.Post);
             }
-            var feedbackType = StatusCode.Post;
 
-            if (letter.HasFlag(StatusCode.Get))
+            if (feedback == null)
             {
-                if (feedback == null)
-                {
-                    return new EMLetter(letter.Sender, this.mailAdress, "OK", feedback, feedbackType, letter.GetTTL());
-                }
-                else
-                {
-                    return new EMLetter(letter.Sender, this.mailAdress, feedbackTitle, feedback, feedbackType, letter.GetTTL());
-                }
+                return null;
             }
 
-            return null;  // post
+            var fbLetter = new EMLetter(letter.Sender, this.mailAdress, feedback, letter.GetTTL());
+            fbLetter.SetEnvelope(new Envelope(letter.ID));
+
+            return fbLetter;
         }
 
         public void Post(string recipient, string title, object content, int timeout = int.MaxValue)
@@ -112,11 +97,11 @@ namespace EntityOrientedCommunication.Client
 
             var letter = new EMLetter(recipient, mailAdress, title, content, StatusCode.Get, timeout);
             
-            return postoffice.Send(letter).Content;
+            return postoffice.Send(letter)?.Content;
         }
 
         /// <summary>
-        /// reply a letter, the 'LetterType' of the reply letter is same with the <paramref name="toReply"/> letter
+        /// reply a letter, the 'LetterType' of the reply letter is same with the letter '<paramref name="toReply"/>'
         /// </summary>
         /// <param name="toReply"></param>
         /// <param name="title"></param>

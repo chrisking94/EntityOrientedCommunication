@@ -323,10 +323,17 @@ namespace EntityOrientedCommunication.Client
         {
             if (msg.HasFlag(StatusCode.Letter))
             {
-                postOffice.Pickup(msg as EMLetter);
-            }
+                msg = postOffice.Pickup(msg as EMLetter);
+                if (msg == null)
+                {
+                    msg = new EMessage(msg, StatusCode.Ok);
+                }
 
-            msg = new EMessage(msg, StatusCode.Ok);
+            }
+            else
+            {
+                msg = new EMessage(msg, StatusCode.Ok);
+            }
         }
 
         protected override void ProcessResponse(EMessage requestMsg, EMessage responseMsg)

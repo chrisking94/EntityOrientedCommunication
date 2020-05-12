@@ -24,7 +24,7 @@ namespace ClientDemo
             /****** B@Tom END ******/
 
             // 'B' send a message to 'A'
-            boxB.Send("A@Mary", "hello A!", "put the content here.");
+            boxB.Get("A@Mary", "hello A!", "put the content here.");
 
             Console.ReadKey();
         }

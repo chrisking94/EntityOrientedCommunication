@@ -340,22 +340,17 @@ namespace EntityOrientedCommunication
         private void SendRaw(byte[] bytes, int offset, int size)
         {
             rwlsSocket.EnterReadLock();  // field access lock
-            try
+            if (this.socket == null)
             {
-                for (var count = 0; offset < size && socket.Connected;)
-                {
-                    count = socket.Send(bytes, offset, size - offset, SocketFlags.None);
-                    offset += count;
-                }
+                throw new Exception($"connection {this} has been closed, failed to send bytes stream.");
             }
-            catch (SocketException se)
+
+            for (var count = 0; offset < size && socket.Connected;)
             {
-                logger.Write(LogType.ER, se.Message);
+                count = socket.Send(bytes, offset, size - offset, SocketFlags.None);
+                offset += count;
             }
-            finally
-            {
-                rwlsSocket.ExitReadLock();
-            }
+            rwlsSocket.ExitReadLock();
         }
 
         /// <summary>
@@ -575,7 +570,14 @@ namespace EntityOrientedCommunication
 
                     if (IsConnected)
                     {
-                        SendBytes(foodBag);
+                        try
+                        {
+                            SendBytes(foodBag);
+                        }
+                        catch
+                        {
+                            // pass, ignore all errors
+                        }
                     }
                 }
             }

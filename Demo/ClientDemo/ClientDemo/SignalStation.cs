@@ -18,10 +18,10 @@ namespace ClientDemo
             this.EntityName = name;
         }
 
-        public object Pickup(ILetter letter)
+        public LetterContent Pickup(ILetter letter)
         {
             Console.WriteLine($"{this.EntityName} received message from {letter.Sender}: title={letter.Title}, content={letter.Content}");
-            return null;
+            return new LetterContent("HAHAHAHA");
         }
     }
 }

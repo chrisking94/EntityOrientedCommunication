@@ -134,14 +134,6 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        internal List<ServerAgent> GetLoggedInAgents()
-        {
-            lock (loginAgents)
-            {
-                return loginAgents.Where(la => la.Token != null).ToList();
-            }
-        }
-
         internal string GenToken(string username)
         {
             var randPart = (new Random()).Next(100000, int.MaxValue).ToString();
@@ -181,7 +173,6 @@ namespace EntityOrientedCommunication.Server
             // remove
             foreach (var dead in deadList)
             {
-                Remove(dead);
                 logger.Info($"removing dead connection '{dead}'");
                 dead.Destroy();
             }

@@ -63,6 +63,13 @@ namespace EntityOrientedCommunication
             this.SetTimeout(timeout);
         }
 
+        public EMLetter(string recipient, string sender, LetterContent content, int timeout) :
+            this(recipient, sender, content.Title, content.Content,
+                content.Mode == TransmissionMode.Post ? StatusCode.Post : StatusCode.Get,
+                timeout)
+        {
+        }
+
         public EMLetter(EMLetter copyFrom) : base(copyFrom)
         {
             this.Title = copyFrom.Title;

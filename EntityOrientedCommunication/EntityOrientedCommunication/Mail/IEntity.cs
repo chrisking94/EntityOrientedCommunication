@@ -29,7 +29,7 @@ namespace EntityOrientedCommunication
         /// receive a new coming letter
         /// </summary>
         /// <param name="letter"></param>
-        /// <returns>the item which will be sent to the sender after picking up, null if nothing to return</returns>
-        object Pickup(ILetter letter);
+        /// <returns>the content which will be sent to the sender after picking up, 'null' if nothing to return</returns>
+        LetterContent Pickup(ILetter letter);
     }
 }

@@ -60,6 +60,7 @@
     <Compile Include="Facilities\QueueExtensions.cs" />
     <Compile Include="Facilities\ReaderWriterLockSlimExtensions.cs" />
     <Compile Include="Mail\ILetter.cs" />
+    <Compile Include="Mail\LetterContent.cs" />
     <Compile Include="Server\IUser.cs" />
     <Compile Include="Server\Router.cs" />
     <Compile Include="Server\Server.cs" />
