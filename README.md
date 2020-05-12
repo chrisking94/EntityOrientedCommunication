@@ -14,7 +14,7 @@ An easy-to-use C/S framework library which allows object2object communication ba
 3. [Message Routing](./.doc/chapter2.md) &nbsp;
 
 
-<a name="QuickStart"/>
+<a name="QuickStart"></a>
 ## 1.Quick Start
 Assume there are 2 objects **A** and **B** on different computers, now they need to send messages to each other.
 
