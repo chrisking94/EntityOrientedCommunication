@@ -7,11 +7,11 @@ An easy-to-use C/S framework library which allows object2object communication ba
 
 ## Table of Contents
 1. [Quick Start](#QuickStart) </br>
-   1.1 [Server Console](#section1_1) &nbsp;
-   1.2 [Client Console](#section1_2) &nbsp;
-   1.3 [Excution Results](#section1_3) &nbsp;
-2. [Intoduction](./.doc/chapter1.md) &nbsp;
-3. [Message Routing](./.doc/chapter2.md) &nbsp;
+   1.1 [Server Console](#section1_1) </br>
+   1.2 [Client Console](#section1_2) </br>
+   1.3 [Excution Results](#section1_3) </br>
+2. [Intoduction](./.doc/chapter1.md) </br>
+3. [Message Routing](./.doc/chapter2.md) </br>
 
 
 <a name="QuickStart"></a>
