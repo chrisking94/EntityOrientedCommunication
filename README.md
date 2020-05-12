@@ -11,11 +11,10 @@ An easy-to-use C/S framework library which allows object2object communication ba
    1.2 [Client Console](#section1_2)
    1.3 [Excution Results](#section1_3)
 2. [Intoduction](./.doc/chapter1.md)
-2. [Message Routing](./.doc/chapter2.md)
+3. [Message Routing](./.doc/chapter2.md)
 
 
-<a name="QuickStart"/a>
-## 1.Quick Start
+## <a name="QuickStart"/> 1.Quick Start
 Assume there are 2 objects **A** and **B** on different computers, now they need to send messages to each other.
 
 - - -
