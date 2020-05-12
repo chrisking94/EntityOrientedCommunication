@@ -19,34 +19,6 @@ using System.Text.RegularExpressions;
 
 namespace EntityOrientedCommunication.Server
 {
-    internal class LetterInfo
-    {
-        public readonly EMLetter letter;
-
-        public MailRouteInfo sender;
-
-        public MailRouteInfo recipient;
-
-        public readonly DateTime timeStamp;
-
-        public LetterInfo(EMLetter letter, MailRouteInfo sender, MailRouteInfo recipient)
-        {
-            this.letter = letter;
-            this.sender = sender;
-            this.recipient = recipient;
-            timeStamp = DateTime.Now;
-        }
-
-        internal LetterInfo(LetterInfo src, MailRouteInfo newRecipInfo)
-        {
-            this.letter = new EMLetter(newRecipInfo.ToLiteral(), src.letter.Sender,
-                        src.letter.Title, src.letter.Content, src.letter.LetterType, src.letter.Serial);
-            this.sender = src.sender;
-            this.recipient = newRecipInfo;
-            this.timeStamp = src.timeStamp;  // hold timestamp
-        }
-    }
-
     internal sealed class ServerPostOffice
     {
         #region data
@@ -60,10 +32,6 @@ namespace EntityOrientedCommunication.Server
         #region field
         private ServerUser owner;
 
-        private List<LetterInfo> popList;
-
-        private List<LetterInfo> retardList;
-
         private IMailDispatcher dispatcher;
 
         /// <summary>
@@ -72,8 +40,6 @@ namespace EntityOrientedCommunication.Server
         private Mutex dispatcherMutex;
 
         private List<string> registeredReceiverEntityNames = new List<string>(1);
-
-        private ThreadControl currentPopingThread;
         #endregion
         #endregion
 
@@ -82,8 +48,6 @@ namespace EntityOrientedCommunication.Server
         {
             this.owner = owner;
             this.dispatcherMutex = new Mutex();
-            this.popList = new List<LetterInfo>();
-            this.retardList = new List<LetterInfo>();
         }
         #endregion
 
@@ -94,69 +58,45 @@ namespace EntityOrientedCommunication.Server
         /// <param name="letter"></param>
         /// <param name="senderInfo"></param>
         /// <param name="recipientInfo"></param>
-        internal void Push(EMLetter letter, MailRouteInfo senderInfo, MailRouteInfo recipientInfo)
+        internal EMLetter Push(EMLetter letter, MailRouteInfo recipientInfo)
         {
-            var info = new LetterInfo(letter, senderInfo, recipientInfo);
-
-            if (info.letter.LetterType == LetterType.RealTime)
+            if (IsActivated)  // postoffice is activated
             {
-                if (!IsActivated) return;  // user is not on line, discard
+                List<string> offlineEntities;
                 lock (this.registeredReceiverEntityNames)
                 {
-                    if (!info.recipient.ReceiverEntityNames.Intersect(registeredReceiverEntityNames).Any())  // no entity in recipients is not online
+                    offlineEntities = recipientInfo.ReceiverEntityNames.Except(registeredReceiverEntityNames).ToList();
+                }
+
+                if (letter.HasFlag(StatusCode.Post))  // Post
+                {
+                    if (offlineEntities.Count < recipientInfo.ReceiverEntityNames.Count)  // if any entity is online
                     {
-                        return;  // discard
+                        this.Dispatch(letter, recipientInfo);
                     }
+
+                    return null;
+                }
+                else  // Get
+                {
+                    if (offlineEntities.Count > 0)
+                    {
+                        throw new Exception($"faild to send letter '{letter.Title}', entity(ies) '{string.Join(", ", offlineEntities)}@{recipientInfo.UserName}' is/are offline.");
+                    }
+
+                    return this.Dispatch(letter, recipientInfo);
                 }
             }
-
-            switch (info.letter.LetterType)
+            else  // postoffice is not activated
             {
-                case LetterType.Retard:
-                    lock (retardList)
-                    {
-                        retardList.Add(info);  // append to retard list
-                    }
-                    break;
-                default:
-                    lock (popList)  // append to pop queue
-                    {
-                        popList.Add(info);
-                    }
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// change the 'LetterType' of letters whose title meets the specified pattern to 'Normal' to trigger transmission
-        /// </summary>
-        /// <param name="letterTitlePattern"></param>
-        public void Pull(string letterTitlePattern)
-        {
-            var regex = new Regex(letterTitlePattern);
-            lock (retardList)
-            {
-                var copyList = new List<LetterInfo>(retardList);  // copy list
-                retardList.Clear();  // reset
-
-                foreach (var info in copyList)
+                if (letter.HasFlag(StatusCode.Post))
                 {
-                    if (info.letter.LetterType == LetterType.Retard)
-                    {
-                        var bMatch = regex.IsMatch(info.letter.Title);
-
-                        if (bMatch)
-                        {
-                            lock (popList)
-                            {
-                                popList.Add(info);  // put into pop queue
-                            }
-                        }
-                        else  // none-match
-                        {
-                            retardList.Add(info);  // put back
-                        }
-                    }
+                    // pass
+                    return null;
+                }
+                else  // Get
+                {
+                    throw new Exception($"unable to '{letter.GetLetterType()}' letter '{letter.Title}', target user '{recipientInfo.UserName}' is not online.");
                 }
             }
         }
@@ -185,8 +125,6 @@ namespace EntityOrientedCommunication.Server
             dispatcherMutex.WaitOne();
             this.dispatcher = dispatcher;
             dispatcherMutex.ReleaseMutex();
-
-            RestartPopingThread();
         }
 
         public void Deactivate()
@@ -196,153 +134,31 @@ namespace EntityOrientedCommunication.Server
             dispatcherMutex.ReleaseMutex();
 
             registeredReceiverEntityNames.Clear();
-            DiscardRealTimeLetters();
         }
 
         public void Destroy()
         {
             this.owner = null;
             this.dispatcher = null;
-            this.popList = null;
-            this.retardList = null;
-            this.currentPopingThread.stopped = true;  // stop the thread
         }
 
         public override string ToString()
         {
-            return $"{owner}'s postoffice，{popList.Count + retardList.Count} unread.";
+            return $"{owner}'s postoffice.";
         }
         #endregion
 
         #region private
-        private void DiscardRealTimeLetters()
+        private EMLetter Dispatch(EMLetter letter, MailRouteInfo recipient)
         {
-            lock (popList)
-            {
-                popList.RemoveAll(info => info.letter.LetterType == LetterType.RealTime);
-            }
-        }
+            var copy = new EMLetter(letter);
+            copy.Recipient = recipient.ToLiteral();
 
-        private class ThreadControl
-        {
-            public bool stopped;
+            this.dispatcherMutex.WaitOne();
+            var result = this.dispatcher.Dispatch(copy);
+            this.dispatcherMutex.ReleaseMutex();
 
-            public Thread thread;
-
-            public ThreadControl(ParameterizedThreadStart paramStart)
-            {
-                this.stopped = false;
-                this.thread = new Thread(paramStart);
-
-                this.thread.IsBackground = true;
-                this.thread.Start(this);
-            }
-        }
-
-        private void RestartPopingThread()
-        {
-            if (currentPopingThread != null)  // stop last thread
-            {
-                currentPopingThread.stopped = true;
-            }
-
-            // create new thread
-            currentPopingThread = new ThreadControl(__threadPop);
-        }
-
-        private List<LetterInfo> Pop(List<string> receiverTypeFullNames)
-        {
-            List<LetterInfo> list;
-            lock (popList)
-            {
-                list = popList.ToList();  // copy
-                popList.Clear();
-            }
-            var popedInfos = new List<LetterInfo>();
-
-            foreach (var letterInfo in list)
-            {
-                var intersection = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
-                var remain = new List<string>(letterInfo.recipient.ReceiverEntityNames.Count);
-
-                foreach (var typeStr in letterInfo.recipient.ReceiverEntityNames)
-                {
-                    if (receiverTypeFullNames.Contains(typeStr))
-                    {
-                        intersection.Add(typeStr);
-                    }
-                    else
-                    {
-                        remain.Add(typeStr);
-                    }
-                }
-
-                if (intersection.Count > 0)
-                {
-                    letterInfo.recipient = new MailRouteInfo(letterInfo.recipient.UserName, remain);  // change the recipient info to remain
-                    var newRecipInfo = new MailRouteInfo(letterInfo.recipient.UserName, intersection);  // create a new letter info with recipient of 'intersection'
-                    var popInfo = new LetterInfo(letterInfo, newRecipInfo);
-
-                    popedInfos.Add(popInfo);
-                }
-
-                if (remain.Count > 0)  // part of letter was not poped
-                {
-                    lock (popList)
-                    {
-                        popList.Add(letterInfo);  // put residue back
-                    }
-                }
-            }
-
-            return popedInfos;
-        }
-
-        private void __threadPop(object obj)  // mail poper
-        {
-            var control = obj as ThreadControl;
-
-            while (IsActivated && !control.stopped)
-            {
-                // pop
-                List<LetterInfo> letterInfos;
-                lock (registeredReceiverEntityNames)
-                {
-                    letterInfos = this.Pop(registeredReceiverEntityNames);
-                }
-
-                // dispatch
-                dispatcherMutex.WaitOne();
-                foreach (var info in letterInfos.OrderBy(info => info.timeStamp))
-                {
-                    try
-                    {
-                        dispatcher.Dispatch(info.letter);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (info.letter.LetterType != LetterType.RealTime)  // ignore 'RealTime' failure
-                        {
-                            if (info.letter.LetterType == LetterType.Emergency ||  // report an error to sender if emergency letter was dispatched with failure
-                                info.letter.LetterType == LetterType.EmergencyGet)
-                            {
-                                this.owner.MailCenter.Deliver(new EMLetter(info.letter.Sender,
-                                    "ServerPostOffice@server", "error",
-                                    $"unable to dispatch emergency letter, detail: {ex.Message}",
-                                    LetterType.Normal,
-                                    info.letter.Serial));
-                            }
-                            else
-                            {
-                                this.Push(info.letter, info.sender, info.recipient);  // try to resend
-                            }
-                        }
-                    }
-                }
-                dispatcherMutex.ReleaseMutex();
-
-                Thread.Sleep(1);
-            }
+            return result;
         }
         #endregion
     }

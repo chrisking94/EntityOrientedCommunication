@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication.Mail;
+using EntityOrientedCommunication.Messages;
 using EOCServer;
 
 namespace EntityOrientedCommunication.Server
@@ -122,6 +123,17 @@ namespace EntityOrientedCommunication.Server
             }
             rwlsDictName2User.ExitUpgradeableReadLock();
         }
+
+        public bool IsOnline(string username)
+        {
+            rwlsDictName2User.EnterReadLock();
+            ServerUser user;
+            var bOnline = dictName2User.TryGetValue(username, out user);
+            if (bOnline) bOnline = user.IsOnline;
+            rwlsDictName2User.ExitReadLock();
+
+            return bOnline;
+        }
         #endregion
 
         #region EOC
@@ -135,9 +147,8 @@ namespace EntityOrientedCommunication.Server
         /// </summary>
         /// <param name="letter"></param>
         /// <returns>error message, null if there is no error</returns>
-        internal void Deliver(EMLetter letter)
+        internal EMLetter Deliver(EMLetter letter)
         {
-            var sInfo = MailRouteInfo.Parse(letter.Sender)[0];
             // routing
             rwlsDictName2User.EnterReadLock();
             var allRecipientInfos = this.router.RouteRecipient(letter, this.dictName2User.Values);
@@ -145,11 +156,11 @@ namespace EntityOrientedCommunication.Server
             allRecipientInfos = MailRouteInfo.Format(allRecipientInfos);
             var notExistsUserRouteInfos = allRecipientInfos.Where(info => !this.Contains(info.UserName)).ToList();
 
-            if (letter.LetterType == LetterType.EmergencyGet)
+            if (letter.HasFlag(StatusCode.Get))
             {  // check recipient
                 if (allRecipientInfos.Count > 1)
                 {
-                    throw new Exception($"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.");
+                    throw new Exception($"letter of type '{nameof(StatusCode.Get)}' should not have multiple recipients.");
                 }
             }
 
@@ -158,39 +169,18 @@ namespace EntityOrientedCommunication.Server
                 throw new Exception($"user '{string.Join("; ", notExistsUserRouteInfos.Select(info => info.UserName).ToArray())}' not exists，faild to send letter");  // operation failed
             }
 
-            if (letter.LetterType == LetterType.Emergency ||
-                letter.LetterType == LetterType.EmergencyGet)
-            {  // check receiver status
-                var offlineOprRouteInfos = new List<MailRouteInfo>(allRecipientInfos.Count);
-                foreach (var recipientInfo in allRecipientInfos)
-                {
-                    var opr = this.GetUser(recipientInfo.UserName);
-                    if (opr == null)
-                    {
-                        offlineOprRouteInfos.Add(new MailRouteInfo(recipientInfo));
-                    }
-                    else
-                    {
-                        var routeInfo = new MailRouteInfo(recipientInfo.UserName,
-                            recipientInfo.ReceiverEntityNames.Where(ren => !opr.PostOffice.IsEntityOnline(ren)).ToList()
-                            );
-                        if (routeInfo.ReceiverEntityNames.Count > 0)
-                        {
-                            offlineOprRouteInfos.Add(routeInfo);
-                        }
-                    }
-                }
-                if (offlineOprRouteInfos.Count > 0)
-                {
-                    throw new Exception($"entity '{MailRouteInfo.ToLiteral(offlineOprRouteInfos)}' is not online, falid to send emergency letter.");
-                }
-            }
-
             foreach (var rInfo in allRecipientInfos)
             {
                 var recipientOpr = this.GetUser(rInfo.UserName);
-                recipientOpr.PostOffice.Push(letter, sInfo, rInfo);
+                var result = recipientOpr.PostOffice.Push(letter, rInfo);
+
+                if (letter.HasFlag(StatusCode.Get))
+                {
+                    return result;  // Get
+                }
             }
+
+            return null;  // Post, SafePost
         }
         #endregion
 

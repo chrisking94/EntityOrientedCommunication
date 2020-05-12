@@ -12,8 +12,6 @@ namespace EntityOrientedCommunication
 
         object Content { get; }
 
-        LetterType LetterType { get; }
-
         string Recipient { get; }
 
         string Sender { get; }

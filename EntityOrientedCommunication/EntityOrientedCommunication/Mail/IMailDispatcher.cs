@@ -17,6 +17,6 @@ namespace EntityOrientedCommunication.Mail
         /// it should be a synchronized dispatch
         /// </summary>
         /// <param name="letter"></param>
-        void Dispatch(EMLetter letter);
+        EMLetter Dispatch(EMLetter letter);
     }
 }

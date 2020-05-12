@@ -156,7 +156,10 @@ namespace EntityOrientedCommunication.Server
                 // wait for new connection request from client
                 var agent = new ServerAgent(socket.Accept(), this);
 
-                loginAgents.Add(agent);  // managed by server
+                lock (loginAgents)
+                {
+                    loginAgents.Add(agent);  // managed by server
+                }
             }
         }
 

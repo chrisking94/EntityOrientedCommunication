@@ -47,10 +47,20 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
-        void IMailDispatcher.Dispatch(EMLetter letter)
+        EMLetter IMailDispatcher.Dispatch(EMLetter letter)
         {
             letter.SetEnvelope(GetEnvelope());
-            Request(StatusCode.Letter, letter);
+
+            if (letter.HasFlag(StatusCode.Get))  // Get
+            {
+                var reply = Request(StatusCode.Letter, letter, letter.GetTTL());
+                return reply as EMLetter;
+            }
+            else  // Post
+            {
+                this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL());
+                return null;
+            }
         }
         #endregion
 
@@ -62,7 +72,7 @@ namespace EntityOrientedCommunication.Server
                 var login = msg as EMLogin;
                 bool hasLoggedIn;
 
-                hasLoggedIn = server.GetLoggedInAgents().Any(a => a.TeleClientName == login.Username);
+                hasLoggedIn = server.MailCenter.IsOnline(login.Username);
 
                 if (hasLoggedIn)
                 {
@@ -79,7 +89,7 @@ namespace EntityOrientedCommunication.Server
                         User = user;
                         Token = server.GenToken(TeleClientName);
                         msg = new EMLoggedin(login, ClientName, user, Token);
-                        msg.Status |= StatusCode.Command | StatusCode.Time | StatusCode.Push;  // sync time command
+                        msg.Status |= StatusCode.Command;  // sync time command
                         logger = new Logger(TeleClientName);
 
                         Phase = ConnectionPhase.P2LoggedIn;
@@ -110,32 +120,24 @@ namespace EntityOrientedCommunication.Server
             }
             else if (msg.HasFlag(StatusCode.Letter))
             {
-                if (msg.HasFlag(StatusCode.Pull))  // pull retard letters
+                var letter = msg as EMLetter;
+
+                try
                 {
-                    try
+                    var result = server.MailCenter.Deliver(letter);
+                    if (result == null)
                     {
-                        var pull = msg as EMText;
-                        SUser.PostOffice.Pull(pull.Text);
-                        msg = new EMessage(msg, StatusCode.Ok);
+                        msg = new EMessage(msg, StatusCode.Ok);  // Post, or SafePost
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        msg = new EMError(msg, $"unable to perform pull action, detail：{ex.Message}");
+                        result.SetEnvelope(new Envelope(msg.ID));
+                        msg = result;
                     }
                 }
-                else  // push letter
+                catch (Exception ex)
                 {
-                    var letter = msg as EMLetter;
-
-                    try
-                    {
-                        server.MailCenter.Deliver(letter);
-                        msg = new EMessage(msg, StatusCode.Ok);
-                    }
-                    catch (Exception ex)
-                    {
-                        msg = new EMError(msg, ex.Message);
-                    }
+                    msg = new EMError(msg, ex.Message);
                 }
             }
             else if (msg.HasFlag(StatusCode.Register))

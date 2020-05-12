@@ -12,12 +12,14 @@ using System.Threading.Tasks;
 namespace EntityOrientedCommunication.Facilities
 {
     public delegate void TimeBlockValueChangedEventHandler(object sender, EventArgs args);
-    
+
     /// <summary>
     /// add some offset to DateTime.Now
     /// </summary>
     public class TimeBlock
     {
+        public static readonly TimeBlock Now = new TimeBlock();
+
         public TimeBlockValueChangedEventHandler TimeChangedEvent;
 
         private long offsetTicks;

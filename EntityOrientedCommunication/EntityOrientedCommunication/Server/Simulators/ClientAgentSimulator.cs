@@ -59,12 +59,18 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region private
-        void IMailDispatcher.Dispatch(EMLetter letter)  // client send, send to server through memory
+        EMLetter IMailDispatcher.Dispatch(EMLetter letter)  // client send, send to server through memory
         {
-            this.serverLoginAgentSimulator.ProcessRequest(letter);
+            // ingore timeout
+            return this.serverLoginAgentSimulator.ProcessRequest(letter);
         }
 
-        internal void ProcessRequest(EMLetter letter)  // client receiving
+        internal EMLetter ProcessRequest(EMLetter letter)  // client receiving
+        {
+            return this.PostOffice.Pickup(letter);
+        }
+
+        internal void AsyncProcessRequest(EMLetter letter)
         {
             this.PostOffice.Pickup(letter);
         }

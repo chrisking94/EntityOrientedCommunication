@@ -50,141 +50,15 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region interface
-        internal void Receive(EMLetter letter)
+        internal EMLetter Receive(EMLetter letter)
         {
-            var waitHandle = this.PopWaitHandler(letter);
-
-            if (waitHandle == null)
-            {
-                ThreadPool.QueueUserWorkItem(_processPickupLetter, letter);
-            }
-            else
-            {
-                waitHandle.SetReply(letter);  // Get
-            }
-        }
-
-        /// <summary>
-        /// the letter will be delivered to local machine if the 'username' part of recipient is set to 'localhost'
-        /// </summary>
-        /// <param name="recipient"></param>
-        /// <param name="title"></param>
-        /// <param name="content"></param>
-        /// <param name="letterType"></param>
-        public void Send(string recipient, string title, object content, LetterType letterType = LetterType.Normal)
-        {
-            var letter = new EMLetter(recipient, mailAdress, title, content, letterType, CreateSerialNumber());
-            postoffice.Send(letter);
-        }
-
-        /// <summary>
-        /// send a letter to the remote entity and wait for reply, the reply message will not be pass to the 'Pickup' method of 'receiver',
-        /// <para>its content will be passed to the invoking position as return value</para>
-        /// </summary>
-        /// <param name="recipient">target entity route information, there should be only 1 entity in the recipient route info</param>
-        /// <param name="title"></param>
-        /// <param name="content"></param>
-        /// <param name="timeout">unit: ms</param>
-        /// <returns></returns>
-        public object Get(string recipient, string title, object content, int timeout = int.MaxValue)
-        {
-            // simple check
-            var routeInfos = MailRouteInfo.Parse(recipient);
-            if (routeInfos.Count > 1)
-            {
-                throw new Exception($"letter of type '{nameof(LetterType.EmergencyGet)}' should not have multiple recipients.");
-            }
-
-            var letter = new EMLetter(recipient, mailAdress, title, content, LetterType.EmergencyGet, CreateSerialNumber());
-            var tCounter = this.CreateWaitHandler(letter, timeout);
-            postoffice.Send(letter);
-
-            // wait
-            while (true)
-            {
-                if (tCounter.IsTimeOut)
-                {
-                    break;
-                }
-
-                if (tCounter.IsReplied)
-                {
-                    var responseLetter = tCounter.ResponseMsg as EMLetter;
-                    if (responseLetter.Title == "error")
-                    {
-                        throw new Exception($"an error has been reported by '{responseLetter.Sender}': {responseLetter.Content}");
-                    }
-                    return responseLetter.Content;
-                }
-
-                Thread.Sleep(1);
-                tCounter.Decrease(1);
-            }
-
-            throw new Exception($"get failed, no response from the remote entity.");
-        }
-
-        /// <summary>
-        /// reply a letter, the 'LetterType' of the reply letter is same with the <paramref name="toReply"/> letter
-        /// </summary>
-        /// <param name="toReply"></param>
-        /// <param name="title"></param>
-        /// <param name="content"></param>
-        public void Reply(ILetter toReply, string title, object content)
-        {
-            Send(toReply.Sender, title, content, toReply.LetterType);
-        }
-
-        internal void Destroy()
-        {
-            receiver = null;
-            postoffice = null;
-        }
-        #endregion
-
-        #region private
-        private int _serialCounter = 1;
-        private string CreateSerialNumber()
-        {
-            return $"{this.mailAdress}{this._serialCounter++}";
-        }
-
-        private TCounter PopWaitHandler(EMLetter letter)  // null if no handler for this letter
-        {
-            lock (dictSerial2TCounter)
-            {
-                TCounter tCounter;
-                if (dictSerial2TCounter.TryGetValue(letter.Serial, out tCounter))  // exists
-                {
-                    dictSerial2TCounter.Remove(letter.Serial);
-                    return tCounter;
-                }
-            }
-            return null;
-        }
-
-        private TCounter CreateWaitHandler(EMLetter letter, int timeout)
-        {
-            TCounter tCounter;
-            lock (dictSerial2TCounter)
-            {
-                tCounter = new TCounter(letter, timeout);
-                this.dictSerial2TCounter[letter.Serial] = tCounter;
-
-                return tCounter;
-            }
-        }
-
-        private void _processPickupLetter(object obj)
-        {
-            var letter = obj as EMLetter;
             var feedbackTitle = $"RE:{letter.Title}";
             object feedback = null;
             try
             {
                 feedback = receiver.Pickup(letter);
 
-                if (letter.LetterType == LetterType.EmergencyGet)  // must return a value to the sender
+                if (letter.HasFlag(StatusCode.Get))  // must return a value to the sender
                 {
                     if (feedback == null)
                     {
@@ -198,14 +72,85 @@ namespace EntityOrientedCommunication.Client
                 feedbackTitle = "error";
                 feedback = ex.Message;
             }
-            var feedbackType = letter.LetterType;
-            if (feedbackType == LetterType.EmergencyGet) feedbackType = LetterType.Normal;
+            var feedbackType = StatusCode.Post;
 
-
-            if (feedback != null)
+            if (letter.HasFlag(StatusCode.Get))
             {
-                this.postoffice.Send(new EMLetter(letter.Sender, this.mailAdress, feedbackTitle, feedback, feedbackType, letter.Serial));
+                if (feedback == null)
+                {
+                    return new EMLetter(letter.Sender, this.mailAdress, "OK", feedback, feedbackType, letter.GetTTL());
+                }
+                else
+                {
+                    return new EMLetter(letter.Sender, this.mailAdress, feedbackTitle, feedback, feedbackType, letter.GetTTL());
+                }
             }
+
+            return null;  // post
+        }
+
+        public void Post(string recipient, string title, object content, int timeout = int.MaxValue)
+        {
+            this.Send(recipient, title, content, StatusCode.Post, timeout);
+        }
+
+        /// <summary>
+        /// send a letter to the remote entity and wait for reply, the reply message will not be pass to the 'Pickup' method of 'receiver',
+        /// <para>its content will be passed to the invoking position as return value</para>
+        /// </summary>
+        /// <param name="recipient">target entity route information, there should be only 1 entity in the recipient route info</param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <param name="timeout">unit: ms</param>
+        /// <returns></returns>
+        public object Get(string recipient, string title, object content, int timeout = int.MaxValue)
+        {
+            if (MailRouteInfo.Parse(recipient).Count > 1)
+            {
+                throw new Exception("'Get' letter should not have multiple recipients.");
+            }
+
+            var letter = new EMLetter(recipient, mailAdress, title, content, StatusCode.Get, timeout);
+            
+            return postoffice.Send(letter).Content;
+        }
+
+        /// <summary>
+        /// reply a letter, the 'LetterType' of the reply letter is same with the <paramref name="toReply"/> letter
+        /// </summary>
+        /// <param name="toReply"></param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        public void Reply(ILetter toReply, string title, object content, int timeout = int.MaxValue)
+        {
+            Send(toReply.Sender, title, content, StatusCode.Post, timeout);
+        }
+
+        internal void Destroy()
+        {
+            receiver = null;
+            postoffice = null;
+        }
+
+        [Obsolete("请使用Post或者Get方法发送消息")]
+        public void Send(string recipient, string title, object content, StatusCode letterType = StatusCode.Post)
+        {
+            this.Post(recipient, title, content);
+        }
+        #endregion
+
+        #region private
+        /// <summary>
+        /// the letter will be delivered to local machine if the 'username' part of recipient is set to 'localhost'
+        /// </summary>
+        /// <param name="recipient"></param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <param name="letterType"></param>
+        private void Send(string recipient, string title, object content, StatusCode letterType, int timeout)
+        {
+            var letter = new EMLetter(recipient, mailAdress, title, content, letterType, timeout);
+            postoffice.Send(letter);
         }
         #endregion
     }

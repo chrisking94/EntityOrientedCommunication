@@ -7,7 +7,7 @@ namespace ClientDemo
     {
         static void Main(string[] args)
         {
-            __clientTest.__main__();
+            //__clientTest.__main__();
 
             /****** A@Mary START ******/  // Code block 1
             var agent1 = new ClientAgent("127.0.0.1", 1350);  // create a client agent with specified server IP and port
@@ -24,7 +24,7 @@ namespace ClientDemo
             /****** B@Tom END ******/
 
             // 'B' send a message to 'A'
-            boxB.Send("A@Mary", "hello A!", "put the content here.", EntityOrientedCommunication.LetterType.EmergencyGet);
+            boxB.Send("A@Mary", "hello A!", "put the content here.");
 
             Console.ReadKey();
         }

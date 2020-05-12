@@ -14,6 +14,7 @@ namespace EntityOrientedCommunication.Messages
     public enum StatusCode
     {
         None            = 0x00_00_0000,
+
         /* basic status */
         Request         = 0x00_00_0001,
         Response        = 0x00_00_0002,
@@ -31,9 +32,13 @@ namespace EntityOrientedCommunication.Messages
         NoAutoReply     = 0x00_00_0400,  // this flag is used to cancel auto reply
 
         /* target */
-        Letter          = 0x02_00_0000,  // EOC letter
-        Entity          = 0x04_00_0000,  // EOC entity
-        Time            = 0x40_00_0000,  // sychronize time.now
+        Letter          = 0x01_00_0000,  // EOC letter
+        Entity          = 0x02_00_0000,  // EOC entity
+        Time            = 0x04_00_0000,  // sychronize time.now
+
+        /* EOC letter type code */
+        Post            = 0x20_00_0000,  // post a letter to the target entity(ies), ignore all errors in the sending progress
+        Get             = 0x40_00_0000,  // send a letter to the target entity(ies), and wait for every entity's reply, error will be reported if failed
     }
 
     [JsonObject(MemberSerialization.OptIn)]

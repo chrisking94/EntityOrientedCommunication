@@ -123,17 +123,28 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region EOC
-        void IMailDispatcher.Dispatch(EMLetter letter)  // dispatch the local letter to server
+        EMLetter IMailDispatcher.Dispatch(EMLetter letter)  // dispatch the local letter to server
         {
             CheckLogin();
 
             letter.SetEnvelope(GetEnvelope());
 
-            var reply = Request(StatusCode.Letter, letter);
-
-            if (reply.HasFlag(StatusCode.Denied))
+            if (letter.HasFlag(StatusCode.Get))
             {
-                throw new EOCException((reply as EMText).Text);
+                var reply = Request(StatusCode.Letter, letter, letter.GetTTL());
+
+                if (reply.HasFlag(StatusCode.Denied))
+                {
+                    throw new EOCException((reply as EMText).Text);
+                }
+
+                return reply as EMLetter;
+            }
+            else
+            {
+                this.AsyncRequest(StatusCode.Letter, letter, timeout);
+
+                return null;
             }
         }
 

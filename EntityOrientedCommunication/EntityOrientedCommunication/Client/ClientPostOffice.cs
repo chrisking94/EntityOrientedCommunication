@@ -122,7 +122,7 @@ namespace EntityOrientedCommunication.Client
         /// pickup a letter sent from remote postoffice
         /// </summary>
         /// <param name="letter"></param>
-        internal void Pickup(EMLetter letter)
+        internal EMLetter Pickup(EMLetter letter)
         {
             ClientMailBox mailBox = null;
 
@@ -144,14 +144,14 @@ namespace EntityOrientedCommunication.Client
                 }
             }
 
-            mailBox?.Receive(letter);
+            return mailBox?.Receive(letter);
         }
 
         /// <summary>
         /// provide a send interface for every mailbox in this postoffice
         /// </summary>
         /// <param name="letter"></param>
-        internal void Send(EMLetter letter)
+        internal EMLetter Send(EMLetter letter)
         {
             var routeInfos = MailRouteInfo.Parse(letter.Recipient);
             if (routeInfos == null)
@@ -181,7 +181,7 @@ namespace EntityOrientedCommunication.Client
             if (letter.Recipient != "")
             {
                 // send to tele-entity
-                this.dispatcher.Dispatch(letter);
+                return this.dispatcher.Dispatch(letter);
             }
 
             if (localRouteInfo != null)
@@ -189,8 +189,10 @@ namespace EntityOrientedCommunication.Client
                 // send to local-entity
                 var copy = new EMLetter(letter);
                 copy.Recipient = localRouteInfo.ToLiteral();
-                Pickup(copy);
+                return Pickup(copy);
             }
+
+            return null;
         }
 
         /// <summary>
@@ -200,7 +202,10 @@ namespace EntityOrientedCommunication.Client
         {
             lock (dictEntityName2MailBox)
             {
-                this.dispatcher.Activate(dictEntityName2MailBox.Values.ToArray());
+                if (dictEntityName2MailBox.Count > 0)
+                {
+                    this.dispatcher.Activate(dictEntityName2MailBox.Values.ToArray());
+                }
             }
         }
 

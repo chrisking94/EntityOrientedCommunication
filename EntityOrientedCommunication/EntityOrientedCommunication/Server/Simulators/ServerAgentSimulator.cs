@@ -31,12 +31,18 @@ namespace EntityOrientedCommunication.Server
             this.SUser.PostOffice.Activate(this);  // activate post office
         }
 
-        public void Dispatch(EMLetter letter)
+        EMLetter IMailDispatcher.Dispatch(EMLetter letter)
         {
-            client.ProcessRequest(letter);  // send to client through memory
+            // ingore timeout
+            return client.ProcessRequest(letter);  // send to client through memory
         }
 
-        public void ProcessRequest(EMLetter letter)  // letter request only
+        public EMLetter ProcessRequest(EMLetter letter)  // letter request only
+        {
+            return this.SUser.MailCenter.Deliver(letter);
+        }
+
+        public void AsyncProcessRequest(EMLetter letter)
         {
             this.SUser.MailCenter.Deliver(letter);
         }

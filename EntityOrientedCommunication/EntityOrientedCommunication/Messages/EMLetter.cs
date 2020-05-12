@@ -13,34 +13,11 @@ using System.Diagnostics;
 using Newtonsoft.Json;
 using EntityOrientedCommunication.Messages;
 using EntityOrientedCommunication.Mail;
+using EntityOrientedCommunication.Client;
+using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication
 {
-    public enum LetterType
-    {
-        /// <summary>
-        /// the letter is stored in the buffer box on server and will be sent out once receiver logs in
-        /// </summary>
-        Normal, 
-        /// <summary>
-        /// letter would be discarded when server receives it if receiver is not online
-        /// </summary>
-        RealTime,
-        /// <summary>
-        /// letter will be stored on the server till the recipients pull it
-        /// </summary>
-        Retard,
-        /// <summary>
-        /// an error will be reported by server if recipient is not on line
-        /// </summary>
-        Emergency,
-        /// <summary>
-        /// an error will be reported by server if recipient is not on line. there's only 1 recipient permitted for each 'EmergencyGet'.
-        /// <para>the difference between 'EmergencyGet' and 'Emergency' is that the recipient should emit a reply to the 'EmergencyGet' letter sender</para>
-        /// </summary>
-        EmergencyGet,
-    }
-
     /// <summary>
     /// EOC letter, the ID of which will be set before transmission
     /// </summary>
@@ -60,14 +37,11 @@ namespace EntityOrientedCommunication
 
         public object Content { get => Object; }  // lazy content
 
-        [JsonProperty]
-        public LetterType LetterType { get; set; }
-
         /// <summary>
-        /// serial is created by ClientMailBox
+        /// this letter is invalid when DateTime.Now exceed the deadline
         /// </summary>
         [JsonProperty]
-        internal string Serial { get; private set; }
+        public long Deadline { get; set; }
         #endregion
 
         #region field
@@ -79,15 +53,14 @@ namespace EntityOrientedCommunication
         protected EMLetter() { }
 
         public EMLetter(string recipient, string sender, string title,
-            object content, LetterType type, string serial)
+            object content, StatusCode letterType, int timeout)
         {
             Title = title;
             Recipient = recipient;
             Sender = sender;
             Object = content;
-            LetterType = type;
-            this.Serial = serial;
-            Status = StatusCode.Letter;
+            Status = StatusCode.Letter | letterType;
+            this.SetTimeout(timeout);
         }
 
         public EMLetter(EMLetter copyFrom) : base(copyFrom)
@@ -95,19 +68,52 @@ namespace EntityOrientedCommunication
             this.Title = copyFrom.Title;
             this.Recipient = copyFrom.Recipient;
             this.Sender = copyFrom.Sender;
-            this.Serial = copyFrom.Serial;
-            this.LetterType = copyFrom.LetterType;
+            this.Deadline = copyFrom.Deadline;
         }
         #endregion
 
         #region interface
+        internal StatusCode GetLetterType()
+        {
+            return (StatusCode)((uint)this.Status & 0xFF_00_0000);
+        }
+
+        internal int GetTTL()
+        {
+            var nowMs = this.BaseMilliseconds();
+
+            if (nowMs > Deadline)
+            {
+                return 0;  // no time to live
+            }
+            return (int)(Deadline - nowMs);
+        }
+
+        internal void SetTimeout(int timeout)
+        {
+            this.Deadline = this.BaseMilliseconds() + timeout;
+        }
+
         public override string ToString()
         {
-            return Format("ELtr", $"{LetterType}#[{Title}] {Sender} -> {Recipient}");
+            return Format("ELtr", $"[{Title}] {Sender} -> {Recipient}");
         }
         #endregion
 
         #region private
+        private long BaseMilliseconds()  // Now.TotalMilliseconds
+        {
+            var now = TimeBlock.Now.Value;
+
+            var ms = ((((((((((long)(now.Year * 365) +
+                now.DayOfYear) * 24) +
+                now.Hour) * 60) +
+                now.Minute) * 60) +
+                now.Second) * 1000) +
+                now.Millisecond);
+
+            return ms;
+        }
         #endregion
     }
 }
