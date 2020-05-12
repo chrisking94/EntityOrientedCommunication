@@ -6,15 +6,16 @@ An easy-to-use C/S framework library which allows object2object communication ba
 :star: Lightweight
 
 ## Table of Contents
-1. [Quick Start](#QuickStart)
-   1.1 [Server Console](#section1_1)
-   1.2 [Client Console](#section1_2)
-   1.3 [Excution Results](#section1_3)
-2. [Intoduction](./.doc/chapter1.md)
-3. [Message Routing](./.doc/chapter2.md)
+1. [Quick Start](#QuickStart) &nbsp;
+   1.1 [Server Console](#section1_1) &nbsp;
+   1.2 [Client Console](#section1_2) &nbsp;
+   1.3 [Excution Results](#section1_3) &nbsp;
+2. [Intoduction](./.doc/chapter1.md) &nbsp;
+3. [Message Routing](./.doc/chapter2.md) &nbsp;
 
 
-## <a name="QuickStart"/> 1.Quick Start
+<a name="QuickStart"/>
+## 1.Quick Start
 Assume there are 2 objects **A** and **B** on different computers, now they need to send messages to each other.
 
 - - -
