@@ -61,11 +61,6 @@ namespace EntityOrientedCommunication
         /// current connection phase
         /// </summary>
         public ConnectionPhase Phase { get; protected set; }
-
-        /// <summary>
-        /// true when watch dog thread is dead
-        /// </summary>
-        public bool IsDead { get; private set; }
         #endregion
 
         #region field
@@ -586,7 +581,8 @@ namespace EntityOrientedCommunication
 
             logger.Debug($"{nameof(__threadWatchdog)}() aborted.");
 
-            this.IsDead = true;
+            this.Destroy();
+            this.Phase = ConnectionPhase.P0Start;
         }
 
         /// <summary>

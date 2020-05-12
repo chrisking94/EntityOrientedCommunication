@@ -35,7 +35,7 @@ namespace EntityOrientedCommunication.Client
 
         public ClientPostOffice PostOffice => postOffice;
 
-        public TimeBlock Now { get; private set; }
+        public DateTime Now => this.nowBlock.Value;
         #endregion
 
         #region field
@@ -44,18 +44,19 @@ namespace EntityOrientedCommunication.Client
         private ClientPostOffice postOffice;
 
         private TransactionPool transPool;
+
+        private TimeBlock nowBlock;
         #endregion
         #endregion
 
         #region constructor
         public ClientAgent(string serverIpOrUrl, int port)
         {
-            this.Now = new TimeBlock();
-
             TeleClientName = "";
             EndPoint = new DnsEndPoint(serverIpOrUrl, port);
 
             this.postOffice = new ClientPostOffice(this);
+            this.nowBlock = new TimeBlock();
 
             this.transPool = new TransactionPool();
             this.transPool.Register(Transaction_ConnectionMonitor, 10, "ConnectionMonitor");
@@ -120,6 +121,20 @@ namespace EntityOrientedCommunication.Client
                 }
             }
         }
+
+        public override void Destroy()
+        {
+            base.Destroy();
+            Phase = ConnectionPhase.P0Start;
+            ClientAgentEvent?.Invoke(this,
+                new ClientAgentEventArgs(ClientAgentEventType.Disconnected | ClientAgentEventType.Prompt, $"{this} was destroyed."));
+            postOffice.Destroy();
+            postOffice = null;
+
+            transPool.Destroy();
+            transPool = null;
+            logger.Debug("transaction pool destroyed.");
+        }
         #endregion
 
         #region EOC
@@ -131,7 +146,7 @@ namespace EntityOrientedCommunication.Client
 
             if (letter.HasFlag(StatusCode.Get))
             {
-                var reply = Request(StatusCode.Letter, letter, letter.GetTTL());
+                var reply = Request(StatusCode.Letter, letter, letter.GetTTL(this.Now));
 
                 if (reply.HasFlag(StatusCode.Denied))
                 {
@@ -142,7 +157,7 @@ namespace EntityOrientedCommunication.Client
             }
             else
             {
-                this.AsyncRequest(StatusCode.Letter, letter, timeout);
+                this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL(this.Now));
 
                 return null;
             }
@@ -168,24 +183,6 @@ namespace EntityOrientedCommunication.Client
                         ClientAgentEventType.Error,
                         $"unable to register entity '{entityNames}', detail：{error.Text}"));
                 }
-            }
-        }
-
-        /// <summary>
-        /// pull retard letters which have the given pattern of title 
-        /// </summary>
-        /// <param name="letterTitlePattern">regex pattern</param>
-        public void Pull(string letterTitlePattern)
-        {
-            CheckLogin();
-
-            var msg = new EMText(GetEnvelope(), letterTitlePattern);
-
-            var reply = Request(StatusCode.Pull | StatusCode.Letter, msg);
-
-            if (reply.HasFlag(StatusCode.Denied))
-            {
-                throw new Exception((reply as EMText).Text);
             }
         }
         #endregion
@@ -277,6 +274,7 @@ namespace EntityOrientedCommunication.Client
                     if (echo.Status.HasFlag(StatusCode.Ok))
                     {
                         var loggedIn = echo as EMLoggedin;
+                        this.nowBlock.Set(loggedIn.Object);
                         User.Update(loggedIn.User);
                         TeleClientName = loggedIn.ServerName;
                         Token = loggedIn.Token;
@@ -323,12 +321,16 @@ namespace EntityOrientedCommunication.Client
         {
             if (msg.HasFlag(StatusCode.Letter))
             {
-                msg = postOffice.Pickup(msg as EMLetter);
-                if (msg == null)
+                var replyLetter = postOffice.Pickup(msg as EMLetter);
+                if (replyLetter == null)
                 {
                     msg = new EMessage(msg, StatusCode.Ok);
                 }
-
+                else
+                {
+                    replyLetter.SetEnvelope(new Envelope(msg.ID));
+                    msg = replyLetter;
+                }
             }
             else
             {
@@ -357,20 +359,6 @@ namespace EntityOrientedCommunication.Client
             {
                 throw new InvalidOperationException("please login first!");
             }
-        }
-
-        public override void Destroy()
-        {
-            base.Destroy();
-            Phase = ConnectionPhase.P0Start;
-            ClientAgentEvent?.Invoke(this,
-                new ClientAgentEventArgs(ClientAgentEventType.Disconnected | ClientAgentEventType.Prompt, $"{this} was destroyed."));
-            postOffice.Destroy();
-            postOffice = null;
-
-            transPool.Destroy();
-            transPool = null;
-            logger.Debug("transaction pool destroyed.");
         }
 
         protected override void OnThreadListenAborted()

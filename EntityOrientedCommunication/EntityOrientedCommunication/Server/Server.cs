@@ -17,7 +17,7 @@ namespace EntityOrientedCommunication.Server
 
         public ServerMailCenter MailCenter { get; }
 
-        public TimeBlock Now { get; }
+        public DateTime Now => nowBlock.Value;
 
         public string IP { get; }
 
@@ -35,11 +35,17 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region field
-        private HashSet<ServerAgent> loginAgents;
+        private HashSet<IServerAgent> loginAgents;
+
         private Socket socket;
+
         private Thread listenThread;
+
         private Logger logger;
+
         private TransactionPool transactionPool;
+
+        private TimeBlock nowBlock;
         #endregion
 
         #region constructor
@@ -55,9 +61,9 @@ namespace EntityOrientedCommunication.Server
             this.Port = port;
 
             this.MailCenter = new ServerMailCenter(this);
-            this.Now = new TimeBlock();
+            this.nowBlock = new TimeBlock();
             this.LocalClient = new ClientAgentSimulator();
-
+            
             // register local client user
             this.MailCenter.Register(this.LocalClient.ServerSimulator.SUser);
         }
@@ -68,7 +74,8 @@ namespace EntityOrientedCommunication.Server
         {
             // initialze simple data members
             var maxConnections = 300;
-            loginAgents = new HashSet<ServerAgent>();
+            loginAgents = new HashSet<IServerAgent>();
+            this.Add(this.LocalClient.ServerSimulator);  // register server agent simulator
             var logfolder = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\TAPALogs\\";
             logfolder = "./logs/";
             if (!Directory.Exists(logfolder))
@@ -90,7 +97,7 @@ namespace EntityOrientedCommunication.Server
             // transaction pool, listen error event, register some transactions
             transactionPool.TransactionErrorEvent += TransactionErrorHandler;
             transactionPool.Register(Logger.IntelliUpdateConfiguration, 1000, "intelligently reconfigure loggers");
-            transactionPool.Register(Transaction_AgentsMonitor, 1000, "connection monitor");
+            transactionPool.Register(Transaction_AgentsMonitor, 10, "connection monitor");
 
             // configure socket
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -126,11 +133,19 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region private
-        internal void Remove(ServerAgent loginAgent)
+        internal void Remove(IServerAgent loginAgent)
         {
             lock (loginAgents)
             {
                 loginAgents.Remove(loginAgent);
+            }
+        }
+
+        private void Add(IServerAgent agent)
+        {
+            lock (loginAgents)
+            {
+                loginAgents.Add(agent);  // managed by server
             }
         }
 
@@ -148,10 +163,7 @@ namespace EntityOrientedCommunication.Server
                 // wait for new connection request from client
                 var agent = new ServerAgent(socket.Accept(), this);
 
-                lock (loginAgents)
-                {
-                    loginAgents.Add(agent);  // managed by server
-                }
+                this.Add(agent);
             }
         }
 
@@ -164,10 +176,10 @@ namespace EntityOrientedCommunication.Server
 
         private void Transaction_AgentsMonitor()
         {
-            List<ServerAgent> deadList;
+            List<IServerAgent> deadList;
             lock (loginAgents)
             {
-                deadList = loginAgents.Where(la => la.IsDead || !la.IsConnected).ToList();
+                deadList = loginAgents.Where(la => !la.IsConnected).ToList();
             }
 
             // remove
@@ -175,6 +187,8 @@ namespace EntityOrientedCommunication.Server
             {
                 logger.Info($"removing dead connection '{dead}'");
                 dead.Destroy();
+
+                this.Remove(dead);
             }
         }
         #endregion

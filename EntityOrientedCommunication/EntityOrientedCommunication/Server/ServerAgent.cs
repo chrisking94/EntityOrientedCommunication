@@ -18,7 +18,7 @@ using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
 {
-    internal class ServerAgent : LoginAgent, IMailDispatcher
+    internal class ServerAgent : LoginAgent, IMailDispatcher, IServerAgent
     {
         #region data
         #region property
@@ -53,12 +53,12 @@ namespace EntityOrientedCommunication.Server
 
             if (letter.HasFlag(StatusCode.Get))  // Get
             {
-                var reply = Request(StatusCode.Letter, letter, letter.GetTTL());
+                var reply = Request(StatusCode.Letter, letter, letter.GetTTL(server.Now));
                 return reply as EMLetter;
             }
             else  // Post
             {
-                this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL());
+                this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL(server.Now));
                 return null;
             }
         }
@@ -169,8 +169,9 @@ namespace EntityOrientedCommunication.Server
         {
             if (msg.HasFlag(StatusCode.Command))  // client refused a command
             {
-                Response(new EMError(GetEnvelope(), $"the client did not response command '{msg.ID}' in time, the connection was cut off."));
-                Destroy();
+                Response(new EMError(GetEnvelope(), $"client did not response command '{msg.ID}' in time, the connection was cut off."));
+
+                GetControl(ThreadType.WatchDog).SafeAbort();
             }
             else if (msg.HasFlag(StatusCode.Letter))
             {
@@ -206,7 +207,6 @@ namespace EntityOrientedCommunication.Server
         private void Logout()
         {
             Token = null;
-            server.Remove(this);
             if (SUser != null)
             {
                 SUser.PostOffice.Deactivate();  // deactivate mailbox
@@ -216,12 +216,12 @@ namespace EntityOrientedCommunication.Server
 
         protected override void OnThreadListenAborted()  // listen thread on aborting
         {
-            Destroy();
+            // pass
         }
 
         protected override void OnConnectionTimeout()  // connection timeout
         {
-            Destroy();
+            // pass
         }
         #endregion
     }

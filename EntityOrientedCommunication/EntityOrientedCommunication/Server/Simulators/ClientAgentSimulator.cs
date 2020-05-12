@@ -15,6 +15,7 @@ using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Messages;
 using EntityOrientedCommunication.Client;
+using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication.Server
 {
@@ -30,22 +31,22 @@ namespace EntityOrientedCommunication.Server
         public string ClientName { get; private set; }
 
         internal ServerAgentSimulator ServerSimulator => serverLoginAgentSimulator;
+
+        public DateTime Now => nowBlock.Value;
         #endregion
 
         #region field
         private ServerAgentSimulator serverLoginAgentSimulator;
+
+        private TimeBlock nowBlock;
         #endregion
         #endregion
 
         #region constructor
-        static ClientAgentSimulator()
-        {
-
-        }
-
         public ClientAgentSimulator(string clientName = "server")
         {
             this.ClientName = clientName;
+            this.nowBlock = new TimeBlock();
 
             // create client office
             PostOffice = new ClientPostOffice(this);
@@ -56,6 +57,17 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
+        internal void SetTime(DateTime now)
+        {
+            this.nowBlock.Set(now);
+        }
+
+        internal void Destroy()
+        {
+            this.PostOffice.Destroy();
+            this.PostOffice = null;
+            this.serverLoginAgentSimulator = null;
+        }
         #endregion
 
         #region private

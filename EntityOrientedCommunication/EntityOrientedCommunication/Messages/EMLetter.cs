@@ -38,10 +38,15 @@ namespace EntityOrientedCommunication
         public object Content { get => Object; }  // lazy content
 
         /// <summary>
-        /// this letter is invalid when DateTime.Now exceed the deadline
+        /// time to live
+        /// </summary>
+        public int Timeout { get; set; }
+
+        /// <summary>
+        /// deadline, this letter is invalid when DateTime.Now exceed the deadline
         /// </summary>
         [JsonProperty]
-        public long Deadline { get; set; }
+        public long DDL { get; set; }
         #endregion
 
         #region field
@@ -60,13 +65,12 @@ namespace EntityOrientedCommunication
             Sender = sender;
             Object = content;
             Status = StatusCode.Letter | letterType;
-            this.SetTimeout(timeout);
+            this.Timeout = timeout;
         }
 
         public EMLetter(string recipient, string sender, LetterContent content, int timeout) :
             this(recipient, sender, content.Title, content.Content,
-                content.Mode == TransmissionMode.Post ? StatusCode.Post : StatusCode.Get,
-                timeout)
+                content.Mode == TransmissionMode.Post ? StatusCode.Post : StatusCode.Get, timeout)
         {
         }
 
@@ -75,7 +79,8 @@ namespace EntityOrientedCommunication
             this.Title = copyFrom.Title;
             this.Recipient = copyFrom.Recipient;
             this.Sender = copyFrom.Sender;
-            this.Deadline = copyFrom.Deadline;
+            this.Timeout = copyFrom.Timeout;
+            this.DDL = copyFrom.DDL;
         }
         #endregion
 
@@ -85,20 +90,20 @@ namespace EntityOrientedCommunication
             return (StatusCode)((uint)this.Status & 0xFF_00_0000);
         }
 
-        internal int GetTTL()
+        internal void UpdateDDL(DateTime now)
         {
-            var nowMs = this.BaseMilliseconds();
+            this.DDL = this.GetMilliseconds(now) + Timeout;
+        }
 
-            if (nowMs > Deadline)
+        internal int GetTTL(DateTime now)
+        {
+            var nowMs = this.GetMilliseconds(now);
+
+            if (nowMs > DDL)
             {
                 return 0;  // no time to live
             }
-            return (int)(Deadline - nowMs);
-        }
-
-        internal void SetTimeout(int timeout)
-        {
-            this.Deadline = this.BaseMilliseconds() + timeout;
+            return (int)(DDL - nowMs);
         }
 
         public override string ToString()
@@ -108,16 +113,14 @@ namespace EntityOrientedCommunication
         #endregion
 
         #region private
-        private long BaseMilliseconds()  // Now.TotalMilliseconds
+        private long GetMilliseconds(DateTime dateTime)  // Now.TotalMilliseconds
         {
-            var now = TimeBlock.Now.Value;
-
-            var ms = ((((((((((long)(now.Year * 365) +
-                now.DayOfYear) * 24) +
-                now.Hour) * 60) +
-                now.Minute) * 60) +
-                now.Second) * 1000) +
-                now.Millisecond);
+            var ms = ((((((((((long)(dateTime.Year * 365) +
+                dateTime.DayOfYear) * 24) +
+                dateTime.Hour) * 60) +
+                dateTime.Minute) * 60) +
+                dateTime.Second) * 1000) +
+                dateTime.Millisecond);
 
             return ms;
         }

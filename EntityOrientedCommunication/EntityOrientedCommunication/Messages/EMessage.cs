@@ -47,12 +47,12 @@ namespace EntityOrientedCommunication.Messages
         #region property
         [JsonProperty]
         internal StatusCode Status { get; set; }
+
+        [JsonProperty]
+        internal uint ID { get; private set; }
         #endregion
 
         #region field
-        [JsonProperty]
-        internal uint ID { get; private set; }
-
         /// <summary>
         /// size after serializing and compressing, in byte
         /// </summary>

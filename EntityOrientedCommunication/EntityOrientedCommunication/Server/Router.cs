@@ -29,7 +29,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
-        public List<MailRouteInfo> RouteRecipient(ILetter letter, IEnumerable<User> serverUsers)
+        public List<MailRouteInfo> RouteRecipient(ILetter letter, IEnumerable<IServerUser> serverUsers)
         {
             var allRecipientInfos = new List<MailRouteInfo>();
             var sInfo = MailRouteInfo.Parse(letter.Sender)[0];
@@ -40,7 +40,8 @@ namespace EntityOrientedCommunication.Server
                 {
                     foreach (var sUser in serverUsers)
                     {
-                        if (sUser.Name != sInfo.UserName)  // sender is not included
+                        if (sUser.Name != sInfo.UserName &&  // sender is not included
+                            sUser.IsOnline)  // online user only
                         {
                             allRecipientInfos.Add(new MailRouteInfo(sUser.Name, rInfo.ReceiverEntityNames));
                         }

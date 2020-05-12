@@ -39,7 +39,7 @@ namespace ClientDemo
             var ea = new Entity("A");
             var mba = agent.PostOffice.Register(ea);
 
-            mba.Send("A@localhost", "hellpA", "fire in the hole");
+            mba.Get("A@localhost", "hellpA", "fire in the hole");
 
             Console.ReadKey(false);
         }

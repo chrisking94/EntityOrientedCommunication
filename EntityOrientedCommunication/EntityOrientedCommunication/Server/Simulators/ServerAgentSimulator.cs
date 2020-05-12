@@ -14,11 +14,13 @@ using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
 {
-   internal sealed class ServerAgentSimulator : IMailDispatcher  // connect client to server through memory
+   internal sealed class ServerAgentSimulator : IMailDispatcher, IServerAgent  // connect client to server through memory
     {
         public ServerUser SUser { get; private set; }
 
         public string ClientName => SUser.Name;
+
+        public bool IsConnected => true;  // constantly connected
 
         private ClientAgentSimulator client;
 
@@ -45,6 +47,13 @@ namespace EntityOrientedCommunication.Server
         public void AsyncProcessRequest(EMLetter letter)
         {
             this.SUser.MailCenter.Deliver(letter);
+        }
+
+        public void Destroy()
+        {
+            this.client.Destroy();
+            this.client = null;
+            this.SUser = null;
         }
     }
 }

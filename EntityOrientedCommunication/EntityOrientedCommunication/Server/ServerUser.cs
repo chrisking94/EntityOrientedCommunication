@@ -11,7 +11,7 @@ namespace EntityOrientedCommunication.Server
     /// <summary>
     /// has more functinalities than 'User'
     /// </summary>
-    internal class ServerUser : User
+    internal class ServerUser : User, IServerUser
     {
         #region data
         #region property

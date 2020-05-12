@@ -21,7 +21,8 @@ namespace ClientDemo
         public LetterContent Pickup(ILetter letter)
         {
             Console.WriteLine($"{this.EntityName} received message from {letter.Sender}: title={letter.Title}, content={letter.Content}");
-            return new LetterContent("HAHAHAHA");
+            //return new LetterContent("HAHAHAHA");
+            return null;
         }
     }
 }

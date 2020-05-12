@@ -23,14 +23,14 @@ namespace EntityOrientedCommunication.Client
         public readonly string EntityName;
 
         private string mailAdress => $"{EntityName}@{postoffice.OfficeName}";
+
+        public DateTime Now => this.postoffice.Now;
         #endregion
 
         #region field
         private IEntity receiver;
 
         private ClientPostOffice postoffice;
-
-        private Dictionary<string, TCounter> dictSerial2TCounter;
         #endregion
         #endregion
 
@@ -45,7 +45,6 @@ namespace EntityOrientedCommunication.Client
             this.receiver = receiver;
             this.EntityName = receiver.EntityName;
             this.postoffice = office;
-            this.dictSerial2TCounter = new Dictionary<string, TCounter>();
         }
         #endregion
 
@@ -68,7 +67,7 @@ namespace EntityOrientedCommunication.Client
                 return null;
             }
 
-            var fbLetter = new EMLetter(letter.Sender, this.mailAdress, feedback, letter.GetTTL());
+            var fbLetter = new EMLetter(letter.Sender, this.mailAdress, feedback, letter.GetTTL(this.Now));
             fbLetter.SetEnvelope(new Envelope(letter.ID));
 
             return fbLetter;
@@ -88,7 +87,7 @@ namespace EntityOrientedCommunication.Client
         /// <param name="content"></param>
         /// <param name="timeout">unit: ms</param>
         /// <returns></returns>
-        public object Get(string recipient, string title, object content, int timeout = int.MaxValue)
+        public ILetter Get(string recipient, string title, object content, int timeout = int.MaxValue)
         {
             if (MailRouteInfo.Parse(recipient).Count > 1)
             {
@@ -97,7 +96,7 @@ namespace EntityOrientedCommunication.Client
 
             var letter = new EMLetter(recipient, mailAdress, title, content, StatusCode.Get, timeout);
             
-            return postoffice.Send(letter)?.Content;
+            return postoffice.Send(letter);
         }
 
         /// <summary>

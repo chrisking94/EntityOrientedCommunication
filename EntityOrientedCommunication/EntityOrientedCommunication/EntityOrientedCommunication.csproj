@@ -61,6 +61,8 @@
     <Compile Include="Facilities\ReaderWriterLockSlimExtensions.cs" />
     <Compile Include="Mail\ILetter.cs" />
     <Compile Include="Mail\LetterContent.cs" />
+    <Compile Include="Server\IServerAgent.cs" />
+    <Compile Include="Server\IServerUser.cs" />
     <Compile Include="Server\IUser.cs" />
     <Compile Include="Server\Router.cs" />
     <Compile Include="Server\Server.cs" />

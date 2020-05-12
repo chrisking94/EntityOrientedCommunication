@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
 
@@ -40,10 +41,14 @@ namespace EntityOrientedCommunication.Client
 
         #region property
         public string OfficeName => dispatcher.ClientName;
+
+        public DateTime Now => this.dispatcher.Now;
         #endregion
 
         #region field
-        private Dictionary<string, ClientMailBox> dictEntityName2MailBox;
+        private Dictionary<string, ClientMailBox> dictName2MailBox;
+
+        private ReaderWriterLockSlim rwlsDictName2MailBox = new ReaderWriterLockSlim();
 
         private IClientMailDispatcher dispatcher;
         #endregion
@@ -52,7 +57,7 @@ namespace EntityOrientedCommunication.Client
         #region constructor
         internal ClientPostOffice(IClientMailDispatcher dispatcher)
         {
-            dictEntityName2MailBox = new Dictionary<string, ClientMailBox>(1);
+            dictName2MailBox = new Dictionary<string, ClientMailBox>(1);
             this.dispatcher = dispatcher;
         }
         #endregion
@@ -67,10 +72,11 @@ namespace EntityOrientedCommunication.Client
         {
             get
             {
-                lock (this.dictEntityName2MailBox)
-                {
-                    return this.dictEntityName2MailBox[entityName];
-                }
+                rwlsDictName2MailBox.EnterReadLock();
+                var mailBox = this.dictName2MailBox[entityName];
+                rwlsDictName2MailBox.ExitReadLock();
+
+                return mailBox;
             }
         }
 
@@ -87,20 +93,22 @@ namespace EntityOrientedCommunication.Client
                 throw new ArgumentNullException($"the {nameof(receiver)}.{nameof(receiver.EntityName)} should not be null.");
             }
 
-            var mailBox = new ClientMailBox(receiver, this);
+            ClientMailBox mailBox;
 
-            lock (dictEntityName2MailBox)
+            rwlsDictName2MailBox.EnterUpgradeableReadLock();  // read lock
+            if (dictName2MailBox.TryGetValue(receiver.EntityName, out mailBox))
             {
-                if (dictEntityName2MailBox.ContainsKey(mailBox.EntityName))
-                {
-                    PostOfficeEvent?.Invoke(this, 
-                        new PostOfficeEventArgs(PostOfficeEventType.Prompt, $"there's already a receiver named '{mailBox.EntityName}' registered, this old receiver will be destroyed."));
-                    var oldBox = dictEntityName2MailBox[mailBox.EntityName];
-                    oldBox.Destroy();
-                }
-
-                dictEntityName2MailBox[mailBox.EntityName] = mailBox;
+                PostOfficeEvent?.Invoke(this,
+                        new PostOfficeEventArgs(PostOfficeEventType.Prompt, $"there's already a mailbox named '{mailBox.EntityName}' registered, which will be destroyed automatically."));
+                mailBox.Destroy();  // destroy the old mailbox
             }
+
+            mailBox = new ClientMailBox(receiver, this);
+            rwlsDictName2MailBox.EnterWriteLock();  // enter write lock
+            dictName2MailBox[mailBox.EntityName] = mailBox;
+            rwlsDictName2MailBox.ExitWriteLock();  // exit write lock
+
+            rwlsDictName2MailBox.ExitUpgradeableReadLock();  // exit read lock
 
             dispatcher.Activate(mailBox);
 
@@ -114,37 +122,48 @@ namespace EntityOrientedCommunication.Client
         /// <returns></returns>
         public bool IsRegistered(string entityName)
         {
-            lock(dictEntityName2MailBox)
-                return dictEntityName2MailBox.ContainsKey(entityName);
+            rwlsDictName2MailBox.EnterReadLock();
+            var bRegistered = dictName2MailBox.ContainsKey(entityName);
+            rwlsDictName2MailBox.ExitReadLock();
+
+            return bRegistered;
         }
 
         /// <summary>
         /// pickup a letter sent from remote postoffice
         /// </summary>
         /// <param name="letter"></param>
+        /// <returns>replies emit by the mailboxes in this postoffice</returns>
         internal EMLetter Pickup(EMLetter letter)
         {
-            ClientMailBox mailBox = null;
+            ClientMailBox mailBox;
+            var replies = new List<EMLetter>(1);
+            var routeInfo = MailRouteInfo.Parse(letter.Recipient)[0];
 
-            lock (dictEntityName2MailBox)
+            foreach (var entityName in routeInfo.ReceiverEntityNames)
             {
-                var routeInfo = MailRouteInfo.Parse(letter.Recipient)[0];
-                foreach (var entityName in routeInfo.ReceiverEntityNames)
+                rwlsDictName2MailBox.EnterReadLock();
+                if (dictName2MailBox.TryGetValue(entityName, out mailBox))
                 {
-                    if (dictEntityName2MailBox.ContainsKey(entityName))
-                    {
-                        mailBox = dictEntityName2MailBox[entityName];
-                    }
-                    else
-                    {
-                        PostOfficeEvent?.Invoke(this,
-                            new PostOfficeEventArgs(PostOfficeEventType.Error,
-                            $"unable to pickup letter: postoffice '{this.OfficeName}' has registered a receiver named '{entityName}', but the corresponding instance if not found."));
-                    }
+                    // pass
+                }
+                else  // report an error
+                {
+                    PostOfficeEvent?.Invoke(this,
+                        new PostOfficeEventArgs(PostOfficeEventType.Error,
+                        $"unable to pickup letter: postoffice '{this.OfficeName}' has registered a receiver named '{entityName}', but the corresponding instance if not found."));
+                }
+                rwlsDictName2MailBox.ExitReadLock();
+
+                // dispatch letter to target mailbox
+                var reply = mailBox?.Receive(letter);
+                if (reply != null)
+                {
+                    replies.Add(reply);
                 }
             }
 
-            return mailBox?.Receive(letter);
+            return replies.Count == 0 ? null : replies[0];  // one reply for 'Get'
         }
 
         /// <summary>
@@ -178,6 +197,8 @@ namespace EntityOrientedCommunication.Client
                 letter.Recipient = MailRouteInfo.ToLiteral(teleRouteInfos);  // new tele-recipient info
             }
 
+            letter.UpdateDDL(this.Now);
+
             if (letter.Recipient != "")
             {
                 // send to tele-entity
@@ -189,7 +210,7 @@ namespace EntityOrientedCommunication.Client
                 // send to local-entity
                 var copy = new EMLetter(letter);
                 copy.Recipient = localRouteInfo.ToLiteral();
-                return Pickup(copy);
+                return this.Dispatch(copy);
             }
 
             return null;
@@ -200,29 +221,45 @@ namespace EntityOrientedCommunication.Client
         /// </summary>
         public void ActivateAll()
         {
-            lock (dictEntityName2MailBox)
+            rwlsDictName2MailBox.EnterReadLock();
+            if (dictName2MailBox.Count > 0)
             {
-                if (dictEntityName2MailBox.Count > 0)
-                {
-                    this.dispatcher.Activate(dictEntityName2MailBox.Values.ToArray());
-                }
+                this.dispatcher.Activate(dictName2MailBox.Values.ToArray());
             }
+            rwlsDictName2MailBox.ExitReadLock();
         }
 
         public void Destroy()
         {
-            lock (dictEntityName2MailBox)
+            rwlsDictName2MailBox.EnterWriteLock();
+            foreach (var mailBox in dictName2MailBox.Values)
             {
-                foreach (var mailBox in dictEntityName2MailBox.Values)
-                {
-                    mailBox.Destroy();
-                }
-                dictEntityName2MailBox.Clear();
+                mailBox.Destroy();
             }
+            dictName2MailBox.Clear();
+            rwlsDictName2MailBox.ExitWriteLock();
         }
         #endregion
 
         #region private
+        /// <summary>
+        /// deliver to localhost
+        /// </summary>
+        /// <param name="letter"></param>
+        /// <returns></returns>
+        private EMLetter Dispatch(EMLetter letter)
+        {
+            if (letter.HasFlag(Messages.StatusCode.Get))
+            {
+                return this.Pickup(letter);
+            }
+            else  // Post
+            {
+                ThreadPool.QueueUserWorkItem(o => this.Pickup(letter), letter);
+
+                return null;
+            }
+        }
         #endregion
     }
 }

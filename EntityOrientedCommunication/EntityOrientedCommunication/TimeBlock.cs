@@ -18,8 +18,6 @@ namespace EntityOrientedCommunication.Facilities
     /// </summary>
     public class TimeBlock
     {
-        public static readonly TimeBlock Now = new TimeBlock();
-
         public TimeBlockValueChangedEventHandler TimeChangedEvent;
 
         private long offsetTicks;
