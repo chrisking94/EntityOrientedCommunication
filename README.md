@@ -60,7 +60,7 @@ namespace ClientDemo
             this.EntityName = name;
         }
 
-        public object Pickup(ILetter letter)  // handle the incoming message
+        public LetterContent Pickup(ILetter letter)  // handle the incoming message
         {
             Console.WriteLine($"{this.EntityName} received message from {letter.Sender}: {letter.Title}, {letter.Content}");
             return null;
@@ -96,7 +96,7 @@ namespace ClientDemo
             /****** B@Tom END ******/
 
             // 'B' send a message to 'A'
-            boxB.Send("A@Mary", "hello A!", "put the content here.");
+            boxB.Post("A@Mary", "hello A!", "put the content here.");
 
             Console.ReadKey();
         }

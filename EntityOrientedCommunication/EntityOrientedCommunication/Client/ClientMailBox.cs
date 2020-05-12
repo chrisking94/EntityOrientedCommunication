@@ -116,7 +116,7 @@ namespace EntityOrientedCommunication.Client
             postoffice = null;
         }
 
-        [Obsolete("请使用Post或者Get方法发送消息")]
+        [Obsolete("请使用Post或者Get方法发送消息", true)]
         public void Send(string recipient, string title, object content, StatusCode letterType = StatusCode.Post)
         {
             this.Post(recipient, title, content);

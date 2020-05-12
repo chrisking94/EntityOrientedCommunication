@@ -96,7 +96,7 @@ namespace EntityOrientedCommunication.Server
                 }
                 else  // Get
                 {
-                    throw new Exception($"unable to '{letter.GetLetterType()}' letter '{letter.Title}', target user '{recipientInfo.UserName}' is not online.");
+                    throw new Exception($"unable to '{letter.GetLetterType()}' letter '{letter.Title}', target user '{recipientInfo.UserName}' is offline.");
                 }
             }
         }
