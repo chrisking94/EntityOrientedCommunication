@@ -1,12 +1,26 @@
 # EntityOrientedCommunication
-A C/S framework library that allows object2object communication based on TCP/IP.
+An easy-to-use C/S framework library which allows object2object communication based on TCP/IP.
 
-## 0.Quick Start
+## Highlights
+:star: Easy to use
+:star: Lightweight
+
+## Table of Contents
+1. [Quick Start](#QuickStart)
+   1.1 [Server Console](#section1_1)
+   1.2 [Client Console](#section1_2)
+   1.3 [Excution Results](#section1_3)
+2. [Intoduction](./.doc/chapter1.md)
+2. [Message Routing](./.doc/chapter2.md)
+
+
+<a name="QuickStart"/a>
+## 1.Quick Start
 Assume there are 2 objects **A** and **B** on different computers, now they need to send messages to each other.
 
 - - -
-
-### 0.1 Server Console
+<a name="section1_1"/>
+### 1.1 Server Console
 Firstly we need to create a server console application, the code of the **Mail(string[])** is shown as follwing.
 
 ```c#
@@ -40,7 +54,8 @@ Now the code of server program is done, we will get a server execution file afte
 
 - - -
 
-### 0.2 Client Console
+<a name="section1_2"/>
+### 1.2 Client Console
 
 Similiar to section 0.1, we need to create a client console application firstly. Then declare a class that implements the interface named **IEntity** in the application. In order to make this quick start conciser, we suppose the objects **A** and **B** are of same type named **SignalStation**.
 
@@ -108,12 +123,13 @@ Certainly the code block 1 and 2 could be put at two diffrenct applications, and
 
 - - -
 
-### 0.3 Execution results
+<a name="section1_3"/>
+### 1.3 Execution Results
 
 The execution result of the client console seems like following.
 
-![Client console execution result](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/client_console_snapshot.png "Client console execution result")
+![Client console execution result](https://github.com/chrisking94/EntityOrientedCommunication/blob/master/.doc/client_console_snapshot.png?raw=true "Client console execution result")
 
 And similiar the server console is.
 
-![Server console execution result](https://github.com/chrisking94/EntityOrientedCommunication/raw/master/.img/server_console_snapshot.png "Server console execution result")
+![Server console execution result](https://github.com/chrisking94/EntityOrientedCommunication/blob/master/.doc/server_console_snapshot.png?raw=true "Server console execution result")
