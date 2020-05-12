@@ -1,9 +1,10 @@
 # EntityOrientedCommunication
-An easy-to-use C/S framework library which allows object2object communication based on TCP/IP.
+A C/S framework library which allows object2object communication based on TCP/IP written in C#.
 
 ## Highlights
 :star: Easy to use
 :star: Lightweight
+:star: Flexible
 
 ## Table of Contents
 1. [Quick Start](#QuickStart) </br>
