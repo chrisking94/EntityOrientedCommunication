@@ -103,7 +103,7 @@ namespace ClientDemo
         static void Main(string[] args)
         {
             /****** A@Mary START ******/  // Code block 1
-            var postoffice1 = new ClientPostOffice("Mary");
+            var postoffice1 = new ClientPostOffice();
             var agent1 = postoffice1.Connect("127.0.0.1", 1350);  // create a client agent with specified server IP and port
             agent1.Login("Mary", "", 10000);  // login with account 'Mary' without password
             var objA = new SignalStation("A");  // create a 'SignalStation' instance named 'A'
@@ -111,7 +111,7 @@ namespace ClientDemo
             /****** A@Mary END ******/
 
             /****** B@Tom START ******/  // Code block 2
-            var postoffice2 = new ClientPostOffice("Tom");
+            var postoffice2 = new ClientPostOffice();
             var agent2 = postoffice2.Connect("127.0.0.1", 1350);
             agent2.Login("Tom", "", 10000);
             var objB = new SignalStation("B");

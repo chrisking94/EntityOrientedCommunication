@@ -130,7 +130,7 @@ namespace EntityOrientedCommunication
             // stop all treads
             foreach (var control in dictThreadTypeAndControl.Values)
             {
-                control.SafeAbort();
+                control.AsyncSafeAbort();
             }
 
             // close socket

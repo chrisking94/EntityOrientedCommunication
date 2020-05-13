@@ -5,7 +5,6 @@ using System.Threading;
 using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Messages;
-using EOCServer;
 
 namespace EntityOrientedCommunication.Server
 {

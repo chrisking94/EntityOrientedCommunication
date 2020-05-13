@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using EntityOrientedCommunication;
-using EOCServer;
 
 namespace EntityOrientedCommunication
 {

@@ -51,29 +51,34 @@ namespace EntityOrientedCommunication.Client
         #region interface
         internal EMLetter Receive(EMLetter letter)
         {
-            LetterContent feedback;
+            if (letter.HasFlag(StatusCode.Post))
+            {
+                ThreadPool.QueueUserWorkItem(o =>  // async mode
+                {
+                    var result = this.Pickup(letter);
 
-            try
-            {
-                feedback = receiver.Pickup(letter);
-            }
-            catch (Exception ex)  // exception report
-            {
-                feedback = new LetterContent("error", ex.Message, TransmissionMode.Post);
-            }
+                    if (result != null)
+                    {
+                        this.Reply(letter, result.Title, result.Content, result.Timeout);  // sync reply
+                    }
+                });
 
-            if (feedback == null)
-            {
                 return null;
             }
-
-            var fbLetter = new EMLetter(letter.Sender, this.mailAdress, feedback, letter.GetTTL(this.Now));
-            fbLetter.SetEnvelope(new Envelope(letter.ID));
-
-            return fbLetter;
+            else  // Get
+            {
+                return this.Pickup(letter);
+            }
         }
 
-        public void Post(string recipient, string title, object content, int timeout = int.MaxValue)
+        /// <summary>
+        /// post a letter to the target entity, discard the entity if target is offline
+        /// </summary>
+        /// <param name="recipient">route string. e.g. entity1,entity2@Mary,Tom;entity1@Jerry</param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <param name="timeout"></param>
+        public void Post(string recipient, string title, object content = null, int timeout = int.MaxValue)
         {
             this.Send(recipient, title, content, StatusCode.Post, timeout);
         }
@@ -82,12 +87,12 @@ namespace EntityOrientedCommunication.Client
         /// send a letter to the remote entity and wait for reply, the reply message will not be pass to the 'Pickup' method of 'receiver',
         /// <para>its content will be passed to the invoking position as return value</para>
         /// </summary>
-        /// <param name="recipient">target entity route information, there should be only 1 entity in the recipient route info</param>
+        /// <param name="recipient">target entity route information, there should be only 1 entity in the recipient route info. e.g. entityA@Mary</param>
         /// <param name="title"></param>
         /// <param name="content"></param>
         /// <param name="timeout">unit: ms</param>
         /// <returns></returns>
-        public ILetter Get(string recipient, string title, object content, int timeout = int.MaxValue)
+        public ILetter Get(string recipient, string title, object content = null, int timeout = int.MaxValue)
         {
             if (MailRouteInfo.Parse(recipient).Count > 1)
             {
@@ -100,12 +105,12 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// reply a letter, the 'LetterType' of the reply letter is same with the letter '<paramref name="toReply"/>'
+        /// reply a letter in post mode
         /// </summary>
         /// <param name="toReply"></param>
         /// <param name="title"></param>
         /// <param name="content"></param>
-        public void Reply(ILetter toReply, string title, object content, int timeout = int.MaxValue)
+        public void Reply(ILetter toReply, string title, object content = null, int timeout = int.MaxValue)
         {
             Send(toReply.Sender, title, content, StatusCode.Post, timeout);
         }
@@ -135,6 +140,30 @@ namespace EntityOrientedCommunication.Client
         {
             var letter = new EMLetter(recipient, mailAdress, title, content, letterType, timeout);
             postoffice.Send(letter);
+        }
+
+        private EMLetter Pickup(EMLetter letter)
+        {
+            LetterContent feedback;
+
+            try
+            {
+                feedback = receiver.Pickup(letter);
+            }
+            catch (Exception ex)  // exception report
+            {
+                feedback = new LetterContent("error", ex.Message, TransmissionMode.Post);
+            }
+
+            if (feedback == null)
+            {
+                return null;
+            }
+
+            var fbLetter = new EMLetter(letter.Sender, this.mailAdress, feedback, letter.GetTTL(this.Now));
+            fbLetter.SetEnvelope(new Envelope(letter.ID));
+
+            return fbLetter;
         }
         #endregion
     }
