@@ -16,7 +16,7 @@ namespace EntityOrientedCommunication.Messages
     /// login succeed message
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EMLoggedin : EMText, IObject<DateTime>
+    internal class EMLoggedin : EMText, IObject<DateTime>
     {
         #region data
         #region property

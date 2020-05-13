@@ -10,7 +10,7 @@ namespace EntityOrientedCommunication.Facilities
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
-    public class InitializedDictionary<TKey, TValue> :
+    internal class InitializedDictionary<TKey, TValue> :
         Dictionary<TKey, TValue>, IDictionary<TKey, TValue>
     {
         #region field

@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public class ThreadControl
+    internal class ThreadControl
     {
         private string name;
         private Thread thread;

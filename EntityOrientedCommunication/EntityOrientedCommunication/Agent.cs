@@ -14,7 +14,7 @@ using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication
 {
-    public enum ThreadType
+    internal enum ThreadType
     {
         None,
         WatchDog,
@@ -31,7 +31,7 @@ namespace EntityOrientedCommunication
     /// <summary>
     /// the underlying communication, based on TCP/IP
     /// </summary>
-    public abstract class Agent
+    internal abstract class Agent
     {
         #region data
         #region property

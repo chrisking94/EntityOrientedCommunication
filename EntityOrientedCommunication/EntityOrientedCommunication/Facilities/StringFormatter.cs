@@ -10,7 +10,7 @@ using System.Text;
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public static class StringFormatter
+    internal static class StringFormatter
     {
         public static string ByteCountToString(int count)
         {

@@ -24,7 +24,7 @@ namespace EntityOrientedCommunication.Facilities
     /// <para>so it's able to use ReaderWriterLockSlim like the key word 'lock(xxx)' in c# through code like using(lck = rwls.GetReadHandle()),
     /// <para>see also: ReaderWriterLockSlimExtensions</para></para>
     /// </summary>
-    public class RWLSHandle : IDisposable
+    internal class RWLSHandle : IDisposable
     {
         private readonly ReaderWriterLockSlim rwls;
 
@@ -53,7 +53,7 @@ namespace EntityOrientedCommunication.Facilities
         }
     }
 
-    public static class ReaderWriterLockSlimExtensions
+    internal static class ReaderWriterLockSlimExtensions
     {
         public static RWLSHandle GetReadHandle(this ReaderWriterLockSlim rwls)
         {

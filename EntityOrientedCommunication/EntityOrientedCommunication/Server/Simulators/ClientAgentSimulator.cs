@@ -22,36 +22,41 @@ namespace EntityOrientedCommunication.Server
     /// <summary>
     /// the local client on server, which is a simulation to 'ClientAngent'
     /// </summary>
-    public sealed class ClientAgentSimulator : IClientMailDispatcher
+    internal sealed class ClientAgentSimulator : IClientMailDispatcher
     {
         #region data
         #region property
-        public ClientPostOffice PostOffice { get; private set; }
-
-        public string ClientName { get; private set; }
+        public string ClientName => this.postOffice.User.Name;
 
         internal ServerAgentSimulator ServerSimulator => serverLoginAgentSimulator;
 
         public DateTime Now => nowBlock.Value;
+
+
         #endregion
 
         #region field
         private ServerAgentSimulator serverLoginAgentSimulator;
 
         private TimeBlock nowBlock;
+
+        public event IncomingLetterEventHandler IncomingLetterEvent;
+
+        public event ResetedEventHandler ResetedEvent;
+
+        public event TransmissionErrorEventHandler TransmissionErrorEvent;
+
+        private ClientPostOffice postOffice;
         #endregion
         #endregion
 
         #region constructor
-        public ClientAgentSimulator(string clientName = "server")
+        public ClientAgentSimulator(ClientPostOffice postOffice)
         {
-            this.ClientName = clientName;
             this.nowBlock = new TimeBlock();
+            this.postOffice = postOffice;
 
-            // create client office
-            PostOffice = new ClientPostOffice(this);
-
-            // create server login agent simulator, and register agent
+            // create server login agent simulator
             this.serverLoginAgentSimulator = new ServerAgentSimulator(this);
         }
         #endregion
@@ -62,11 +67,10 @@ namespace EntityOrientedCommunication.Server
             this.nowBlock.Set(now);
         }
 
-        internal void Destroy()
+        public void Dispose()
         {
-            this.PostOffice.Destroy();
-            this.PostOffice = null;
             this.serverLoginAgentSimulator = null;
+            this.postOffice = null;
         }
         #endregion
 
@@ -79,19 +83,19 @@ namespace EntityOrientedCommunication.Server
 
         internal EMLetter ProcessRequest(EMLetter letter)  // client receiving
         {
-            return this.PostOffice.Pickup(letter);
+            return this.IncomingLetterEvent?.Invoke(letter);
         }
 
         internal void AsyncProcessRequest(EMLetter letter)
         {
-            this.PostOffice.Pickup(letter);
+            this.IncomingLetterEvent?.Invoke(letter);
         }
 
         void IClientMailDispatcher.Activate(params ClientMailBox[] mailBoxes)
         {
             foreach (var mailBox in mailBoxes)
             {
-                this.ServerSimulator.SUser.PostOffice.Register(mailBox.EntityName);
+                this.ServerSimulator.User.PostOffice.Register(mailBox.EntityName);
             }
         }
         #endregion

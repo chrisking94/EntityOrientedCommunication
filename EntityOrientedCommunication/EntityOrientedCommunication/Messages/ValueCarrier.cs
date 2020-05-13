@@ -19,7 +19,7 @@ namespace EntityOrientedCommunication.Messages
     /// <para>this class carries the type information of the item, so it is able to convert the serialized item to it's original type correctly</para>
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class ValueCarrier
+    internal class ValueCarrier
     {
         #region field
         [JsonProperty]

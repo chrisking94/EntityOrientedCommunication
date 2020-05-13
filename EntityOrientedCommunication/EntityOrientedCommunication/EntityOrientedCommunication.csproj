@@ -56,6 +56,7 @@
     <Compile Include="Client\ClientAgent.cs" />
     <Compile Include="Client\ClientMailBox.cs" />
     <Compile Include="Client\ClientPostOffice.cs" />
+    <Compile Include="Client\IClientAgent.cs" />
     <Compile Include="Client\IClientMailDispatcher.cs" />
     <Compile Include="Facilities\QueueExtensions.cs" />
     <Compile Include="Facilities\ReaderWriterLockSlimExtensions.cs" />
@@ -73,7 +74,6 @@
     <Compile Include="Server\Simulators\ClientAgentSimulator.cs" />
     <Compile Include="Server\Simulators\ServerAgentSimulator.cs" />
     <Compile Include="EOCException.cs" />
-    <Compile Include="IToken.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="LoginAgent.cs" />
     <Compile Include="Mail\IMailDispatcher.cs" />

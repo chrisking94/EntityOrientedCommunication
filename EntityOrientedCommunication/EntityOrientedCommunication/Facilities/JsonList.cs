@@ -21,7 +21,7 @@ namespace EntityOrientedCommunication.Facilities
     /// to solve the serilization and deserilization problem of value type items in List&lt;object&gt;
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class JsonList<T> : IEnumerable<T>
+    internal class JsonList<T> : IEnumerable<T>
     {
         #region data
         #region property

@@ -22,7 +22,7 @@ namespace EntityOrientedCommunication.Client
         #region property
         public readonly string EntityName;
 
-        private string mailAdress => $"{EntityName}@{postoffice.OfficeName}";
+        private string mailAdress => $"{EntityName}@{postoffice.User.Name}";
 
         public DateTime Now => this.postoffice.Now;
         #endregion
@@ -116,10 +116,10 @@ namespace EntityOrientedCommunication.Client
             postoffice = null;
         }
 
-        [Obsolete("请使用Post或者Get方法发送消息", true)]
-        public void Send(string recipient, string title, object content, StatusCode letterType = StatusCode.Post)
+        [Obsolete("please use Post(string, string, object) or Get(string, string, object)", true)]
+        public void Send(string recipient, string title, object content, int code)
         {
-            this.Post(recipient, title, content);
+            throw new Exception();
         }
         #endregion
 

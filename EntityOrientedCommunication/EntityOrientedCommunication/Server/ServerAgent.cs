@@ -18,11 +18,11 @@ using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
 {
-    internal class ServerAgent : LoginAgent, IMailDispatcher, IServerAgent
+    internal sealed class ServerAgent : LoginAgent, IMailDispatcher, IServerAgent
     {
         #region data
         #region property
-        public ServerUser SUser => User as ServerUser;
+        public ServerUser User { get; private set; }
         #endregion
 
         #region field
@@ -108,7 +108,7 @@ namespace EntityOrientedCommunication.Server
                     msg = new EMError(msg, $"user '{login.Username}' is not registered.", ErrorCode.UnregisteredUser);
                 }
             }
-            else if (SUser == null || !SUser.IsOnline)
+            else if (User == null || !User.IsOnline)
             {
                 msg = new EMError(msg, "please login first.");
             }
@@ -148,7 +148,7 @@ namespace EntityOrientedCommunication.Server
 
                     foreach (var name in entityNames)
                     {
-                        SUser.PostOffice.Register(name);
+                        User.PostOffice.Register(name);
                     }
 
                     msg = new EMessage(msg, StatusCode.Ok);
@@ -207,10 +207,10 @@ namespace EntityOrientedCommunication.Server
         private void Logout()
         {
             Token = null;
-            if (SUser != null)
+            if (User != null)
             {
-                SUser.PostOffice.Deactivate();  // deactivate mailbox
-                SUser.IsOnline = false;
+                User.PostOffice.Deactivate();  // deactivate mailbox
+                User.IsOnline = false;
             }
         }
 

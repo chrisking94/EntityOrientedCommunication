@@ -13,7 +13,7 @@ namespace EntityOrientedCommunication.Messages
     /// <para>when the remote computer received this message, the object will be deserilized when it is accessed</para>
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EMObject<T> : EMessage, IObject<T>
+    internal class EMObject<T> : EMessage, IObject<T>
     {
         #region property
         /// <summary>

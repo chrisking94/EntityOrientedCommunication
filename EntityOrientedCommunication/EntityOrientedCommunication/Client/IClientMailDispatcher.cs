@@ -6,14 +6,33 @@ using EntityOrientedCommunication.Mail;
 
 namespace EntityOrientedCommunication.Client
 {
-    internal interface IClientMailDispatcher : IMailDispatcher
-    {
-        string ClientName { get; }
+    internal delegate EMLetter IncomingLetterEventHandler(EMLetter letter);
 
+    internal delegate void ResetedEventHandler();
+
+    internal delegate void TransmissionErrorEventHandler(EMLetter letter, string errorMessage);
+
+    internal interface IClientMailDispatcher : IMailDispatcher, IDisposable
+    {
         /// <summary>
         /// provide a datetime which represents the now time of communication system
         /// </summary>
         DateTime Now { get; }
+
+        /// <summary>
+        /// this event will be emitted when the dispatcher receives a new letter
+        /// </summary>
+        event IncomingLetterEventHandler IncomingLetterEvent;
+
+        /// <summary>
+        /// emitted once after this dispatcher was reseted
+        /// </summary>
+        event ResetedEventHandler ResetedEvent;
+
+        /// <summary>
+        /// emitted when a letter encountered a async transmission error
+        /// </summary>
+        event TransmissionErrorEventHandler TransmissionErrorEvent;
         
         /// <summary>
         /// activate mailboxes, notify other mailboxes that these 'mailBoxes' are online

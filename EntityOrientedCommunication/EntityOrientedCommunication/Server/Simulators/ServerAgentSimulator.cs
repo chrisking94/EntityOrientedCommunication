@@ -16,9 +16,9 @@ namespace EntityOrientedCommunication.Server
 {
    internal sealed class ServerAgentSimulator : IMailDispatcher, IServerAgent  // connect client to server through memory
     {
-        public ServerUser SUser { get; private set; }
+        public ServerUser User { get; private set; }
 
-        public string ClientName => SUser.Name;
+        public string ClientName => User.Name;
 
         public bool IsConnected => true;  // constantly connected
 
@@ -28,9 +28,9 @@ namespace EntityOrientedCommunication.Server
         {
             this.client = client;
 
-            this.SUser = new ServerUser(client.ClientName, "system.server");
-            this.SUser.IsOnline = true;  // change opeartor's status to online
-            this.SUser.PostOffice.Activate(this);  // activate post office
+            this.User = new ServerUser(client.ClientName, "system.server");
+            this.User.IsOnline = true;  // change opeartor's status to online
+            this.User.PostOffice.Activate(this);  // activate post office
         }
 
         EMLetter IMailDispatcher.Dispatch(EMLetter letter)
@@ -41,19 +41,19 @@ namespace EntityOrientedCommunication.Server
 
         public EMLetter ProcessRequest(EMLetter letter)  // letter request only
         {
-            return this.SUser.MailCenter.Deliver(letter);
+            return this.User.MailCenter.Deliver(letter);
         }
 
         public void AsyncProcessRequest(EMLetter letter)
         {
-            this.SUser.MailCenter.Deliver(letter);
+            this.User.MailCenter.Deliver(letter);
         }
 
         public void Destroy()
         {
-            this.client.Destroy();
+            this.client.Dispose();
             this.client = null;
-            this.SUser = null;
+            this.User = null;
         }
     }
 }

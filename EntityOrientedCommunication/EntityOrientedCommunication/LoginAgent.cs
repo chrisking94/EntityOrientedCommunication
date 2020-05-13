@@ -13,13 +13,11 @@ using System.Diagnostics;
 
 namespace EntityOrientedCommunication
 {
-    public abstract class LoginAgent : Agent
+    internal abstract class LoginAgent : Agent
     {
         #region data
         #region property
         public string Token { get; protected set; }
-
-        public User User { get; protected set; }
         #endregion
 
         #region field
@@ -29,7 +27,6 @@ namespace EntityOrientedCommunication
         #region constructor
         protected LoginAgent()
         {
-            User = new User();
         }
         #endregion
 

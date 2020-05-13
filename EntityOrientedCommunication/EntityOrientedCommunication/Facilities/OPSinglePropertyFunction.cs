@@ -21,7 +21,7 @@ namespace EntityOrientedCommunication.Facilities
     /// 通过属性类型所带的函数来判断是否匹配
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class OPSinglePropertyFunction : OPSingleProperty
+    internal class OPSinglePropertyFunction : OPSingleProperty
     {
         #region data
         #region property

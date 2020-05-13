@@ -18,7 +18,7 @@ namespace EntityOrientedCommunication.Facilities
     /// <summary>
     /// 'Update()' method of this class's instance will be invoked repeatedly in specified interval
     /// </summary>
-    public abstract class CycleUpdater
+    internal abstract class CycleUpdater
     {
         #region data
         #region property

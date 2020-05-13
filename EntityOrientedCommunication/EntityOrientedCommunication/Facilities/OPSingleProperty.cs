@@ -20,7 +20,7 @@ namespace EntityOrientedCommunication.Facilities
     /// match a single property/field
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public abstract class OPSingleProperty : IObjectPattern
+    internal abstract class OPSingleProperty : IObjectPattern
     {
         #region data
         #region property

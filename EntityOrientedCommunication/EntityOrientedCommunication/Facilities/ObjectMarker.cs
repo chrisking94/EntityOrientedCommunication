@@ -20,7 +20,7 @@ namespace EntityOrientedCommunication.Facilities
     /// carry the 'Type' information along an object
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class ObjectMarker
+    internal class ObjectMarker
     {
         #region data
         #region property

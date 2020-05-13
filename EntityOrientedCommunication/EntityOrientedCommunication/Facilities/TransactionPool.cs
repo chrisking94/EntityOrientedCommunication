@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public class TransactionErrorArgs : EventArgs
+    internal class TransactionErrorArgs : EventArgs
     {
         public string ErrorMessage => $"transaction '{transaction.Name}': {exception.Message}";
 
@@ -26,9 +26,9 @@ namespace EntityOrientedCommunication.Facilities
         }
     }
 
-    public delegate void TransactionErrorEventHandler(object sender, TransactionErrorArgs args);
+    internal delegate void TransactionErrorEventHandler(object sender, TransactionErrorArgs args);
 
-    public class TransactionPool
+    internal class TransactionPool
     {
         public TransactionErrorEventHandler TransactionErrorEvent;
 

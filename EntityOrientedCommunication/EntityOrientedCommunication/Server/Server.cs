@@ -7,6 +7,7 @@ using System.Threading;
 using System.IO;
 using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication.Messages;
+using EntityOrientedCommunication.Client;
 
 namespace EntityOrientedCommunication.Server
 {
@@ -24,9 +25,9 @@ namespace EntityOrientedCommunication.Server
         public int Port { get; }
 
         /// <summary>
-        /// the user name of this local client is 'server'
+        /// the username of this local client is 'server'
         /// </summary>
-        public ClientAgentSimulator LocalClient { get; }
+        public ClientPostOffice LocalClient { get; }
 
         /// <summary>
         /// this property is set by server when some error occurred
@@ -62,10 +63,11 @@ namespace EntityOrientedCommunication.Server
 
             this.MailCenter = new ServerMailCenter(this);
             this.nowBlock = new TimeBlock();
-            this.LocalClient = new ClientAgentSimulator();
-            
-            // register local client user
-            this.MailCenter.Register(this.LocalClient.ServerSimulator.SUser);
+
+            // create local client
+            this.LocalClient = new ClientPostOffice("server");
+            var clientSimulator = this.LocalClient.ConnectSimulator();
+            this.MailCenter.Register(clientSimulator.ServerSimulator.User);
         }
         #endregion
 
@@ -75,7 +77,7 @@ namespace EntityOrientedCommunication.Server
             // initialze simple data members
             var maxConnections = 300;
             loginAgents = new HashSet<IServerAgent>();
-            this.Add(this.LocalClient.ServerSimulator);  // register server agent simulator
+            this.Add(this.LocalClient.GetDispatcher<ClientAgentSimulator>().ServerSimulator);  // register server agent simulator
             var logfolder = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\TAPALogs\\";
             logfolder = "./logs/";
             if (!Directory.Exists(logfolder))

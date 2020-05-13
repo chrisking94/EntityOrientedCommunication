@@ -40,10 +40,19 @@ namespace EntityOrientedCommunication.Client
     {
         #region data
         #region property
+        /// <summary>
+        /// event type
+        /// </summary>
         public ClientAgentEventType EventType { get; private set; }
 
+        /// <summary>
+        /// event title
+        /// </summary>
         public string Title { get; private set; }
 
+        /// <summary>
+        /// event message
+        /// </summary>
         public string Message { get; private set; }
         #endregion
 
@@ -52,7 +61,7 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region constructor
-        public ClientAgentEventArgs(ClientAgentEventType eventType, 
+        internal ClientAgentEventArgs(ClientAgentEventType eventType, 
             string message = "", string title = "EOC client message")
         {
             EventType = eventType;

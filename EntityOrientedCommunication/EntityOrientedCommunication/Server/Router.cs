@@ -15,7 +15,7 @@ namespace EntityOrientedCommunication.Server
     /// <summary>
     /// route for letters
     /// </summary>
-    public class Router
+    internal class Router
     {
         #region data
         #region property

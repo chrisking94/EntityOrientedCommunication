@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading;
 using EntityOrientedCommunication;
 using EntityOrientedCommunication.Mail;
+using EntityOrientedCommunication.Server;
+using EOCServer;
 
 namespace EntityOrientedCommunication.Client
 {
@@ -40,7 +42,7 @@ namespace EntityOrientedCommunication.Client
         public PostOfficeEventHandler PostOfficeEvent;
 
         #region property
-        public string OfficeName => dispatcher.ClientName;
+        public IUser User { get; }
 
         public DateTime Now => this.dispatcher.Now;
         #endregion
@@ -55,14 +57,64 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region constructor
-        internal ClientPostOffice(IClientMailDispatcher dispatcher)
+        public ClientPostOffice(string username = "localhost")
         {
             dictName2MailBox = new Dictionary<string, ClientMailBox>(1);
-            this.dispatcher = dispatcher;
+            this.User = new User(username);
         }
         #endregion
 
         #region interface
+        /// <summary>
+        /// connect to server at sepecified IP and port
+        /// </summary>
+        /// <param name="serverIpOrUrl"></param>
+        /// <param name="port"></param>
+        /// <returns>client agent handle</returns>
+        public IClientAgent Connect(string serverIpOrUrl, int port)
+        {
+            var agent = new ClientAgent(this, serverIpOrUrl, port);
+
+            this.Connect(agent);  // set agent as dispatcher of this PostOffice
+
+            return agent;
+        }
+
+        internal ClientAgentSimulator ConnectSimulator()
+        {
+            var simulator = new ClientAgentSimulator(this);
+
+            this.Connect(simulator);
+
+            return simulator;
+        }
+
+        internal IClientMailDispatcher Connect(IClientMailDispatcher dispatcher)
+        {
+            if (this.dispatcher != null)
+            {
+                // dispose the old dispatcher
+                this.dispatcher.Dispose();  
+                // unregiseter event listenings on old dispatcher
+                this.Listen(this.dispatcher, false);
+            }
+            this.dispatcher = dispatcher;
+            // register event listenings on new dispatcher
+            this.Listen(this.dispatcher, true);
+
+            return dispatcher;
+        }
+
+        /// <summary>
+        /// get current dispatcher, and cast it to specifield type 'T'
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T GetDispatcher<T>() where T : class
+        {
+            return this.dispatcher as T;
+        }
+
         /// <summary>
         /// get a mailbox by entity name
         /// </summary>
@@ -130,43 +182,6 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// pickup a letter sent from remote postoffice
-        /// </summary>
-        /// <param name="letter"></param>
-        /// <returns>replies emit by the mailboxes in this postoffice</returns>
-        internal EMLetter Pickup(EMLetter letter)
-        {
-            ClientMailBox mailBox;
-            var replies = new List<EMLetter>(1);
-            var routeInfo = MailRouteInfo.Parse(letter.Recipient)[0];
-
-            foreach (var entityName in routeInfo.EntityNames)
-            {
-                rwlsDictName2MailBox.EnterReadLock();
-                if (dictName2MailBox.TryGetValue(entityName, out mailBox))
-                {
-                    // pass
-                }
-                else  // report an error
-                {
-                    PostOfficeEvent?.Invoke(this,
-                        new PostOfficeEventArgs(PostOfficeEventType.Error,
-                        $"unable to pickup letter: postoffice '{this.OfficeName}' has registered a receiver named '{entityName}', but the corresponding instance if not found."));
-                }
-                rwlsDictName2MailBox.ExitReadLock();
-
-                // dispatch letter to target mailbox
-                var reply = mailBox?.Receive(letter);
-                if (reply != null)
-                {
-                    replies.Add(reply);
-                }
-            }
-
-            return replies.Count == 0 ? null : replies[0];  // one reply for 'Get'
-        }
-
-        /// <summary>
         /// provide a send interface for every mailbox in this postoffice
         /// </summary>
         /// <param name="letter"></param>
@@ -216,19 +231,6 @@ namespace EntityOrientedCommunication.Client
             return null;
         }
 
-        /// <summary>
-        /// activate all mailboxes
-        /// </summary>
-        public void ActivateAll()
-        {
-            rwlsDictName2MailBox.EnterReadLock();
-            if (dictName2MailBox.Count > 0)
-            {
-                this.dispatcher.Activate(dictName2MailBox.Values.ToArray());
-            }
-            rwlsDictName2MailBox.ExitReadLock();
-        }
-
         public void Destroy()
         {
             rwlsDictName2MailBox.EnterWriteLock();
@@ -238,10 +240,87 @@ namespace EntityOrientedCommunication.Client
             }
             dictName2MailBox.Clear();
             rwlsDictName2MailBox.ExitWriteLock();
+            if (this.dispatcher != null)
+            {
+                this.Listen(this.dispatcher, false);
+                this.dispatcher.Dispose();
+                this.dispatcher = null;
+            }
         }
         #endregion
 
         #region private
+        /// <summary>
+        /// pickup a letter sent from remote postoffice
+        /// </summary>
+        /// <param name="letter"></param>
+        /// <returns>replies emit by the mailboxes in this postoffice</returns>
+        private EMLetter OnIncomingLetter(EMLetter letter)
+        {
+            ClientMailBox mailBox;
+            var replies = new List<EMLetter>(1);
+            var routeInfo = MailRouteInfo.Parse(letter.Recipient)[0];
+
+            foreach (var entityName in routeInfo.EntityNames)
+            {
+                rwlsDictName2MailBox.EnterReadLock();
+                if (dictName2MailBox.TryGetValue(entityName, out mailBox))
+                {
+                    // pass
+                }
+                else  // report an error
+                {
+                    PostOfficeEvent?.Invoke(this,
+                        new PostOfficeEventArgs(PostOfficeEventType.Error,
+                        $"unable to pickup letter: {this.User.Name}'s postoffice has registered a receiver named '{entityName}', but the corresponding instance if not found."));
+                }
+                rwlsDictName2MailBox.ExitReadLock();
+
+                // dispatch letter to target mailbox
+                var reply = mailBox?.Receive(letter);
+                if (reply != null)
+                {
+                    replies.Add(reply);
+                }
+            }
+
+            return replies.Count == 0 ? null : replies[0];  // one reply for 'Get'
+        }
+
+        /// <summary>
+        /// re-activate all mailboxes
+        /// </summary>
+        private void OnDispatcherReseted()
+        {
+            rwlsDictName2MailBox.EnterReadLock();
+            if (dictName2MailBox.Count > 0)
+            {
+                this.dispatcher.Activate(dictName2MailBox.Values.ToArray());
+            }
+            rwlsDictName2MailBox.ExitReadLock();
+        }
+
+        private void OnTransmissionError(EMLetter letter, string errorMessage)
+        {
+            this.PostOfficeEvent?.Invoke(this, new PostOfficeEventArgs(PostOfficeEventType.Error, $"letter '{letter.Title}' encountered a transmission error: {errorMessage}"));
+        }
+
+        private void Listen(IClientMailDispatcher dispatcher, bool bListen)
+        {
+            if (bListen)
+            {
+                dispatcher.ResetedEvent += this.OnDispatcherReseted;
+                dispatcher.IncomingLetterEvent += this.OnIncomingLetter;
+                dispatcher.TransmissionErrorEvent += this.OnTransmissionError;
+            }
+            else
+            {
+                dispatcher.ResetedEvent -= this.OnDispatcherReseted;
+                dispatcher.IncomingLetterEvent -= this.OnIncomingLetter;
+                dispatcher.TransmissionErrorEvent -= this.OnTransmissionError;
+            }
+        }
+
         /// <summary>
         /// deliver to localhost
         /// </summary>
@@ -251,11 +330,11 @@ namespace EntityOrientedCommunication.Client
         {
             if (letter.HasFlag(Messages.StatusCode.Get))
             {
-                return this.Pickup(letter);
+                return this.OnIncomingLetter(letter);
             }
             else  // Post
             {
-                ThreadPool.QueueUserWorkItem(o => this.Pickup(letter), letter);
+                ThreadPool.QueueUserWorkItem(o => this.OnIncomingLetter(letter), letter);
 
                 return null;
             }

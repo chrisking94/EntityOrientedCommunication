@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public enum PatternMatchType
+    internal enum PatternMatchType
     {
         All,
         Any,
@@ -25,7 +25,7 @@ namespace EntityOrientedCommunication.Facilities
     /// serializable pattern set
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class ObjectPatternSet
+    internal class ObjectPatternSet
     {
         #region data
         #region property

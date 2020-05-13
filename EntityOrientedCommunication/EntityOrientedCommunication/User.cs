@@ -38,7 +38,7 @@ namespace EntityOrientedCommunication
             Password = "";
         }
 
-        protected User(string name, string detail = "")
+        public User(string name, string detail = "")
         {
             Name = name;
             Detail = detail;

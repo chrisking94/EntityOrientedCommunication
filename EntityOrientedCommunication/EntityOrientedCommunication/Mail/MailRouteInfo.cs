@@ -13,7 +13,7 @@ namespace EntityOrientedCommunication.Mail
     /// <summary>
     /// route information of a letter
     /// </summary>
-    public class MailRouteInfo
+    internal class MailRouteInfo
     {
         #region data
         #region property

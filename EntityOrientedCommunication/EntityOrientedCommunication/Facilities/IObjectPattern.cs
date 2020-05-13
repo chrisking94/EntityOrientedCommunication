@@ -7,7 +7,7 @@
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public interface IObjectPattern
+    internal interface IObjectPattern
     {
         bool Match(object obj);
     }

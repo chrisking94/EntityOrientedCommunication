@@ -34,10 +34,11 @@ namespace ClientDemo
 
         public static void __main__()
         {
-            var agent = new ClientAgent("127.0.0.1", 1350);
+            var office = new ClientPostOffice("");
+            var agent = office.Connect("127.0.0.1", 1350);
 
             var ea = new Entity("A");
-            var mba = agent.PostOffice.Register(ea);
+            var mba = office.Register(ea);
 
             mba.Get("A@localhost", "hellpA", "fire in the hole");
 

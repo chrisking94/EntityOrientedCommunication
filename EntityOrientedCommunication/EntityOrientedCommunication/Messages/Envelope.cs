@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace EntityOrientedCommunication.Messages
 {
-    public struct Envelope
+    internal struct Envelope
     {
         public readonly uint ID;
 

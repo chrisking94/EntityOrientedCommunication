@@ -12,7 +12,7 @@ namespace EntityOrientedCommunication.Messages
     /// used to transfer a simple literal string
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EMText: EMessage
+    internal class EMText: EMessage
     {
         #region field
         [JsonProperty]

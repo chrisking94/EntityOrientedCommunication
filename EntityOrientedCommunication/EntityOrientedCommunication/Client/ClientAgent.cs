@@ -23,40 +23,41 @@ namespace EntityOrientedCommunication.Client
     /// <summary>
     /// implement the function of client login management, provide full duplex communication
     /// </summary>
-    public sealed class ClientAgent : LoginAgent, IClientMailDispatcher
+    internal sealed class ClientAgent : LoginAgent, IClientMailDispatcher, IClientAgent
     {
         #region data
         #region property
-        public ClientAgentEventHandler ClientAgentEvent;
+        public event ClientAgentEventHandler ClientAgentEvent;
 
         public EndPoint EndPoint { get; private set; }
 
-        public bool IsLoggedIn => Phase >= ConnectionPhase.P2LoggedIn;
-
-        public ClientPostOffice PostOffice => postOffice;
+        public bool LoggedIn => Phase >= ConnectionPhase.P2LoggedIn;
 
         public DateTime Now => this.nowBlock.Value;
+
+        public User User => this.postOffice.User as User;
         #endregion
 
         #region field
         private bool bOnWorking;
 
-        private ClientPostOffice postOffice;
-
         private TransactionPool transPool;
 
         private TimeBlock nowBlock;
+
+        private ClientPostOffice postOffice;
         #endregion
         #endregion
 
         #region constructor
-        public ClientAgent(string serverIpOrUrl, int port)
+        public ClientAgent(ClientPostOffice postOffice, string serverIpOrUrl, int port)
         {
             TeleClientName = "";
             EndPoint = new DnsEndPoint(serverIpOrUrl, port);
 
-            this.postOffice = new ClientPostOffice(this);
             this.nowBlock = new TimeBlock();
+
+            this.postOffice = postOffice;
 
             this.transPool = new TransactionPool();
             this.transPool.Register(Transaction_ConnectionMonitor, 10, "ConnectionMonitor");
@@ -128,16 +129,26 @@ namespace EntityOrientedCommunication.Client
             Phase = ConnectionPhase.P0Start;
             ClientAgentEvent?.Invoke(this,
                 new ClientAgentEventArgs(ClientAgentEventType.Disconnected | ClientAgentEventType.Prompt, $"{this} was destroyed."));
-            postOffice.Destroy();
-            postOffice = null;
 
             transPool.Destroy();
             transPool = null;
+            this.postOffice = null;
             logger.Debug("transaction pool destroyed.");
+        }
+
+        void IDisposable.Dispose()
+        {
+            this.Destroy();
         }
         #endregion
 
         #region EOC
+        public event IncomingLetterEventHandler IncomingLetterEvent;
+
+        public event ResetedEventHandler ResetedEvent;
+
+        public event TransmissionErrorEventHandler TransmissionErrorEvent;
+
         EMLetter IMailDispatcher.Dispatch(EMLetter letter)  // dispatch the local letter to server
         {
             CheckLogin();
@@ -165,7 +176,7 @@ namespace EntityOrientedCommunication.Client
 
         void IClientMailDispatcher.Activate(params ClientMailBox[] mailBoxes)
         {
-            if (IsLoggedIn)
+            if (LoggedIn)
             {
                 var entityNames = string.Join(",", mailBoxes.Select(mb => mb.EntityName));
                 var msg = new EMText(GetEnvelope(), entityNames);
@@ -283,7 +294,8 @@ namespace EntityOrientedCommunication.Client
                         ClientAgentEvent?.Invoke(this,
                             new ClientAgentEventArgs(ClientAgentEventType.LoggedIn | ClientAgentEventType.Prompt, "login success!"));
 
-                        postOffice.ActivateAll();
+
+                        this.ResetedEvent?.Invoke();
                     }
                     else  // denied
                     {
@@ -321,7 +333,7 @@ namespace EntityOrientedCommunication.Client
         {
             if (msg.HasFlag(StatusCode.Letter))
             {
-                var replyLetter = postOffice.Pickup(msg as EMLetter);
+                var replyLetter = this.IncomingLetterEvent?.Invoke(msg as EMLetter);
                 if (replyLetter == null)
                 {
                     msg = new EMessage(msg, StatusCode.Ok);
@@ -340,12 +352,19 @@ namespace EntityOrientedCommunication.Client
 
         protected override void ProcessResponse(EMessage requestMsg, EMessage responseMsg)
         {
-            // pass
+            if (requestMsg.HasFlag(StatusCode.Letter) && responseMsg.HasFlag(StatusCode.Denied))
+            {
+                var errorMsg = responseMsg as EMError;
+                this.TransmissionErrorEvent?.Invoke(requestMsg as EMLetter, $"E{(int)errorMsg.Code}: {errorMsg.Text}");
+            }
         }
 
         protected override void ProcessTimeoutRequest(EMessage msg)
         {
-            // pass
+            if (msg.HasFlag(StatusCode.Letter))
+            {
+                this.TransmissionErrorEvent(msg as EMLetter, "request to timeout.");
+            }
         }
 
         protected override void ResetEnvelope()

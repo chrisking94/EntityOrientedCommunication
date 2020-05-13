@@ -37,7 +37,7 @@ namespace EntityOrientedCommunication.Server
             rwlsDictName2User = new ReaderWriterLockSlim();
 
             this.server = server;
-            this.router = new Router();
+            this.SetRouter(new Router());
         }
         #endregion
 
@@ -137,7 +137,7 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region EOC
-        public void SetRouter(Router router)
+        internal void SetRouter(Router router)
         {
             this.router = router;
         }

@@ -11,7 +11,7 @@ using EntityOrientedCommunication.Facilities;
 namespace EntityOrientedCommunication.Messages
 {
     [Flags]
-    public enum StatusCode
+    internal enum StatusCode
     {
         None            = 0x00_00_0000,
 
@@ -42,7 +42,7 @@ namespace EntityOrientedCommunication.Messages
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class EMessage
+    internal class EMessage
     {
         #region property
         [JsonProperty]

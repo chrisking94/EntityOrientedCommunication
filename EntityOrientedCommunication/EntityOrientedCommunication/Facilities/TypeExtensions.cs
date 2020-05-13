@@ -10,7 +10,7 @@ using System.Text;
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public static class TypeExtensions
+    internal static class TypeExtensions
     {
         /// <summary>
         /// convert target to object of 'type'

@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 
 namespace EntityOrientedCommunication.Messages
 {
-    public enum ErrorCode
+    internal enum ErrorCode
     {
         Default,
         RedundantLogin,
@@ -29,7 +29,7 @@ namespace EntityOrientedCommunication.Messages
     /// this class is used by server to report errors
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EMError : EMText
+    internal class EMError : EMText
     {
         #region data
         #region property

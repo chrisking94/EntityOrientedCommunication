@@ -13,7 +13,7 @@ using System.Diagnostics;
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public class Transaction : CycleUpdater
+    internal class Transaction : CycleUpdater
     {
         #region data
         #region property

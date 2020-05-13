@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EntityOrientedCommunication.Server
 {
-    interface IServerAgent
+    internal interface IServerAgent
     {
         bool IsConnected { get; }
 

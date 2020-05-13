@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>EntityOrientedCommunication</id>
-    <version>1.0.6</version>
+    <version>1.1.0</version>
     <title>$title$</title>
     <authors>chris</authors>
     <owners>$author$</owners>
@@ -11,7 +11,7 @@
 	<icon>EOC.png</icon>
     <projectUrl>https://github.com/chrisking94/EntityOrientedCommunication</projectUrl>
     <description>An easy to use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
-    <releaseNotes>fix some bugs.</releaseNotes>
+    <releaseNotes>Tight encapsulation, refactor interfaces.</releaseNotes>
     <copyright>Copyright (c) Railsmart 2020</copyright>
     <tags>object communication, TCP/IP, C/S framework</tags>
     <dependencies>

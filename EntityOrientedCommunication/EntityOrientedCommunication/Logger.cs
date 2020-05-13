@@ -10,6 +10,7 @@ using NLog.LayoutRenderers;
 using NLog.Config;
 using System.IO;
 using EntityOrientedCommunication.Messages;
+using System.Threading;
 
 namespace EntityOrientedCommunication
 {
@@ -109,9 +110,10 @@ namespace EntityOrientedCommunication
             var errMsg = $"{msg}\r\n----{ex.Message}\r\n{ex.StackTrace}";
             Write(LogType.FT, errMsg);
         }
-        public virtual void Write(LogType type, EMessage msg)
+
+        internal void Write(LogType type, EMessage msg)
         {
-            Write(type, msg.ToString());
+            ThreadPool.QueueUserWorkItem(o => Write(type, msg.ToString()));
         }
 
         public void SetOwner(string owner)

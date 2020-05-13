@@ -16,7 +16,7 @@ namespace EntityOrientedCommunication.Facilities
     /// <summary>
     /// countdown timer for message request
     /// </summary>
-    public class TCounter
+    internal class TCounter
     {
         public EMessage RequestMsg { get; private set; }
 

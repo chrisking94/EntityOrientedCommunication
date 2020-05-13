@@ -11,7 +11,7 @@ namespace EntityOrientedCommunication.Messages
     /// a kind of message sent by client, request log into server
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EMLogin: EMessage
+    internal class EMLogin: EMessage
     {
         #region property
         [JsonProperty]

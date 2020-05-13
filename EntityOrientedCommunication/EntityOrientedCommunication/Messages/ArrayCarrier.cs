@@ -16,7 +16,7 @@ namespace EntityOrientedCommunication.Messages
     /// there is a problem when convert 'array' to json string, this class is used to wrap 'array'
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class ArrayCarrier
+    internal class ArrayCarrier
     {
         #region data
         #region property
