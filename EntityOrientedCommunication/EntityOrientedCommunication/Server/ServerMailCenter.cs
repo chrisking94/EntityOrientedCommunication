@@ -16,6 +16,9 @@ namespace EntityOrientedCommunication.Server
     {
         #region data
         #region property
+        /// <summary>
+        /// the count of user registered
+        /// </summary>
         public int Count => dictName2User.Count;
         #endregion
 
@@ -42,6 +45,11 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
+        /// <summary>
+        /// determine whether contains a user with given name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public bool Contains(string name)
         {
             rwlsDictName2User.EnterReadLock();
@@ -85,15 +93,6 @@ namespace EntityOrientedCommunication.Server
             return user;
         }
 
-        public List<string> GetAllUserNames()
-        {
-            rwlsDictName2User.EnterReadLock();
-            var allUsers = dictName2User.Values.Select(s => s.Name).ToList();
-            rwlsDictName2User.ExitReadLock();
-
-            return allUsers;
-        }
-
         internal void Register(ServerUser serverUser)
         {
             rwlsDictName2User.EnterWriteLock();
@@ -104,10 +103,9 @@ namespace EntityOrientedCommunication.Server
         }
 
         /// <summary>
-        /// update user info, if the specified user does not exist(identified by Username), then a new user will be created
-        /// <para>attention: only 1 thread could invoke this method at the same time</para>
+        /// update user info, if the specified user does not exist(identified by UsernName), then a new user will be created.
         /// </summary>
-        /// <param name="opr"></param>
+        /// <param name="iuser"></param>
         public void Update(IUser iuser)
         {
             rwlsDictName2User.EnterUpgradeableReadLock();
@@ -124,6 +122,11 @@ namespace EntityOrientedCommunication.Server
             rwlsDictName2User.ExitUpgradeableReadLock();
         }
 
+        /// <summary>
+        /// determine whether the specified user is online
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
         public bool IsOnline(string username)
         {
             rwlsDictName2User.EnterReadLock();

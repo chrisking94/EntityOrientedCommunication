@@ -19,19 +19,52 @@ namespace EntityOrientedCommunication.Client
         Unknown         = 0x0000_0000_0000_0000,  // unknown event type
 
         /* operation */
-        Disconnected    = 0x0000_0000_0000_0001 | Connection,  // the connection was broken
-        Connecting      = 0x0000_0000_0000_0002 | Connection,// client is trying to connect with server
-        Connected       = Connecting | Ok,  // client and server are connected
-        LoggingIn        = 0x0000_0000_0000_0004 | Connection,// client is loging in
-        LoggedIn        = LoggingIn | Ok,  // successfully logged in 
+        /// <summary>
+        /// the connection was broken
+        /// </summary>
+        Disconnected    = 0x0000_0000_0000_0001 | Connection,
+        /// <summary>
+        /// client agent is trying to connect with server
+        /// </summary>
+        Connecting      = 0x0000_0000_0000_0002 | Connection,
+        /// <summary>
+        /// client agent and server are connected
+        /// </summary>
+        Connected       = Connecting | Ok,
+        /// <summary>
+        /// the client agent is loging in
+        /// </summary>
+        LoggingIn       = 0x0000_0000_0000_0004 | Connection,
+        /// <summary>
+        /// the client agent has logged in
+        /// </summary>
+        LoggedIn        = LoggingIn | Ok,
 
         /* describer */
-        Error           = 0x0001_0000_0000_0000,  // some error occurred when execute 'operation'
-        Ok              = 0x0002_0000_0000_0000,  // operation succeeded
-        Fatal           = 0x0004_0000_0000_0000 | Error,  // a higher level of error
-        Prompt          = 0x0008_0000_0000_0000,  // prompt for operation execution
-        Warning        = 0x0020_0000_0000_0000,  // warning threw by operation
-        Connection      = 0x0040_0000_0000_0000,  // indicate the operation is a connection-type operation
+        /// <summary>
+        /// some error occurred when execute 'operation'
+        /// </summary>
+        Error           = 0x0001_0000_0000_0000,
+        /// <summary>
+        /// succeeded or accepted
+        /// </summary>
+        Ok              = 0x0002_0000_0000_0000,
+        /// <summary>
+        /// a higher level of error
+        /// </summary>
+        Fatal           = 0x0004_0000_0000_0000 | Error,
+        /// <summary>
+        /// prompt message for operation execution
+        /// </summary>
+        Prompt          = 0x0008_0000_0000_0000,  
+        /// <summary>
+        /// warning threw by operation
+        /// </summary>
+        Warning         = 0x0020_0000_0000_0000, 
+        /// <summary>
+        /// indicate the operation is a connection
+        /// </summary>
+        Connection      = 0x0040_0000_0000_0000, 
     }
 
     public delegate void ClientAgentEventHandler(object sender, ClientAgentEventArgs args);

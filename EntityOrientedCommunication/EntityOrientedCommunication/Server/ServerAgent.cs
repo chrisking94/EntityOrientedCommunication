@@ -67,7 +67,11 @@ namespace EntityOrientedCommunication.Server
         #region private
         protected override void ProcessRequest(ref EMessage msg)
         {
-            if (msg.HasFlag(StatusCode.Login))
+            if (server.BlockMessage != null)
+            {
+                msg = new EMError(msg, server.BlockMessage, ErrorCode.ServerBlocked);
+            }
+            else if (msg.HasFlag(StatusCode.Login))
             {
                 var login = msg as EMLogin;
                 bool hasLoggedIn;

@@ -10,22 +10,18 @@
     <license type="expression">MIT</license>
 	<icon>EOC.png</icon>
     <projectUrl>https://github.com/chrisking94/EntityOrientedCommunication</projectUrl>
-    <description>An easy to use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
+    <description>An easy-to-use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
     <releaseNotes>Tight encapsulation, refactor interfaces.</releaseNotes>
     <copyright>Copyright (c) Railsmart 2020</copyright>
-    <tags>object communication, TCP/IP, C/S framework</tags>
+    <tags>object communication, TCP/IP, C/S framework, login management</tags>
     <dependencies>
       <dependency id="Newtonsoft.Json" version="12.0.3" />
       <dependency id="NLog" version="4.7.0" />
     </dependencies>
-    <contentFiles>
-      <files include=".\NLog.config" buildAction="none" copyToOutput="true" />
-    </contentFiles>
   </metadata>
   <files>
     <file src=".\EOC.png" target="" />
-    <file src=".\NLog.config" target="runtimes\win-x64\native" />
-    <file src=".\NLog.config" target="runtimes\win-x86\native" />
-    <file src=".\bin\Release\EntityOrientedCommunication.xml" target="lib\Net45" />
+    <file src=".\NLog.config" target="Build" />
+	<file src=".\EntityOrientedCommunication.targets" target="Build" />
   </files>
 </package>

@@ -14,12 +14,12 @@ namespace EntityOrientedCommunication
     public enum TransmissionMode
     {
         /// <summary>
-        /// ignore all errors while transferring
+        /// ignore the message when recipient entity is offline
         /// </summary>
         Post,
 
         /// <summary>
-        /// communicate in succession, any error during transmission will be reported
+        /// communicate in succession, any error will be reported if the recipient entity is offline
         /// </summary>
         Get,
     }
@@ -29,12 +29,27 @@ namespace EntityOrientedCommunication
     /// </summary>
     public class LetterContent
     {
+        /// <summary>
+        /// title of the letter to be transferred
+        /// </summary>
         public readonly string Title;
 
+        /// <summary>
+        /// content of the letter to be transferred
+        /// </summary>
         public readonly object Content;
 
+        /// <summary>
+        /// transmission mode
+        /// </summary>
         public TransmissionMode Mode;
 
+        /// <summary>
+        /// instantiate a LetterContent
+        /// </summary>
+        /// <param name="title">title of the letter to be transferred</param>
+        /// <param name="content">content of the letter to be transferred</param>
+        /// <param name="transmissionMode">transimission mode</param>
         public LetterContent(string title, object content = null, TransmissionMode transmissionMode = TransmissionMode.Post)
         {
             this.Title = title;

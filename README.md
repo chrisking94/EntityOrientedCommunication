@@ -19,7 +19,7 @@ A C/S framework library which allows object2object communication based on TCP/IP
 ## 1.Quick Start
 Assume there are 2 objects **A** and **B** on different computers, now they need to send messages to each other.
 
-* It is able to use the libraray without downloading source code of which. Since the compiled library was published on [nuget.org](nuget.org), you might use **EntityOrientedCommunication** library by installing the nuget packge through some facilities. e.g. **PackageManager**, etc.
+* It is able to use the libraray without downloading source code of which. Since the compiled library was published on [nuget.org](nuget.org), we might use **EntityOrientedCommunication** library by installing the nuget packge through some facilities. e.g. **PackageManager**, etc.
   ```code
   PM> Install-Package EntityOrientedCommunication -Source nuget.org
   ```
@@ -63,7 +63,7 @@ Now the code of server program is done, we will get a server execution file afte
 <a name="section1_2"></a>
 ### 1.2 Client Console
 
-Similiar to section 0.1, we need to create a client console application first. Then declare a class that implements the interface named **IEntity** in the application. In order to make this quick start conciser, we suppose the objects **A** and **B** are of same type named **SignalStation**.
+Similiar to section 1.1, we need to create a client console application first. Then declare a class that implements the interface named **IEntity** in the application. In order to make this quick start conciser, we suppose the objects **A** and **B** are of same type named **SignalStation**.
 
 ```c#
 using EntityOrientedCommunication;

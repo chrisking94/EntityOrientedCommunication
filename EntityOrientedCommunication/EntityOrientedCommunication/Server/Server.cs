@@ -11,6 +11,9 @@ using EntityOrientedCommunication.Client;
 
 namespace EntityOrientedCommunication.Server
 {
+    /// <summary>
+    /// EOC server
+    /// </summary>
     public class Server
     {
         #region property
@@ -25,7 +28,7 @@ namespace EntityOrientedCommunication.Server
         public int Port { get; }
 
         /// <summary>
-        /// the username of this local client is 'server'
+        /// the username of this local client is 'server', so it's able for other entities to send messages to the entities registered in this LocalClient by setting recipient like 'xxx@server'
         /// </summary>
         public ClientPostOffice LocalClient { get; }
 

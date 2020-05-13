@@ -39,7 +39,7 @@ namespace EntityOrientedCommunication.Client
         /// </summary>
         /// <param name="username"></param>
         /// <param name="password"></param>
-        /// <param name="timeout">the time for waiting at longest</param>
+        /// <param name="timeout">the maximum time for waiting, in milliseconds</param>
         void Login(string username, string password, int timeout);
 
         /// <summary>

@@ -15,18 +15,33 @@ namespace EntityOrientedCommunication
     public class User : IUser
     {
         #region property
+        /// <summary>
+        /// A number managed by the server
+        /// </summary>
         [JsonProperty]
         public long ID { get; set; }
 
+        /// <summary>
+        /// The unique name of user
+        /// </summary>
         [JsonProperty]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Any char[]
+        /// </summary>
         [JsonProperty]
-        public string Password { get; private set; }
+        public string Password { get; set; }
 
+        /// <summary>
+        /// The extra information of user
+        /// </summary>
         [JsonProperty]
         public string NickName { get; set; }
 
+        /// <summary>
+        /// Curstomized user information, should be a JsonObject, see NewtonSoft.Json. Set this property on server, and it will be distributed to the logged-in client.
+        /// </summary>
         [JsonProperty]
         public object Detail { get; set; }
         #endregion
@@ -47,17 +62,17 @@ namespace EntityOrientedCommunication
         #endregion
 
         #region interface
-        public void SetPassword(string password)
+        internal void SetPassword(string password)
         {
             this.Password = password;
         }
 
-        public bool CheckPassword(string password)
+        internal bool CheckPassword(string password)
         {
             return this.Password == password;
         }
 
-        public void Update(IUser opr)
+        internal void Update(IUser opr)
         {
             Name = opr.Name;
             ID = opr.ID;
@@ -66,10 +81,10 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// the password is not copied
+        /// The password is not copied
         /// </summary>
         /// <returns></returns>
-        public User Copy()
+        internal User Copy()
         {
             var opr = new User();
 

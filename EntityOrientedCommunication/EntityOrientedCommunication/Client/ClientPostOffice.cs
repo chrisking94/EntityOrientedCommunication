@@ -36,14 +36,26 @@ namespace EntityOrientedCommunication.Client
 
     public delegate void PostOfficeEventHandler(object sender, PostOfficeEventArgs args);
 
-    public class ClientPostOffice
+    /// <summary>
+    /// manage the entity register, message route etc.
+    /// </summary>
+    public class ClientPostOffice : IDisposable
     {
         #region data
+        /// <summary>
+        /// event emmited by this post office, include 'Promt' and 'Error'
+        /// </summary>
         public PostOfficeEventHandler PostOfficeEvent;
 
         #region property
+        /// <summary>
+        /// the information of the logged-in user
+        /// </summary>
         public IUser User { get; }
 
+        /// <summary>
+        /// server time
+        /// </summary>
         public DateTime Now => this.dispatcher.Now;
         #endregion
 
@@ -57,6 +69,10 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region constructor
+        /// <summary>
+        /// instantiate a 'ClientPostOffice'
+        /// </summary>
+        /// <param name="username">the username of this postoffice, which will be used for message route, such as entity@[username]</param>
         public ClientPostOffice(string username = "localhost")
         {
             dictName2MailBox = new Dictionary<string, ClientMailBox>(1);
@@ -66,7 +82,7 @@ namespace EntityOrientedCommunication.Client
 
         #region interface
         /// <summary>
-        /// connect to server at sepecified IP and port
+        /// connect to the server at sepecified IP and port
         /// </summary>
         /// <param name="serverIpOrUrl"></param>
         /// <param name="port"></param>
@@ -106,9 +122,9 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// get current dispatcher, and cast it to specifield type 'T'
+        /// get current dispatcher, and cast it to the specified type 'T'
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">the type dispatcher should be</typeparam>
         /// <returns></returns>
         public T GetDispatcher<T>() where T : class
         {
@@ -133,7 +149,7 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// register a 'ClientMailBox' box for 'receiver', one entity name can only be registered once
+        /// register a 'ClientMailBox' box for 'receiver', one entity name can only be registered once.
         /// <para>if the imminent receiver has same name with the old receiver in this office, then the old receiver will be destroyed and replaced</para>
         /// </summary>
         /// <param name="receiver"></param>
@@ -168,7 +184,7 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// determine whether the entityName has been registered
+        /// determine whether the given entity name has been registered
         /// </summary>
         /// <param name="entityName"></param>
         /// <returns></returns>
@@ -231,7 +247,10 @@ namespace EntityOrientedCommunication.Client
             return null;
         }
 
-        public void Destroy()
+        /// <summary>
+        /// destroy this postoffice and the mailboxes registered in which
+        /// </summary>
+        public void Dispose()
         {
             rwlsDictName2MailBox.EnterWriteLock();
             foreach (var mailBox in dictName2MailBox.Values)
