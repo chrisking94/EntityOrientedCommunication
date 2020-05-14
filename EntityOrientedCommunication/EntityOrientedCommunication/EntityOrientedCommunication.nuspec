@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>EntityOrientedCommunication</id>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <title>$title$</title>
     <authors>chris</authors>
     <owners>$author$</owners>
@@ -11,9 +11,9 @@
 	<icon>EOC.png</icon>
     <projectUrl>https://github.com/chrisking94/EntityOrientedCommunication</projectUrl>
     <description>An easy-to-use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
-    <releaseNotes>Tight encapsulation, refactor interfaces.</releaseNotes>
+    <releaseNotes>Fix some bugs.</releaseNotes>
     <copyright>Copyright (c) Railsmart 2020</copyright>
-    <tags>object communication, TCP/IP, C/S framework, login management</tags>
+    <tags>object communication, TCP/IP, C/S framework, login management, distributed object</tags>
     <dependencies>
       <dependency id="Newtonsoft.Json" version="12.0.3" />
       <dependency id="NLog" version="4.7.0" />

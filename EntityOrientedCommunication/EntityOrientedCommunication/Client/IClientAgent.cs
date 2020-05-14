@@ -15,6 +15,16 @@ namespace EntityOrientedCommunication.Client
     public interface IClientAgent
     {
         /// <summary>
+        /// client name
+        /// </summary>
+        string ClientName { get; }
+
+        /// <summary>
+        /// server name
+        /// </summary>
+        string TeleClientName { get; }
+
+        /// <summary>
         /// some events about connection affair
         /// </summary>
         event ClientAgentEventHandler ClientAgentEvent;
