@@ -120,11 +120,15 @@ namespace EntityOrientedCommunication.Client
                 {
                     throw new Exception($"failed to logout, detail：{(reply as EMText).Text}");
                 }
+
+                this.SetOfflineState();
             }
         }
 
         public override void Destroy()
         {
+            this.Logout();
+
             base.Destroy();
             Phase = ConnectionPhase.P0Start;
             ClientAgentEvent?.Invoke(this,
@@ -303,7 +307,7 @@ namespace EntityOrientedCommunication.Client
                         {
                             if (err.Code == ErrorCode.IncorrectUsernameOrPassword ||
                                 err.Code == ErrorCode.UnregisteredUser ||
-                                err.Code == ErrorCode.RedundantLogin)
+                                err.Code == ErrorCode.PushedOut)
                             {
                                 bOnWorking = false;  // stop working
                             }
@@ -329,6 +333,12 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
+        private void SetOfflineState()
+        {
+            this.Phase = ConnectionPhase.P1Connected;
+            this.bOnWorking = false;
+        }
+
         protected override void ProcessRequest(ref EMessage msg)
         {
             if (msg.HasFlag(StatusCode.Letter))
@@ -342,6 +352,20 @@ namespace EntityOrientedCommunication.Client
                 {
                     replyLetter.SetEnvelope(new Envelope(msg.ID));
                     msg = replyLetter;
+                }
+            }
+            else if (msg.HasFlag(StatusCode.Push))
+            {
+                if (msg.HasFlag(StatusCode.Denied))  // error message
+                {
+                    var errorMsg = msg as EMError;
+
+                    this.ClientAgentEvent?.Invoke(this, 
+                        new ClientAgentEventArgs(ClientAgentEventType.Error, errorMsg.Text, "server notification"));
+
+                    this.SetOfflineState();
+
+                    msg = new EMessage(msg, StatusCode.Ok);
                 }
             }
             else

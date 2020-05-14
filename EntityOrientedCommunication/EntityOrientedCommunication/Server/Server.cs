@@ -154,6 +154,26 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
+        /// <summary>
+        /// cut off a logged-in connection by username
+        /// </summary>
+        /// <param name="username"></param>
+        internal void PushOut(string username, string message)
+        {
+            // find agent
+            IServerAgent agent;
+            lock (loginAgents)
+            {
+                agent = loginAgents.FirstOrDefault(la => la.User?.Name == username);
+                if (agent != null)
+                {
+                    loginAgents.Remove(agent);
+                }
+            }
+
+            agent?.PushOut(message);
+        }
+
         internal string GenToken(string username)
         {
             var randPart = (new Random()).Next(100000, int.MaxValue).ToString();

@@ -18,7 +18,7 @@ using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
 {
-    internal sealed class ServerAgent : LoginAgent, IMailDispatcher, IServerAgent
+    internal sealed class ServerAgent : LoginAgent, IServerMailDispatcher, IServerAgent
     {
         #region data
         #region property
@@ -62,6 +62,19 @@ namespace EntityOrientedCommunication.Server
                 return null;
             }
         }
+
+        /// <summary>
+        /// force logout
+        /// </summary>
+        /// <param name="message"></param>
+        public void PushOut(string message)
+        {
+            // notify the client
+            this.AsyncRequest(StatusCode.Push, new EMError(GetEnvelope(), message, ErrorCode.PushedOut));
+
+            // logout
+            this.Logout();
+        }
         #endregion
 
         #region private
@@ -80,9 +93,10 @@ namespace EntityOrientedCommunication.Server
 
                 if (hasLoggedIn)
                 {
-                    msg = new EMError(msg, $"'{login.Username}' has logged in，replicated logins are forbidden.", ErrorCode.RedundantLogin);
+                    server.PushOut(login.Username, $"You have been signed out because your account is logged in elsewhere.");
                 }
-                else if (server.MailCenter.Contains(login.Username))
+
+                if (server.MailCenter.Contains(login.Username))
                 {
                     var user = server.MailCenter.GetUser(login.Username, login.Password);
 
@@ -215,7 +229,9 @@ namespace EntityOrientedCommunication.Server
             {
                 User.PostOffice.Deactivate();  // deactivate mailbox
                 User.IsOnline = false;
+                this.User = null;
             }
+            this.Phase = ConnectionPhase.P1Connected;
         }
 
         protected override void OnThreadListenAborted()  // listen thread on aborting

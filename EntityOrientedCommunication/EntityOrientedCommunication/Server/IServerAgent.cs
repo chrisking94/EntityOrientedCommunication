@@ -8,8 +8,16 @@ namespace EntityOrientedCommunication.Server
 {
     internal interface IServerAgent
     {
+        ServerUser User { get; }
+
         bool IsConnected { get; }
 
         void Destroy();
+
+        /// <summary>
+        /// push out this agent
+        /// </summary>
+        /// <param name="message"></param>
+        void PushOut(string message);
     }
 }

@@ -63,6 +63,7 @@
     <Compile Include="Mail\ILetter.cs" />
     <Compile Include="Mail\LetterContent.cs" />
     <Compile Include="Server\IServerAgent.cs" />
+    <Compile Include="Server\IServerMailDispatcher.cs" />
     <Compile Include="Server\IServerUser.cs" />
     <Compile Include="IUser.cs" />
     <Compile Include="Server\Router.cs" />

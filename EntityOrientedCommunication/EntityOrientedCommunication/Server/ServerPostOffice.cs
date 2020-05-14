@@ -129,9 +129,7 @@ namespace EntityOrientedCommunication.Server
 
         public void Deactivate()
         {
-            dispatcherMutex.WaitOne();
             this.dispatcher = null;
-            dispatcherMutex.ReleaseMutex();
 
             registeredReceiverEntityNames.Clear();
         }
@@ -159,7 +157,7 @@ namespace EntityOrientedCommunication.Server
             {
                 throw new Exception($"unable to dispatch letter '{letter.Title}' to '{letter.Recipient}', the dispatcher was offline.");
             }
-            var result = this.dispatcher.Dispatch(copy);
+            var result = this.dispatcher?.Dispatch(copy);  // Deactivate() may cause null dispatcher
             this.dispatcherMutex.ReleaseMutex();
 
             return result;

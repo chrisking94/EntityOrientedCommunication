@@ -305,11 +305,6 @@ namespace EntityOrientedCommunication.Client
             return replies.Count == 0 ? null : replies[0];  // one reply for 'Get'
         }
 
-        private void AsyncReceive(object letter)
-        {
-
-        }
-
         /// <summary>
         /// re-activate all mailboxes
         /// </summary>

@@ -17,7 +17,7 @@ namespace EntityOrientedCommunication.Messages
     internal enum ErrorCode
     {
         Default,
-        RedundantLogin,
+        PushedOut,  // pushed out by another login
         IncorrectUsernameOrPassword,
         UnregisteredUser,
         InvalidOperation,
