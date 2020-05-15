@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
 using System.Diagnostics;
 using NLog;
-using NLog.LayoutRenderers;
-using NLog.Config;
 using System.IO;
 using EntityOrientedCommunication.Messages;
 using System.Threading;

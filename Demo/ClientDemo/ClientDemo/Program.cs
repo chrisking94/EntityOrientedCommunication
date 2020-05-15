@@ -7,7 +7,7 @@ namespace ClientDemo
     {
         static void Main(string[] args)
         {
-            __clientTest.__main__();
+            //__clientTest.__main__();
 
             /****** A@Mary START ******/  // Code block 1
             var postoffice1 = new ClientPostOffice();

@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
-using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace EntityOrientedCommunication.Messages
 {
@@ -12,7 +7,7 @@ namespace EntityOrientedCommunication.Messages
     /// this message is used to transfer an object, the object will be serialized before transfering
     /// <para>when the remote computer received this message, the object will be deserilized when it is accessed</para>
     /// </summary>
-    [JsonObject(MemberSerialization.OptIn)]
+    [Serializable]
     internal class EMObject<T> : EMessage, IObject<T>
     {
         #region property
@@ -25,19 +20,8 @@ namespace EntityOrientedCommunication.Messages
             {
                 if (!bObjectRecovered)
                 {
-                    var obj = Serializer.FromJson<object>(_objJson);
-                    if (obj is ValueCarrier vc)
-                    {
-                        this._object = (T)vc.ToValue();
-                    }
-                    else if (obj is ArrayCarrier ac)
-                    {
-                        this._object = (T)(ac.ToArray() as object);
-                    }
-                    else
-                    {
-                        this._object = (T)obj;
-                    }
+                    var obj = Configuration.Serializer.FromBytes(_objBytes);  // deserialize
+                    this._object = (T)obj;
                     bObjectRecovered = true;
                 }
 
@@ -53,56 +37,27 @@ namespace EntityOrientedCommunication.Messages
 
         #region lazy serialization, deserialization
         /// <summary>
-        /// the object will be serialized as string when this message is prepared to transfer to remote computer
+        /// stores the serialized object
         /// </summary>
-        [JsonProperty]
-        private string _serilizeObject
-        {
-            get
-            {
-                if (_objJson == null)
-                {
-                    if (this._object == null)  // null
-                    {
-                        _objJson = Serializer.ToJson(_object);
-                    }
-                    else if (this._object.GetType().IsValueType)
-                    {
-                        _objJson = Serializer.ToJson(new ValueCarrier(this._object));
-                    }
-                    else if (this._object is Array arr)
-                    {
-                        _objJson = Serializer.ToJson(new ArrayCarrier(arr));
-                    }
-                    else
-                    {
-                        _objJson = Serializer.ToJson(_object);
-                    }
-                }
+        [DataMember]
+        private byte[] _objBytes;
 
-                return _objJson;
-            }
-            set
-            {
-                _objJson = value;
-                bObjectRecovered = false;
-            }
-        }
-
-        private string _objJson;
-
+        [NonSerialized]
         private T _object;
 
         /// <summary>
         /// denote the '_object' of this message has been rehabilitated from json string to it's original form
         /// </summary>
+        [NonSerialized]
         private bool bObjectRecovered;
         #endregion
         #endregion
 
         #region constructor
-        [JsonConstructor]
-        protected EMObject() { }
+        protected EMObject()
+        {
+
+        }
 
         public EMObject(Envelope envelope, T @object) : base(envelope)
         {
@@ -116,7 +71,7 @@ namespace EntityOrientedCommunication.Messages
 
         public EMObject(EMObject<T> copyFrom) : base(copyFrom)
         {
-            _objJson = copyFrom._objJson;
+            _objBytes = copyFrom._objBytes;
             _object = copyFrom._object;
             this.bObjectRecovered = copyFrom.bObjectRecovered;
         }
@@ -133,6 +88,17 @@ namespace EntityOrientedCommunication.Messages
             }
 
             return Format("EObj", $"{objStr}");
+        }
+        #endregion
+
+        #region private
+        protected override void PrepareForTransmission()
+        {
+            // serialize object
+            if (_objBytes == null)
+            {
+                _objBytes = Configuration.Serializer.ToBytes(_object);
+            }
         }
         #endregion
     }

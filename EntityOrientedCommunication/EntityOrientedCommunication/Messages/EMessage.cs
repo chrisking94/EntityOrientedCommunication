@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
 using System.IO.Compression;
 using System.IO;
 using EntityOrientedCommunication.Facilities;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace EntityOrientedCommunication.Messages
 {
@@ -41,14 +37,12 @@ namespace EntityOrientedCommunication.Messages
         Get             = 0x40_00_0000,  // send a letter to the target entity(ies), and wait for every entity's reply, error will be reported if failed
     }
 
-    [JsonObject(MemberSerialization.OptIn)]
+    [Serializable]
     internal class EMessage
     {
         #region property
-        [JsonProperty]
         internal StatusCode Status { get; set; }
 
-        [JsonProperty]
         internal uint ID { get; private set; }
         #endregion
 
@@ -56,12 +50,15 @@ namespace EntityOrientedCommunication.Messages
         /// <summary>
         /// size after serializing and compressing, in byte
         /// </summary>
-        private int size;
+        [NonSerialized]
+        private long size;
         #endregion
 
         #region constructor
-        [JsonConstructor]
-        protected EMessage() { }
+        protected EMessage()
+        {
+
+        }
 
         internal EMessage(uint id)
         {
@@ -92,37 +89,6 @@ namespace EntityOrientedCommunication.Messages
             this.ID = env.ID;
         }
 
-        public byte[] ToBytes()
-        {
-            var bytes = Encoding.ASCII.GetBytes(Serializer.ToJson(this));
-            using (var ms = new MemoryStream())
-            {
-                var gzip = new GZipStream(ms, CompressionMode.Compress, false);
-                gzip.Write(bytes, 0, bytes.Length);
-                gzip.Close();
-                bytes = ms.ToArray();
-                size = bytes.Length;
-                return bytes;
-            }
-        }
-
-        public static EMessage FromBytes(byte[] bytes, int index, int count)
-        {
-            using (var ms = new MemoryStream(bytes, index, count))
-            {
-                using (var gzip = new GZipStream(ms, CompressionMode.Decompress))
-                {
-                    using (var sr = new StreamReader(gzip, Encoding.ASCII))
-                    {
-                        var json = sr.ReadToEnd();
-                        var msg = Serializer.FromJson<EMessage>(json);
-                        msg.size = bytes.Length;
-                        return msg;
-                    }
-                }
-            }
-        }
-
         public bool HasFlag(StatusCode flag)
         {
             return (this.Status & flag) == flag;
@@ -136,6 +102,59 @@ namespace EntityOrientedCommunication.Messages
         public override string ToString()
         {
             return Format("EMsg");
+        }
+        #endregion
+
+        #region serialization, deserialization
+        /// <summary>
+        /// fill some data before the incoming transmission
+        /// </summary>
+        protected virtual void PrepareForTransmission()
+        {
+            // pass
+        }
+
+        private static BinaryFormatter g_bf = new BinaryFormatter();
+
+        public byte[] ToBytes()
+        {
+            PrepareForTransmission();  // prepare
+
+            using (var zippedStream = new MemoryStream())
+            {
+                using (var gzip = new GZipStream(zippedStream, CompressionLevel.Optimal))
+                {
+                    g_bf.Serialize(gzip, this);  // serialize
+                }
+
+                var bytes = zippedStream.ToArray();
+                this.size = bytes.Length;
+
+                return bytes;
+            }
+        }
+
+        /// <summary>
+        /// the stream will not be closed by this method
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public static EMessage FromBytes(byte[] bytes, int offset, int count)
+        {
+            using (var rawStream = new MemoryStream(bytes, offset, count))
+            {
+                var os = new MemoryStream();
+                using (var gzip = new GZipStream(rawStream, CompressionMode.Decompress))
+                {
+                    var msg = g_bf.Deserialize(gzip) as EMessage;
+
+                    msg.size = rawStream.Length;
+
+                    return msg;
+                }
+            }
         }
         #endregion
 

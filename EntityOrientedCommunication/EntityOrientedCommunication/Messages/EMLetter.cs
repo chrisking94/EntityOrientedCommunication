@@ -5,34 +5,22 @@
  * create time	：4/30/2019 9:54:45 AM
  * ============================================================================================*/
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
-using Newtonsoft.Json;
 using EntityOrientedCommunication.Messages;
-using EntityOrientedCommunication.Mail;
-using EntityOrientedCommunication.Client;
-using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication
 {
     /// <summary>
     /// EOC letter, the ID of which will be set before transmission
     /// </summary>
-    [JsonObject(MemberSerialization.OptIn)]
+    [Serializable]
     internal class EMLetter : EMObject<object>, ILetter
     {
         #region data
         #region property
-        [JsonProperty]
         public string Title { get; set; }
 
-        [JsonProperty]
         public string Recipient { get; set; }
 
-        [JsonProperty]
         public string Sender { get; set; }
 
         public object Content { get => Object; }  // lazy content
@@ -45,7 +33,6 @@ namespace EntityOrientedCommunication
         /// <summary>
         /// deadline, this letter is invalid when DateTime.Now exceed the deadline
         /// </summary>
-        [JsonProperty]
         public long DDL { get; set; }
         #endregion
 
@@ -54,9 +41,6 @@ namespace EntityOrientedCommunication
         #endregion
 
         #region constructor
-        [JsonConstructor]
-        protected EMLetter() { }
-
         public EMLetter(string recipient, string sender, string title,
             object content, StatusCode letterType, int timeout)
         {

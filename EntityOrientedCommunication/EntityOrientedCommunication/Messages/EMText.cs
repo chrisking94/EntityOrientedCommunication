@@ -1,26 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
-using System.Diagnostics;
 
 namespace EntityOrientedCommunication.Messages
 {
     /// <summary>
     /// used to transfer a simple literal string
     /// </summary>
-    [JsonObject(MemberSerialization.OptIn)]
+    [Serializable]
     internal class EMText: EMessage
     {
         #region field
-        [JsonProperty]
         public string Text;
         #endregion
 
         #region constructor
-        [JsonConstructor]
         protected EMText() { }
 
         protected EMText(string text)

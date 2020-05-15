@@ -1,33 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
+﻿using System.Linq;
 
 namespace EntityOrientedCommunication
 {
-    public static class Serializer
+    public interface ISerializer
     {
-        private static JsonSerializerSettings jsonSerializerSettings;
+        /// <summary>
+        /// Serialize object to bytes
+        /// </summary>
+        /// <param name="obj">might be null</param>
+        /// <returns></returns>
+        byte[] ToBytes(object obj);
 
-        static Serializer()
-        {
-            jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.TypeNameHandling = TypeNameHandling.All;
-            jsonSerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
-            jsonSerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.All;
-            jsonSerializerSettings.StringEscapeHandling = StringEscapeHandling.EscapeNonAscii;
-        }
-
-        public static string ToJson<T>(T obj)
-        {
-            return JsonConvert.SerializeObject(obj, jsonSerializerSettings);
-        }
-
-        public static T FromJson<T>(string json)
-        {
-            return JsonConvert.DeserializeObject<T>(json, jsonSerializerSettings);
-        }
+        /// <summary>
+        /// Deserialize bytes to object
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        object FromBytes(byte[] bytes);
     }
 }

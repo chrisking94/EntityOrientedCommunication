@@ -12,9 +12,9 @@ namespace EntityOrientedCommunication.Facilities
 {
     internal static class StringFormatter
     {
-        public static string ByteCountToString(int count)
+        public static string ByteCountToString(long count)
         {
-            var unitChars = new char[] { 'B', 'K', 'M', 'G' };
+            var unitChars = new char[] { 'B', 'K', 'M', 'G', 'T', 'P' };
             int i = 0;
             double j = count;
             for (; i < unitChars.Length && j > 1024.0; ++i, j /= 1024.0) ;

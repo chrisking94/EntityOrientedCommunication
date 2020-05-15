@@ -8,9 +8,9 @@ using System.Net.Sockets;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Collections;
-using Newtonsoft.Json;
 using EntityOrientedCommunication.Facilities;
 using EntityOrientedCommunication.Messages;
+using System.IO;
 
 namespace EntityOrientedCommunication
 {
@@ -305,22 +305,22 @@ namespace EntityOrientedCommunication
 
             // send
             var bytes = msg.ToBytes();
-
             logger.Write(LogType.OT, msg);
-
-            SendBytes(bytes);
+            SendBytes(bytes, 0, bytes.Length);
         }
 
         /// <summary>
         /// send byte array，the 'header' and 'check code' are auto attached
         /// </summary>
         /// <param name="bytes"></param>
-        private void SendBytes(byte[] bytes)
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        private void SendBytes(byte[] bytes, int offset, int count)
         {
-            var lenBuff = BitConverter.GetBytes(bytes.Length);
+            var lenBuff = BitConverter.GetBytes(count);
             sendMutex.WaitOne();
             SendRaw(lenBuff, 0, lenBuff.Length);  // 长度码
-            SendRaw(bytes, 0, bytes.Length);  // 正文
+            SendRaw(bytes, offset, count);  // 正文
             SendRaw(lenBuff, 0, lenBuff.Length);  // 校验
             sendMutex.ReleaseMutex();
         }
@@ -420,7 +420,7 @@ namespace EntityOrientedCommunication
         {
             EMessage msg = null;
 
-            try
+            //try
             {
                 // #######################
                 // in message queue
@@ -495,17 +495,17 @@ namespace EntityOrientedCommunication
                     ProcessTimeoutRequest(msg);
                 }
             }
-            catch (Exception ex)
-            {
-                if (msg == null)
-                {
-                    Catch(new EOCException(ex));
-                }
-                else
-                {
-                    Catch(new EOCException(ex, TExceptionType.MessageProcessingFailed, msg));
-                }
-            }
+            //catch (Exception ex)
+            //{
+            //    if (msg == null)
+            //    {
+            //        Catch(new EOCException(ex));
+            //    }
+            //    else
+            //    {
+            //        Catch(new EOCException(ex, TExceptionType.MessageProcessingFailed, msg));
+            //    }
+            //}
         }
 
         /// <summary>
@@ -566,7 +566,7 @@ namespace EntityOrientedCommunication
                     {
                         try
                         {
-                            SendBytes(foodBag);
+                            SendBytes(foodBag, 0, foodBag.Length);
                         }
                         catch
                         {
@@ -660,7 +660,6 @@ namespace EntityOrientedCommunication
                                     else
                                     {
                                         var msg = EMessage.FromBytes(slot, 0, k);
-
                                         lock (inMsgQueue) inMsgQueue.Enqueue(msg);
                                         ThreadPool.QueueUserWorkItem(_processTask, inMsgQueue);
                                     }
