@@ -20,7 +20,7 @@ A C/S framework library which allows object2object communication based on TCP/IP
 
 <a name="QuickStart"></a>
 ## 1.Quick Start
-Assume there are 2 objects **A** and **B** on different computers, now they need to send messages to each other.
+Assume there are 2 objects **A** and **B** on different computers, now they need to send messages(type of any object) to each other.
 
 * It is able to use the libraray without downloading source code of which. Since the compiled library was published on [nuget.org](nuget.org), we might use **EntityOrientedCommunication** library by installing the nuget packge through some facilities. e.g. **PackageManager**, etc.
   ```code
@@ -131,6 +131,41 @@ namespace ClientDemo
 ```
 
 Certainly the code block 1 and 2 could be put at two diffrenct applications, and the two applications could run on different computers. Just make the agents point to same server if you want to connect the objects.
+
+Sometimes an entity might want to send an object to another entity, please mark [SerializableAttribute] to the class of the object which is going to be sent.
+
+For example:
+```c#
+using System;
+
+namespace ClientDemo
+{
+    [Serializable]
+    class Person
+    {
+        public int Age;
+
+        public string Name;
+
+        public Person(int age, string name)
+        {
+            this.Age = age;
+            this.Name = name;
+        }
+
+        public override string ToString()
+        {
+            return $"Name: {this.Name}, Age: {this.Age}";
+        }
+    }
+}
+```
+
+Then post a message of type 'Persion' to the remote entity.
+
+```c#
+boxA.Post("B@Tom", "hello B, this is a information card of Jerry!", new Person(20, "Jerry"));
+```
 
 - - -
 

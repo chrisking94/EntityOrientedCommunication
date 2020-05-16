@@ -13,13 +13,14 @@
     <description>An easy-to-use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
     <releaseNotes>Replace Newtonsoft.Json with System.Runtime.Serialization.Formatters.Binary. Users of this lib need to update both client and server .dll reference to make the applications work fine.</releaseNotes>
     <copyright>Copyright (c) Railsmart 2020</copyright>
-    <tags>object communication, TCP/IP, C/S framework, login management, distributed object</tags>
+    <tags>TCP/IP, C/S framework, login management, distributed object</tags>
     <dependencies>
       <dependency id="NLog" version="4.7.0" />
     </dependencies>
   </metadata>
   <files>
     <file src=".\EOC.png" target="" />
+    <file src=".\readme.txt" target="" />
     <file src=".\NLog.config" target="Build" />
 	<file src=".\EntityOrientedCommunication.targets" target="Build" />
   </files>

@@ -5,6 +5,25 @@ namespace ClientDemo
 {
     class Program
     {
+        [Serializable]
+        private class Person
+        {
+            public int Age;
+
+            public string Name;
+
+            public Person(int age, string name)
+            {
+                this.Age = age;
+                this.Name = name;
+            }
+
+            public override string ToString()
+            {
+                return $"Name: {this.Name}, Age: {this.Age}";
+            }
+        }
+
         static void Main(string[] args)
         {
             //__clientTest.__main__();
@@ -28,6 +47,8 @@ namespace ClientDemo
             // 'B' send a message to 'A'
             //var result = boxB.Get("A@Mary", "hello A!", "put the content here.");
             boxB.Post("A@Mary", "hello A!", "put the content here.");
+            // or send a serializable object
+            boxA.Post("B@Tom", "hello B, this is a information card of Jerry!", new Person(20, "Jerry"));
 
             Console.ReadKey();
         }
