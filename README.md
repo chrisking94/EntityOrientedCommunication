@@ -11,11 +11,11 @@ A C/S framework library which allows object2object communication based on TCP/IP
    1.1 [Server Console](#section1_1) </br>
    1.2 [Client Console](#section1_2) </br>
    1.3 [Excution Results](#section1_3) </br>
-2. [Intoduction](./.doc/chapter1.md) </br>
-3. [EOC Server](./.doc/chapter2.md) </br>
-4. [Entity](./.doc/chapter3.md) </br>
-5. [Client Postoffice](./.doc/chapter4.md) </br>
-6. [Client Mailbox](./.doc/chapter5.md) </br>
+2. [Intoduction](./.doc/chapter2.md) </br>
+3. [EOC Server](./.doc/chapter3.md) </br>
+4. [Entity](./.doc/chapter4.md) </br>
+5. [Client Postoffice](./.doc/chapter5.md) </br>
+6. [Client Mailbox](./.doc/chapter6.md) </br>
 
 
 <a name="QuickStart"></a>
@@ -46,7 +46,7 @@ namespace ServerDemo
         	// create a server named 'EOCServerDemo' at 127.0.0.1:1350
             var server = new Server("EOCServerDemo", "127.0.0.1", 1350);
 
-            // create 2 users without password
+            // append 2 users without password
             server.MailCenter.Update(new User() { Name = "Mary" });
             server.MailCenter.Update(new User() { Name = "Tom" });
 
