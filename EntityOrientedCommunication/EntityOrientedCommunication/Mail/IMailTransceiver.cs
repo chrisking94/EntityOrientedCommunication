@@ -11,12 +11,18 @@ using System.Text;
 
 namespace EntityOrientedCommunication.Mail
 {
-    internal interface IMailDispatcher
+    internal interface IMailTransceiver
     {
         /// <summary>
-        /// it should be a synchronized dispatch
+        /// synchronized dispatch, there might be a reply letter
         /// </summary>
         /// <param name="letter"></param>
-        EMLetter Dispatch(EMLetter letter);
+        EMLetter Get(EMLetter letter);
+
+        /// <summary>
+        /// asynchronized dispatch
+        /// </summary>
+        /// <param name="letter"></param>
+        void Post(EMLetter letter);
     }
 }

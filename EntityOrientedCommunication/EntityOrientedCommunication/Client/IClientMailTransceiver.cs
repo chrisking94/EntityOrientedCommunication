@@ -12,7 +12,7 @@ namespace EntityOrientedCommunication.Client
 
     internal delegate void TransmissionErrorEventHandler(EMLetter letter, string errorMessage);
 
-    internal interface IClientMailDispatcher : IMailDispatcher, IDisposable
+    internal interface IClientMailTransceiver : IMailTransceiver, IDisposable
     {
         /// <summary>
         /// provide a datetime which represents the now time of communication system

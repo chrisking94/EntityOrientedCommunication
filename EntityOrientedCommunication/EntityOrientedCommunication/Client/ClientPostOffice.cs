@@ -42,20 +42,20 @@ namespace EntityOrientedCommunication.Client
     {
         #region data
         /// <summary>
-        /// event emmited by this post office, include 'Promt' and 'Error'
+        /// event emmited by this post office, either 'Promt' or 'Error'
         /// </summary>
         public PostOfficeEventHandler PostOfficeEvent;
 
         #region property
         /// <summary>
-        /// the information of the logged-in user
+        /// the information of the user has logged in
         /// </summary>
         public IUser User { get; }
 
         /// <summary>
         /// server time
         /// </summary>
-        public DateTime Now => this.dispatcher.Now;
+        public DateTime Now => this.transceiver.Now;
         #endregion
 
         #region field
@@ -63,7 +63,7 @@ namespace EntityOrientedCommunication.Client
 
         private ReaderWriterLockSlim rwlsDictName2MailBox = new ReaderWriterLockSlim();
 
-        private IClientMailDispatcher dispatcher;
+        private IClientMailTransceiver transceiver;
         #endregion
         #endregion
 
@@ -71,7 +71,7 @@ namespace EntityOrientedCommunication.Client
         /// <summary>
         /// instantiate a 'ClientPostOffice'
         /// </summary>
-        /// <param name="username">the username of this postoffice, which will be used for message route, such as entity@[username]</param>
+        /// <param name="username">the username of this postoffice, which will be used for message route. The name may be modified by the method 'ClientLoginAgent.Login(string, string, int)'</param>
         public ClientPostOffice(string username = "localhost")
         {
             dictName2MailBox = new Dictionary<string, ClientMailBox>(1);
@@ -95,6 +95,10 @@ namespace EntityOrientedCommunication.Client
             return agent;
         }
 
+        /// <summary>
+        /// connect to the server through memory, the returned 'ClientAgentSimulator' is effictive only when the related 'ServerSimulator' is registered to server
+        /// </summary>
+        /// <returns></returns>
         internal ClientAgentSimulator ConnectSimulator()
         {
             var simulator = new ClientAgentSimulator(this);
@@ -104,18 +108,18 @@ namespace EntityOrientedCommunication.Client
             return simulator;
         }
 
-        internal IClientMailDispatcher Connect(IClientMailDispatcher dispatcher)
+        internal IClientMailTransceiver Connect(IClientMailTransceiver dispatcher)
         {
-            if (this.dispatcher != null)
+            if (this.transceiver != null)
             {
                 // dispose the old dispatcher
-                this.dispatcher.Dispose();  
+                this.transceiver.Dispose();  
                 // unregiseter event listenings on old dispatcher
-                this.Listen(this.dispatcher, false);
+                this.Listen(this.transceiver, false);
             }
-            this.dispatcher = dispatcher;
+            this.transceiver = dispatcher;
             // register event listenings on new dispatcher
-            this.Listen(this.dispatcher, true);
+            this.Listen(this.transceiver, true);
 
             return dispatcher;
         }
@@ -127,7 +131,7 @@ namespace EntityOrientedCommunication.Client
         /// <returns></returns>
         public T GetDispatcher<T>() where T : class
         {
-            return this.dispatcher as T;
+            return this.transceiver as T;
         }
 
         /// <summary>
@@ -177,7 +181,7 @@ namespace EntityOrientedCommunication.Client
 
             rwlsDictName2MailBox.ExitUpgradeableReadLock();  // exit read lock
 
-            dispatcher.Activate(mailBox);
+            transceiver.Activate(mailBox);
 
             return mailBox;
         }
@@ -197,10 +201,10 @@ namespace EntityOrientedCommunication.Client
         }
 
         /// <summary>
-        /// provide a send interface for every mailbox in this postoffice
+        /// an interface which is used to send letter to the reomote postoffices
         /// </summary>
         /// <param name="letter"></param>
-        internal EMLetter Send(EMLetter letter)
+        internal EMLetter Transfer(EMLetter letter)
         {
             var routeInfos = MailRouteInfo.Parse(letter.Recipient);
             if (routeInfos == null)
@@ -229,25 +233,33 @@ namespace EntityOrientedCommunication.Client
 
             letter.UpdateDDL(this.Now);
 
+            // tele transmission
             if (letter.Recipient != "")
             {
                 // send to tele-entity
-                return this.dispatcher.Dispatch(letter);
+                if (letter.HasFlag(Messages.StatusCode.Get))
+                    return this.transceiver.Get(letter);  // Get
+                else
+                    this.transceiver.Post(letter);  // Post
             }
 
+            // local transmission
             if (localRouteInfo != null)
             {
-                // send to local-entity
                 var copy = new EMLetter(letter);
                 copy.Recipient = localRouteInfo.ToLiteral();
-                return this.Dispatch(copy);
+
+                if (letter.HasFlag(Messages.StatusCode.Get))
+                    return this.LocalGet(copy);  // Get
+                else
+                    this.LocalGet(copy);  // Post
             }
 
             return null;
         }
 
         /// <summary>
-        /// destroy this postoffice and the mailboxes registered in which
+        /// destroy this postoffice, the registered mailboxes and the transceiver
         /// </summary>
         public void Dispose()
         {
@@ -258,11 +270,11 @@ namespace EntityOrientedCommunication.Client
             }
             dictName2MailBox.Clear();
             rwlsDictName2MailBox.ExitWriteLock();
-            if (this.dispatcher != null)
+            if (this.transceiver != null)
             {
-                this.Listen(this.dispatcher, false);
-                this.dispatcher.Dispose();
-                this.dispatcher = null;
+                this.Listen(this.transceiver, false);
+                this.transceiver.Dispose();
+                this.transceiver = null;
             }
         }
         #endregion
@@ -313,7 +325,7 @@ namespace EntityOrientedCommunication.Client
             rwlsDictName2MailBox.EnterReadLock();
             if (dictName2MailBox.Count > 0)
             {
-                this.dispatcher.Activate(dictName2MailBox.Values.ToArray());
+                this.transceiver.Activate(dictName2MailBox.Values.ToArray());
             }
             rwlsDictName2MailBox.ExitReadLock();
         }
@@ -323,39 +335,44 @@ namespace EntityOrientedCommunication.Client
             this.PostOfficeEvent?.Invoke(this, new PostOfficeEventArgs(PostOfficeEventType.Error, $"letter '{letter.Title}' encountered a transmission error: {errorMessage}"));
         }
 
-        private void Listen(IClientMailDispatcher dispatcher, bool bListen)
+        /// <summary>
+        /// listen or cancel listening to transceiver
+        /// </summary>
+        /// <param name="transceiver"></param>
+        /// <param name="bListen"></param>
+        private void Listen(IClientMailTransceiver transceiver, bool bListen)
         {
             if (bListen)
             {
-                dispatcher.ResetedEvent += this.OnDispatcherReseted;
-                dispatcher.IncomingLetterEvent += this.OnIncomingLetter;
-                dispatcher.TransmissionErrorEvent += this.OnTransmissionError;
+                transceiver.ResetedEvent += this.OnDispatcherReseted;
+                transceiver.IncomingLetterEvent += this.OnIncomingLetter;
+                transceiver.TransmissionErrorEvent += this.OnTransmissionError;
             }
             else
             {
-                dispatcher.ResetedEvent -= this.OnDispatcherReseted;
-                dispatcher.IncomingLetterEvent -= this.OnIncomingLetter;
-                dispatcher.TransmissionErrorEvent -= this.OnTransmissionError;
+                transceiver.ResetedEvent -= this.OnDispatcherReseted;
+                transceiver.IncomingLetterEvent -= this.OnIncomingLetter;
+                transceiver.TransmissionErrorEvent -= this.OnTransmissionError;
             }
         }
 
         /// <summary>
-        /// deliver to localhost
+        /// 'Get' localhost
         /// </summary>
         /// <param name="letter"></param>
         /// <returns></returns>
-        private EMLetter Dispatch(EMLetter letter)
+        private EMLetter LocalGet(EMLetter letter)
         {
-            if (letter.HasFlag(Messages.StatusCode.Get))
-            {
-                return this.OnIncomingLetter(letter);
-            }
-            else  // Post
-            {
-                ThreadPool.QueueUserWorkItem(o => this.OnIncomingLetter(letter), letter);
+            return this.OnIncomingLetter(letter);
+        }
 
-                return null;
-            }
+        /// <summary>
+        /// 'Post' a letter to localhost
+        /// </summary>
+        /// <param name="letter"></param>
+        private void LocalPost(EMLetter letter)
+        {
+            ThreadPool.QueueUserWorkItem(o => this.OnIncomingLetter(letter), letter);
         }
         #endregion
     }

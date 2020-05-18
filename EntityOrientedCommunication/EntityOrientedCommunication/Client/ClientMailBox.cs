@@ -16,14 +16,26 @@ using EntityOrientedCommunication.Facilities;
 
 namespace EntityOrientedCommunication.Client
 {
+    /// <summary>
+    /// the communication handle for a entity
+    /// </summary>
     public sealed class ClientMailBox
     {
         #region data
         #region property
+        /// <summary>
+        /// name of entity bound with this mailbox
+        /// </summary>
         public readonly string EntityName;
 
-        private string mailAdress => $"{EntityName}@{postoffice.User.Name}";
+        /// <summary>
+        /// mail adress of this mailbox
+        /// </summary>
+        public string MailAdress => $"{EntityName}@{postoffice.User.Name}";
 
+        /// <summary>
+        /// server time
+        /// </summary>
         public DateTime Now => this.postoffice.Now;
         #endregion
 
@@ -49,6 +61,11 @@ namespace EntityOrientedCommunication.Client
         #endregion
 
         #region interface
+        /// <summary>
+        /// an interface provided to 'ClientPostOffice'
+        /// </summary>
+        /// <param name="letter"></param>
+        /// <returns></returns>
         internal EMLetter Receive(EMLetter letter)
         {
             if (letter.HasFlag(StatusCode.Post))
@@ -59,7 +76,7 @@ namespace EntityOrientedCommunication.Client
 
                     if (result != null)
                     {
-                        this.Reply(letter, result.Title, result.Content, result.Timeout);  // sync reply
+                        this.Reply(letter, result.Title, result.Content, result.Timeout);  // async reply
                     }
                 });
 
@@ -99,9 +116,9 @@ namespace EntityOrientedCommunication.Client
                 throw new Exception("'Get' letter should not have multiple recipients.");
             }
 
-            var letter = new EMLetter(recipient, mailAdress, title, content, StatusCode.Get, timeout);
+            var letter = new EMLetter(recipient, MailAdress, title, content, StatusCode.Get, timeout);
             
-            return postoffice.Send(letter);
+            return postoffice.Transfer(letter);
         }
 
         /// <summary>
@@ -138,8 +155,8 @@ namespace EntityOrientedCommunication.Client
         /// <param name="letterType"></param>
         private void Send(string recipient, string title, object content, StatusCode letterType, int timeout)
         {
-            var letter = new EMLetter(recipient, mailAdress, title, content, letterType, timeout);
-            postoffice.Send(letter);
+            var letter = new EMLetter(recipient, MailAdress, title, content, letterType, timeout);
+            postoffice.Transfer(letter);
         }
 
         private EMLetter Pickup(EMLetter letter)
@@ -160,7 +177,7 @@ namespace EntityOrientedCommunication.Client
                 return null;
             }
 
-            var fbLetter = new EMLetter(letter.Sender, this.mailAdress, feedback, letter.GetTTL(this.Now));
+            var fbLetter = new EMLetter(letter.Sender, this.MailAdress, feedback, letter.GetTTL(this.Now));
             fbLetter.SetEnvelope(new Envelope(letter.ID));
 
             return fbLetter;

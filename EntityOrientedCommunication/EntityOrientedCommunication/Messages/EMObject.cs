@@ -8,11 +8,11 @@ namespace EntityOrientedCommunication.Messages
     /// <para>when the remote computer received this message, the object will be deserilized when it is accessed</para>
     /// </summary>
     [Serializable]
-    internal class EMObject<T> : EMessage, IObject<T>
+    internal class EMObject<T> : EMessage
     {
         #region property
         /// <summary>
-        /// the object json will be converted to 'T' type object when this property is visited first time.
+        /// the object data bytes will be converted to object of type 'T' when this property is accessed first time.
         /// </summary>
         public T Object
         {
@@ -46,7 +46,7 @@ namespace EntityOrientedCommunication.Messages
         private T _object;
 
         /// <summary>
-        /// denote the '_object' of this message has been rehabilitated from json string to it's original form
+        /// denote the '_object' of this message has been rehabilitated from bytes to it's original form
         /// </summary>
         [NonSerialized]
         private bool bObjectRecovered;

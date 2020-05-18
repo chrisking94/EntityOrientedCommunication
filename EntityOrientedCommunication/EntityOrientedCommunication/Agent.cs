@@ -128,6 +128,15 @@ namespace EntityOrientedCommunication
 
         #region interface
         /// <summary>
+        /// wait for connection phase of this agent encounter the specified 'phase'
+        /// </summary>
+        /// <param name="ph"></param>
+        public void WaitTill(ConnectionPhase ph)
+        {
+            while (Phase < ph) Thread.Sleep(1);
+        }
+
+        /// <summary>
         /// this agent can not be recovered after it is destroyed
         /// </summary>
         public virtual void Destroy()
@@ -140,15 +149,6 @@ namespace EntityOrientedCommunication
 
             // close socket
             CloseSocket();
-        }
-
-        /// <summary>
-        /// wait for connection phase of this agent encounter the specified 'phase'
-        /// </summary>
-        /// <param name="ph"></param>
-        public void WaitTill(ConnectionPhase ph)
-        {
-            while (Phase < ph) Thread.Sleep(1);
         }
 
         public override string ToString()
@@ -218,11 +218,11 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// asynchronized requst, similiar to 'Request', but this method will not wait for the remote computer to response
+        /// asynchronized request, similiar to 'Request', but this method will not wait for the remote computer to response
         /// </summary>
         /// <param name="status"></param>
         /// <param name="msg"></param>
-        /// <param name="timeout"></param>
+        /// <param name="timeout">in milliseconds</param>
         /// <returns>the time counter for the request 'msg'</returns>
         protected TCounter AsyncRequest(StatusCode status, EMessage msg, int timeout = -1)
         {
@@ -244,14 +244,14 @@ namespace EntityOrientedCommunication
             SendMessage(msg);
         }
 
-        protected TCounter SetWaitFlag(EMessage msg, int timeout)
+        private TCounter SetWaitFlag(EMessage msg, int timeout)  // set the wait flag of a request message at given timeout milliseconds
         {
             var tc = new TCounter(msg, timeout);
             lock (dictMsgId2TC) dictMsgId2TC[msg.ID] = tc;
             return tc;
         }
 
-        protected TCounter RemoveWaitFlag(uint msgId)
+        private TCounter RemoveWaitFlag(uint msgId)  // remove the wait flag of a request message
         {
             lock (dictMsgId2TC)
             {
@@ -331,7 +331,7 @@ namespace EntityOrientedCommunication
         /// <summary>
         /// process the request sent from remote agent, overrides shoud edit the 'msg', after to process is completed,
         /// <para>the edited message will be treated as response message which will be sent to the remote agent, use StatusCode 'NoAutoReply' to cancell this auto reply action</para>
-        /// <para>warning：do not block this method, otherwise program might encounter a connection timeout error, because the response is not sent to remote agent in time</para>
+        /// <para>warning：do not block this method, otherwise program might encounter a connection timeout error due to that the response is not sent to remote agent in time</para>
         /// </summary>
         /// <param name="msg"></param>
         protected abstract void ProcessRequest(ref EMessage msg);
@@ -344,7 +344,7 @@ namespace EntityOrientedCommunication
         protected abstract void ProcessResponse(EMessage requestMsg, EMessage responseMsg);
 
         /// <summary>
-        /// process the request messages which are timeout
+        /// process the request message which is timeout
         /// </summary>
         /// <param name="requestMsg"></param>
         protected abstract void ProcessTimeoutRequest(EMessage requestMsg);
@@ -392,7 +392,7 @@ namespace EntityOrientedCommunication
             // pass
         }
 
-        private void _processOutMessage(object msgObj)
+        private void _processOutMessage(object msgObj)  // async method
         {
             var msg = msgObj as EMessage;
 
@@ -412,7 +412,7 @@ namespace EntityOrientedCommunication
             SendBytes(bytes, 0, bytes.Length);
         }
 
-        private void _processInMessage(object msgObj)
+        private void _processInMessage(object msgObj)  // async method
         {
             var msg = msgObj as EMessage;
 
@@ -455,7 +455,7 @@ namespace EntityOrientedCommunication
             }
         }
 
-        private void _processTimeoutMessage(object msgObj)
+        private void _processTimeoutMessage(object msgObj)  // async method
         {
             var msg = msgObj as EMessage;
 
@@ -473,7 +473,7 @@ namespace EntityOrientedCommunication
         }
 
         /// <summary>
-        /// watch dog has the highest authority in agent, it performs some light wight operations, such as update 'TCounters'
+        /// watch dog has the highest authority in agent, it performs some light weight operations, such as update 'TCounters'
         /// </summary>
         private void __threadWatchdog(ThreadControl control)
         {
@@ -488,24 +488,14 @@ namespace EntityOrientedCommunication
             while (!control.SafelyTerminating)
             {
                 Thread.Sleep(threadInterval);
-                feedTCounter += threadInterval;
-                if (IsConnected)
-                {
-                    // check whether the dog is dead
-                    if (watchDog != -1)  // -1 denote the dog is dead，only __threadListen can set it back to '0' to rebirth the dog
-                    {
-                        watchDog += threadInterval;
-                        if (watchDog >= timeout)
-                        {
-                            watchDog = -1;  // time out flag
 
-                            GetControl(ThreadType.Listen).SafeAbort();
-                            OnConnectionTimeout();
-                            logger.Error($"{this} connection timeout.");
-                        }
-                    }
-                }
-                // udpate TCounter of request messages
+                // -1 denote that the dog is dead，only __threadListen can set it back to '0' to rebirth the dog
+                if (watchDog == -1) continue;  // no more actions when dog has died
+
+
+                /*******************
+                 * update TCounters
+                 * *****************/
                 KeyValuePair<uint, TCounter>[] msgIdAndTCounterPairs;
                 lock (dictMsgId2TC) msgIdAndTCounterPairs = dictMsgId2TC.ToArray();
                 foreach (var kv in msgIdAndTCounterPairs)
@@ -517,13 +507,30 @@ namespace EntityOrientedCommunication
                         ThreadPool.QueueUserWorkItem(_processTimeoutMessage, kv.Value.RequestMsg);
                     }
                 }
-                // feed the remote dog
-                if (feedTCounter >= feedCycle)
-                {
-                    feedTCounter = 0;  // reset
 
-                    if (IsConnected)
+                /************
+                 * watch dog
+                 * **********/
+                if (IsConnected)
+                {
+
+                    // check local dog
+                    watchDog += threadInterval;
+                    if (watchDog >= timeout)
                     {
+                        watchDog = -1;  // time out flag
+
+                        GetControl(ThreadType.Listen).SafeAbort();
+                        OnConnectionTimeout();
+                        logger.Error($"{this} connection timeout.");
+                    }
+
+                    // feed remote dog
+                    feedTCounter += threadInterval;
+                    if (feedTCounter >= feedCycle)
+                    {
+                        feedTCounter = 0;  // reset
+
                         try
                         {
                             SendBytes(foodBag, 0, foodBag.Length);

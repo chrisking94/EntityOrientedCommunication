@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EntityOrientedCommunication.Server
 {
-    interface IServerMailDispatcher : IMailDispatcher
+    interface IServerMailTransceiver : IMailTransceiver
     {
         void Destroy();
     }

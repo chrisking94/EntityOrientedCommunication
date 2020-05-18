@@ -17,18 +17,33 @@ namespace EntityOrientedCommunication.Server
     public class Server
     {
         #region property
+        /// <summary>
+        /// name of server
+        /// </summary>
         public string Name { get; }
 
+        /// <summary>
+        /// mail center bound to this server
+        /// </summary>
         public ServerMailCenter MailCenter { get; }
 
+        /// <summary>
+        /// server time
+        /// </summary>
         public DateTime Now => nowBlock.Value;
 
+        /// <summary>
+        /// server IP
+        /// </summary>
         public string IP { get; }
 
+        /// <summary>
+        /// server port
+        /// </summary>
         public int Port { get; }
 
         /// <summary>
-        /// the username of this local client is 'server', so it's able for other entities to send messages to the entities registered in this LocalClient by setting recipient like 'xxx@server'
+        /// the username of this local client is 'server', therefore it's able for other entities to send messages to the entities registered in this LocalClient by setting recipient like 'xxx@server'
         /// </summary>
         public ClientPostOffice LocalClient { get; }
 
@@ -39,25 +54,26 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region field
-        private HashSet<IServerAgent> loginAgents;
+        private HashSet<IServerAgent> connectedAgents;  // manage the connected server agents
 
-        private Socket socket;
+        private Socket socket;  // the primal socket which is used to accept connection requests from the clients
 
-        private Thread listenThread;
+        private Thread listenThread;  // primal socket listen thread
 
-        private Logger logger;
+        private Logger logger;  // server logger
 
         private TransactionPool transactionPool;
 
-        private TimeBlock nowBlock;
+        private TimeBlock nowBlock;  // server time
         #endregion
 
         #region constructor
-        static Server()
-        {
-
-        }
-
+        /// <summary>
+        /// initialize a server
+        /// </summary>
+        /// <param name="name">name of server</param>
+        /// <param name="ip">IP that the client should connect to</param>
+        /// <param name="port">Port that the client should connect to</param>
         public Server(string name, string ip, int port)
         {
             this.Name = name;
@@ -75,11 +91,14 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
+        /// <summary>
+        /// start the server
+        /// </summary>
         public void Run()
         {
             // initialze simple data members
             var maxConnections = 300;
-            loginAgents = new HashSet<IServerAgent>();
+            connectedAgents = new HashSet<IServerAgent>();
             this.Add(this.LocalClient.GetDispatcher<ClientAgentSimulator>().ServerSimulator);  // register server agent simulator
             var logfolder = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\TAPALogs\\";
             logfolder = "./logs/";
@@ -129,6 +148,9 @@ namespace EntityOrientedCommunication.Server
             this.BlockMessage = message;
         }
 
+        /// <summary>
+        /// stop the server, restart the server by inoking 'Run()'
+        /// </summary>
         public void Stop()
         {
             transactionPool.Destroy();
@@ -140,17 +162,17 @@ namespace EntityOrientedCommunication.Server
         #region private
         internal void Remove(IServerAgent loginAgent)
         {
-            lock (loginAgents)
+            lock (connectedAgents)
             {
-                loginAgents.Remove(loginAgent);
+                connectedAgents.Remove(loginAgent);
             }
         }
 
         private void Add(IServerAgent agent)
         {
-            lock (loginAgents)
+            lock (connectedAgents)
             {
-                loginAgents.Add(agent);  // managed by server
+                connectedAgents.Add(agent);  // managed by server
             }
         }
 
@@ -162,12 +184,12 @@ namespace EntityOrientedCommunication.Server
         {
             // find agent
             IServerAgent agent;
-            lock (loginAgents)
+            lock (connectedAgents)
             {
-                agent = loginAgents.FirstOrDefault(la => la.User?.Name == username);
+                agent = connectedAgents.FirstOrDefault(la => la.User?.Name == username);
                 if (agent != null)
                 {
-                    loginAgents.Remove(agent);
+                    connectedAgents.Remove(agent);
                 }
             }
 
@@ -196,15 +218,15 @@ namespace EntityOrientedCommunication.Server
         {
             logger.Fatal($"error occurred when executing transaction '{args.transaction.Name}'", args.exception);
             this.Block($"tansaction has encountered an unrecoverable error, server has stopped running, please contact the server administrator for help.");
-            System.Environment.Exit(-1);
+            System.Environment.Exit(-1);  // stop server
         }
 
         private void Transaction_AgentsMonitor()
         {
             List<IServerAgent> deadList;
-            lock (loginAgents)
+            lock (connectedAgents)
             {
-                deadList = loginAgents.Where(la => !la.IsConnected).ToList();
+                deadList = connectedAgents.Where(la => !la.IsConnected).ToList();
             }
 
             // remove

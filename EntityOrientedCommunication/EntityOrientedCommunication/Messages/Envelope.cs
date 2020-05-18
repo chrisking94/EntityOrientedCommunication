@@ -1,5 +1,8 @@
 ﻿namespace EntityOrientedCommunication.Messages
 {
+    /// <summary>
+    /// contains the ID of a EOC message
+    /// </summary>
     internal struct Envelope
     {
         public readonly uint ID;

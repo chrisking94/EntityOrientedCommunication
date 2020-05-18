@@ -18,7 +18,7 @@ using EntityOrientedCommunication.Messages;
 
 namespace EntityOrientedCommunication.Server
 {
-    internal sealed class ServerAgent : LoginAgent, IServerMailDispatcher, IServerAgent
+    internal sealed class ServerAgent : LoginAgent, IServerMailTransceiver, IServerAgent
     {
         #region data
         #region property
@@ -47,20 +47,19 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region interface
-        EMLetter IMailDispatcher.Dispatch(EMLetter letter)
+        EMLetter IMailTransceiver.Get(EMLetter letter)
         {
             letter.SetEnvelope(GetEnvelope());
 
-            if (letter.HasFlag(StatusCode.Get))  // Get
-            {
-                var reply = Request(StatusCode.Letter, letter, letter.GetTTL(server.Now));
-                return reply as EMLetter;
-            }
-            else  // Post
-            {
-                this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL(server.Now));
-                return null;
-            }
+            var reply = Request(StatusCode.Letter, letter, letter.GetTTL(server.Now));
+            return reply as EMLetter;
+        }
+
+        void IMailTransceiver.Post(EMLetter letter)
+        {
+            letter.SetEnvelope(GetEnvelope());
+
+            this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL(server.Now));
         }
 
         /// <summary>
@@ -114,7 +113,7 @@ namespace EntityOrientedCommunication.Server
                         user.PostOffice.Activate(this);  // activate mailbox
                         user.IsOnline = true;
 
-                        (msg as EMLoggedin).Object = server.Now;  // set sync time
+                        (msg as EMLoggedin).ServerTime = server.Now;  // set sync time
                     }
                     else
                     {
@@ -218,6 +217,8 @@ namespace EntityOrientedCommunication.Server
         public override void Destroy()
         {
             Logout();
+
+            this.server = null;
 
             base.Destroy();
         }

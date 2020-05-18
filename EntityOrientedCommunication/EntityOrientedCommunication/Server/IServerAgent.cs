@@ -15,7 +15,7 @@ namespace EntityOrientedCommunication.Server
         void Destroy();
 
         /// <summary>
-        /// push out this agent
+        /// push out this agent from server
         /// </summary>
         /// <param name="message"></param>
         void PushOut(string message);

@@ -23,7 +23,7 @@ namespace EntityOrientedCommunication.Client
     /// <summary>
     /// implement the function of client login management, provide full duplex communication
     /// </summary>
-    internal sealed class ClientAgent : LoginAgent, IClientMailDispatcher, IClientAgent
+    internal sealed class ClientAgent : LoginAgent, IClientMailTransceiver, IClientAgent
     {
         #region data
         #region property
@@ -153,32 +153,32 @@ namespace EntityOrientedCommunication.Client
 
         public event TransmissionErrorEventHandler TransmissionErrorEvent;
 
-        EMLetter IMailDispatcher.Dispatch(EMLetter letter)  // dispatch the local letter to server
+        EMLetter IMailTransceiver.Get(EMLetter letter)  // dispatch the local letter to server
         {
             CheckLogin();
 
             letter.SetEnvelope(GetEnvelope());
 
-            if (letter.HasFlag(StatusCode.Get))
+            var reply = Request(StatusCode.Letter, letter, letter.GetTTL(this.Now));
+
+            if (reply.HasFlag(StatusCode.Denied))
             {
-                var reply = Request(StatusCode.Letter, letter, letter.GetTTL(this.Now));
-
-                if (reply.HasFlag(StatusCode.Denied))
-                {
-                    throw new EOCException((reply as EMText).Text);
-                }
-
-                return reply as EMLetter;
+                throw new EOCException((reply as EMText).Text);
             }
-            else
-            {
-                this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL(this.Now));
 
-                return null;
-            }
+            return reply as EMLetter;
         }
 
-        void IClientMailDispatcher.Activate(params ClientMailBox[] mailBoxes)
+        void IMailTransceiver.Post(EMLetter letter)
+        {
+            CheckLogin();
+
+            letter.SetEnvelope(GetEnvelope());
+
+            this.AsyncRequest(StatusCode.Letter, letter, letter.GetTTL(this.Now));
+        }
+
+        void IClientMailTransceiver.Activate(params ClientMailBox[] mailBoxes)
         {
             if (LoggedIn)
             {
@@ -289,7 +289,7 @@ namespace EntityOrientedCommunication.Client
                     if (echo.Status.HasFlag(StatusCode.Ok))
                     {
                         var loggedIn = echo as EMLoggedin;
-                        this.nowBlock.Set(loggedIn.Object);
+                        this.nowBlock.Set(loggedIn.ServerTime);
                         User.Update(loggedIn.User);
                         TeleClientName = loggedIn.ServerName;
                         Token = loggedIn.Token;
@@ -324,6 +324,9 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
+        /// <summary>
+        /// auto reconnection
+        /// </summary>
         private void Transaction_ConnectionMonitor()
         {
             if (bOnWorking)
@@ -333,6 +336,9 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
+        /// <summary>
+        /// set state of this agent to 'offline'
+        /// </summary>
         private void SetOfflineState()
         {
             this.Phase = ConnectionPhase.P1Connected;

@@ -10,7 +10,7 @@ using System.Net;
 namespace EntityOrientedCommunication.Client
 {
     /// <summary>
-    /// a type of mail dispatcher
+    /// a kind of mail dispatcher
     /// </summary>
     public interface IClientAgent
     {

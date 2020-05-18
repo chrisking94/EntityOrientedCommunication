@@ -32,7 +32,7 @@ namespace EntityOrientedCommunication.Server
         #region field
         private ServerUser owner;
 
-        private IMailDispatcher dispatcher;
+        private IMailTransceiver dispatcher;
 
         /// <summary>
         /// mutex on operating with field 'dispatcher'
@@ -118,7 +118,7 @@ namespace EntityOrientedCommunication.Server
             }
         }
 
-        public void Activate(IMailDispatcher dispatcher)
+        public void Activate(IMailTransceiver dispatcher)
         {
             this.IsActivated = true;
 
@@ -157,7 +157,7 @@ namespace EntityOrientedCommunication.Server
             {
                 throw new Exception($"unable to dispatch letter '{letter.Title}' to '{letter.Recipient}', the dispatcher was offline.");
             }
-            var result = this.dispatcher?.Dispatch(copy);  // Deactivate() may cause null dispatcher
+            var result = this.dispatcher?.Get(copy);  // Deactivate() may cause null dispatcher
             this.dispatcherMutex.ReleaseMutex();
 
             return result;

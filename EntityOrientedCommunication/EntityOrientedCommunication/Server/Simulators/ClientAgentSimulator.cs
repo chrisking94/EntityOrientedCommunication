@@ -16,13 +16,14 @@ using EntityOrientedCommunication.Mail;
 using EntityOrientedCommunication.Messages;
 using EntityOrientedCommunication.Client;
 using EntityOrientedCommunication.Facilities;
+using System.Threading;
 
 namespace EntityOrientedCommunication.Server
 {
     /// <summary>
     /// the local client on server, which is a simulation to 'ClientAngent'
     /// </summary>
-    internal sealed class ClientAgentSimulator : IClientMailDispatcher
+    internal sealed class ClientAgentSimulator : IClientMailTransceiver
     {
         #region data
         #region property
@@ -31,8 +32,6 @@ namespace EntityOrientedCommunication.Server
         internal ServerAgentSimulator ServerSimulator => serverLoginAgentSimulator;
 
         public DateTime Now => nowBlock.Value;
-
-
         #endregion
 
         #region field
@@ -75,11 +74,17 @@ namespace EntityOrientedCommunication.Server
         #endregion
 
         #region private
-        EMLetter IMailDispatcher.Dispatch(EMLetter letter)  // client send, send to server through memory
+        EMLetter IMailTransceiver.Get(EMLetter letter)  // client send, send to server through memory
         {
             // ingore timeout
             return this.serverLoginAgentSimulator.ProcessRequest(letter);
         }
+
+        void IMailTransceiver.Post(EMLetter letter)
+        {
+            ThreadPool.QueueUserWorkItem(o => this.serverLoginAgentSimulator.ProcessRequest(letter));
+        }
+
 
         internal EMLetter ProcessRequest(EMLetter letter)  // client receiving
         {
@@ -91,7 +96,7 @@ namespace EntityOrientedCommunication.Server
             this.IncomingLetterEvent?.Invoke(letter);
         }
 
-        void IClientMailDispatcher.Activate(params ClientMailBox[] mailBoxes)
+        void IClientMailTransceiver.Activate(params ClientMailBox[] mailBoxes)
         {
             foreach (var mailBox in mailBoxes)
             {

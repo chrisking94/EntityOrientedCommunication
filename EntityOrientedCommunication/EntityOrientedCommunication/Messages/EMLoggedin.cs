@@ -10,13 +10,13 @@ namespace EntityOrientedCommunication.Messages
     /// login succeed message
     /// </summary>
     [Serializable]
-    internal class EMLoggedin : EMText, IObject<DateTime>
+    internal class EMLoggedin : EMText
     {
         #region data
         #region property
         public string Token => Text;
 
-        public DateTime Object { get; set; }  // sync time
+        public DateTime ServerTime { get; set; }  // sync time
         #endregion
 
         #region field

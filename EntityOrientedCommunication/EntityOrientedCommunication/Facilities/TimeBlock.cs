@@ -11,15 +11,11 @@ using System.Threading.Tasks;
 
 namespace EntityOrientedCommunication.Facilities
 {
-    public delegate void TimeBlockValueChangedEventHandler(object sender, EventArgs args);
-    
     /// <summary>
     /// add some offset to DateTime.Now
     /// </summary>
-    public class TimeBlock
+    internal class TimeBlock
     {
-        public TimeBlockValueChangedEventHandler TimeChangedEvent;
-
         private long offsetTicks;
 
         public DateTime Value => DateTime.Now.AddTicks(offsetTicks);
@@ -27,7 +23,6 @@ namespace EntityOrientedCommunication.Facilities
         public void Set(DateTime now)
         {
             offsetTicks = now.Ticks - DateTime.Now.Ticks;
-            TimeChangedEvent?.Invoke(this, new EventArgs());
         }
 
         public static implicit operator DateTime(TimeBlock block)
