@@ -16,6 +16,9 @@ namespace EntityOrientedCommunication
         Default,
         IncorrectUsernameOrPassword,
         MessageProcessingFailed,
+        TimeoutMessageProcessingFailed,
+        OutMessageProcessingFailed,
+        InMessageProcessingFailed,
     }
 
     public class EOCException : Exception

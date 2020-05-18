@@ -391,9 +391,9 @@ namespace EntityOrientedCommunication.Client
             }
         }
 
-        protected override void ResetEnvelope()
+        protected override uint GetInitialEnvelope()
         {
-            envelope = 101;
+            return 101;
         }
 
         private void CheckLogin()

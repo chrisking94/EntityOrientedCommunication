@@ -23,9 +23,18 @@ namespace EntityOrientedCommunication
 
     public enum ConnectionPhase
     {
-        P0Start,  // start
-        P1Connected,  // server and client are successfully connected through TCP/IP
-        P2LoggedIn,  // client logged in
+        /// <summary>
+        /// the initial state
+        /// </summary>
+        P0Start,
+        /// <summary>
+        /// server and client are connected
+        /// </summary>
+        P1Connected,
+        /// <summary>
+        /// client has logged in
+        /// </summary>
+        P2LoggedIn,
     }
 
     /// <summary>
@@ -64,28 +73,31 @@ namespace EntityOrientedCommunication
         #endregion
 
         #region field
-        private const byte dogFoodFlag = 0xdf;
+        private const byte DOG_FOOD_FLAG = 0xdf;
 
-        private Socket socket;
-        protected readonly ReaderWriterLockSlim rwlsSocket = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);  // the lock for field 'socket' of this agent
+        private Socket socket;  // byte data sender and receiver
+        protected readonly ReaderWriterLockSlim rwlsSocket =  // the lock for field 'socket' of this agent
+            new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);  
 
         private int bufferSize = 65535;
-        private byte[] rbuffer;  // reception buffer
-        private byte[] slot;  // reception slot, it could maintain a series of complete json bytes of a message
+
         private int slotSize;
+
         private int watchDog = 0;  // watch dog time counter, unit: ms
-        protected readonly int timeout = 10000;  // request timeout milliseconds
-        private Queue<EMessage> inMsgQueue;  // reception message queue
-        private Queue<EMessage> outMsgQueue;  // delivery message queue
-        private Queue<TCounter> timeoutTCQ;  // request timeout message queue
+
+        protected readonly int timeout = 10000;  // default request timeout in milliseconds
         /// <summary>
-        /// special id: 2-login
+        /// message ID to TCounter mapping
         /// </summary>
-        private Dictionary<uint, TCounter> dictMsgIdAndTCounter;
+        private Dictionary<uint, TCounter> dictMsgId2TC;
+
         private Mutex sendMutex;
-        protected Logger logger;
-        protected uint envelope;
-        private Dictionary<ThreadType, ThreadControl> dictThreadTypeAndControl;  // maintains some thread controller
+
+        protected readonly Logger logger;
+
+        private uint envelope;  // the ID of message which will be transferred
+
+        private Dictionary<ThreadType, ThreadControl> dictThreadType2Control;  // maintains some thread controller
         #endregion
         #endregion
 
@@ -98,21 +110,16 @@ namespace EntityOrientedCommunication
             ClientName = "localhost";
             TeleClientName = "";
 
-            dictMsgIdAndTCounter = new Dictionary<uint, TCounter>(8);
-            rbuffer = new byte[bufferSize];
+            dictMsgId2TC = new Dictionary<uint, TCounter>(8);
             slotSize = bufferSize << 1;
-            slot = new byte[slotSize];
             sendMutex = new Mutex();
-            inMsgQueue = new Queue<EMessage>(32);
-            outMsgQueue = new Queue<EMessage>(32);
-            timeoutTCQ = new Queue<TCounter>(32);
             logger = new Logger("@@@");
-            dictThreadTypeAndControl = new Dictionary<ThreadType, ThreadControl>()
+            dictThreadType2Control = new Dictionary<ThreadType, ThreadControl>()
             {
                 { ThreadType.Listen, new ThreadControl(ThreadType.Listen.ToString(), __threadListen, CloseSocket) },
                 { ThreadType.WatchDog, new ThreadControl(ThreadType.WatchDog.ToString(), __threadWatchdog) },
             };
-            ResetEnvelope();
+            GetInitialEnvelope();
 
             // start watchdog
             GetControl(ThreadType.WatchDog).Start();
@@ -125,10 +132,8 @@ namespace EntityOrientedCommunication
         /// </summary>
         public virtual void Destroy()
         {
-            ClearMessageQueues();
-
             // stop all treads
-            foreach (var control in dictThreadTypeAndControl.Values)
+            foreach (var control in dictThreadType2Control.Values)
             {
                 control.AsyncSafeAbort();
             }
@@ -153,13 +158,6 @@ namespace EntityOrientedCommunication
         #endregion
 
         #region private
-        protected void ClearMessageQueues()
-        {
-            lock (inMsgQueue) inMsgQueue.Clear();
-            lock (outMsgQueue) outMsgQueue.Clear();
-            lock (timeoutTCQ) timeoutTCQ.Clear();
-        }
-
         private void CloseSocket()
         {
             RestSocket(null);
@@ -192,9 +190,9 @@ namespace EntityOrientedCommunication
 
         protected ThreadControl GetControl(ThreadType threadType)
         {
-            if (dictThreadTypeAndControl.ContainsKey(threadType))
+            if (dictThreadType2Control.ContainsKey(threadType))
             {
-                return dictThreadTypeAndControl[threadType];
+                return dictThreadType2Control[threadType];
             }
             else
             {
@@ -226,7 +224,7 @@ namespace EntityOrientedCommunication
         /// <param name="msg"></param>
         /// <param name="timeout"></param>
         /// <returns>the time counter for the request 'msg'</returns>
-        internal TCounter AsyncRequest(StatusCode status, EMessage msg, int timeout = -1)
+        protected TCounter AsyncRequest(StatusCode status, EMessage msg, int timeout = -1)
         {
             msg.Status |= status | StatusCode.Request;
             if (timeout == -1) timeout = this.timeout;
@@ -249,15 +247,18 @@ namespace EntityOrientedCommunication
         protected TCounter SetWaitFlag(EMessage msg, int timeout)
         {
             var tc = new TCounter(msg, timeout);
-            lock (dictMsgIdAndTCounter) dictMsgIdAndTCounter[msg.ID] = tc;
+            lock (dictMsgId2TC) dictMsgId2TC[msg.ID] = tc;
             return tc;
         }
 
         protected TCounter RemoveWaitFlag(uint msgId)
         {
-            var tc = dictMsgIdAndTCounter[msgId];
-            lock (dictMsgIdAndTCounter) dictMsgIdAndTCounter.Remove(msgId);
-            return tc;
+            lock (dictMsgId2TC)
+            {
+                var tc = dictMsgId2TC[msgId];
+                dictMsgId2TC.Remove(msgId);
+                return tc;
+            }
         }
 
         protected Envelope GetEnvelope()
@@ -266,14 +267,17 @@ namespace EntityOrientedCommunication
             envelope += 2;
             if (uint.MaxValue - envelope < 2)
             {
-                ResetEnvelope();
+                GetInitialEnvelope();
             }
             return env;
         }
 
-        protected virtual void ResetEnvelope()
+        /// <summary>
+        /// get the start envelope number, odd for client, even for server
+        /// </summary>
+        protected virtual uint GetInitialEnvelope()
         {
-            envelope = 100;
+            return 100;
         }
 
         /// <summary>
@@ -282,31 +286,7 @@ namespace EntityOrientedCommunication
         /// <param name="msg"></param>
         protected void SendMessage(EMessage msg)
         {
-            lock (outMsgQueue)
-            {
-                outMsgQueue.Enqueue(msg);  // enqueue out message
-            }
-            ThreadPool.QueueUserWorkItem(_processTask, outMsgQueue);  // create a task
-        }
-
-        /// <summary>
-        /// send 'msg' through socket
-        /// </summary>
-        /// <param name="msg"></param>
-        private void Send(EMessage msg)
-        {
-            if (msg.Status == StatusCode.None)
-            {
-                throw new Exception($"{msg.GetType().Name}.{nameof(EMessage.Status)} can't be None");
-            }
-
-            // pre-processing
-            PreprocessOutMessage(ref msg);
-
-            // send
-            var bytes = msg.ToBytes();
-            logger.Write(LogType.OT, msg);
-            SendBytes(bytes, 0, bytes.Length);
+            ThreadPool.QueueUserWorkItem(_processOutMessage, msg);  // create a task
         }
 
         /// <summary>
@@ -319,9 +299,9 @@ namespace EntityOrientedCommunication
         {
             var lenBuff = BitConverter.GetBytes(count);
             sendMutex.WaitOne();
-            SendRaw(lenBuff, 0, lenBuff.Length);  // 长度码
-            SendRaw(bytes, offset, count);  // 正文
-            SendRaw(lenBuff, 0, lenBuff.Length);  // 校验
+            SendRaw(lenBuff, 0, lenBuff.Length);  // header, length code
+            SendRaw(bytes, offset, count);  // content
+            SendRaw(lenBuff, 0, lenBuff.Length);  // check code
             sendMutex.ReleaseMutex();
         }
 
@@ -409,103 +389,87 @@ namespace EntityOrientedCommunication
         /// </summary>
         protected virtual void OnConnectionTimeout()
         {
-            ClearMessageQueues();
+            // pass
         }
 
-        /// <summary>
-        /// fetch messages from the 3 message queues and invoke method to process them
-        /// </summary>
-        /// <param name="state"></param>
-        private void _processTask(object state)
+        private void _processOutMessage(object msgObj)
         {
-            EMessage msg = null;
+            var msg = msgObj as EMessage;
 
-            //try
+            // pre-processing
+            PreprocessOutMessage(ref msg);
+
+            if (msg.Status == StatusCode.None)
             {
-                // #######################
-                // in message queue
-                // #######################
-                msg = null;
-                if (state == inMsgQueue)
+                throw new Exception($"{msg.GetType().Name}.{nameof(EMessage.Status)} can't be None");
+            }
+
+            // transmission
+            var bytes = msg.ToBytes();
+
+            logger.Write(LogType.OT, msg);
+
+            SendBytes(bytes, 0, bytes.Length);
+        }
+
+        private void _processInMessage(object msgObj)
+        {
+            var msg = msgObj as EMessage;
+
+            try
+            {
+                // pre-processing
+                PreprocessInMessage(ref msg);
+
+                logger.Write(LogType.IN, msg);
+
+                if (msg.HasFlag(StatusCode.Response))
                 {
-                    lock (inMsgQueue)
+                    TCounter tc = null;
+                    lock (dictMsgId2TC)
                     {
-                        if (inMsgQueue.Count > 0) msg = inMsgQueue.Dequeue();
+                        dictMsgId2TC.TryGetValue(msg.ID, out tc);
                     }
-                    if (msg != null)
+
+                    if (tc != null)
                     {
-                        PreprocessInMessage(ref msg);
-                        logger.Write(LogType.IN, msg);
+                        tc.SetReply(msg);
+                        RemoveWaitFlag(msg.ID);
 
-                        if (msg.HasFlag(StatusCode.Response))
-                        {
-                            TCounter tc = null;
-                            if (dictMsgIdAndTCounter.ContainsKey(msg.ID))
-                            {
-                                lock (dictMsgIdAndTCounter)
-                                {
-                                    tc = dictMsgIdAndTCounter[msg.ID];
-                                    tc.SetReply(msg);
-                                    RemoveWaitFlag(msg.ID);
-                                }
-                                ProcessResponse(tc.RequestMsg, tc.ResponseMsg);
-                            }
-                        }
-
-                        if (msg.HasFlag(StatusCode.Request))
-                        {
-                            ProcessRequest(ref msg);
-                            if (!msg.HasFlag(StatusCode.NoAutoReply))
-                            {
-                                Response(msg);
-                            }
-                        }
-                        msg = null;
+                        ProcessResponse(tc.RequestMsg, tc.ResponseMsg);
                     }
                 }
 
-                // ######################
-                // out message queue
-                // ######################
-                msg = null;
-                if (state == outMsgQueue)
+                if (msg.HasFlag(StatusCode.Request))
                 {
-                    lock (outMsgQueue)
+                    ProcessRequest(ref msg);
+                    if (!msg.HasFlag(StatusCode.NoAutoReply))
                     {
-                        if (outMsgQueue.Count > 0) msg = outMsgQueue.Dequeue();
+                        Response(msg);
                     }
-
-                    if (msg != null)
-                    {
-                        Send(msg);
-                    }
-                }
-
-                // #############
-                // timeout message
-                // #############
-                msg = null;
-                lock (timeoutTCQ)
-                {
-                    if (timeoutTCQ.Count > 0) msg = timeoutTCQ.Dequeue().RequestMsg;
-                }
-                if (msg != null)
-                {
-                    logger.Error($"request '{msg.ID}' timeout.");
-                    ProcessTimeoutRequest(msg);
                 }
             }
-            //catch (Exception ex)
-            //{
-            //    if (msg == null)
-            //    {
-            //        Catch(new EOCException(ex));
-            //    }
-            //    else
-            //    {
-            //        Catch(new EOCException(ex, TExceptionType.MessageProcessingFailed, msg));
-            //    }
-            //}
+            catch (Exception ex)
+            {
+                this.Catch(new EOCException(ex));
+            }
+        }
+
+        private void _processTimeoutMessage(object msgObj)
+        {
+            var msg = msgObj as EMessage;
+
+            logger.Error($"request '{msg.ID}' timeout.");
+
+            try
+            {
+                // the actual process
+                ProcessTimeoutRequest(msg);
+            }
+            catch (Exception ex)
+            {
+                Catch(new EOCException(ex, TExceptionType.TimeoutMessageProcessingFailed, msg));
+            }
         }
 
         /// <summary>
@@ -518,7 +482,7 @@ namespace EntityOrientedCommunication
             var feedCycle = Math.Min(1000, this.timeout >> 1);  // the cycle of dog feeding, unit: ms
             var feedTCounter = 0;
             var msg = new EMessage(0);
-            var foodBag = new[] { dogFoodFlag };
+            var foodBag = new[] { DOG_FOOD_FLAG };
             var threadInterval = 1;  // watch dog scan cycle, ms
 
             while (!control.SafelyTerminating)
@@ -543,18 +507,14 @@ namespace EntityOrientedCommunication
                 }
                 // udpate TCounter of request messages
                 KeyValuePair<uint, TCounter>[] msgIdAndTCounterPairs;
-                lock (dictMsgIdAndTCounter) msgIdAndTCounterPairs = dictMsgIdAndTCounter.ToArray();
+                lock (dictMsgId2TC) msgIdAndTCounterPairs = dictMsgId2TC.ToArray();
                 foreach (var kv in msgIdAndTCounterPairs)
                 {
                     if (kv.Value.Decrease(threadInterval) || !this.IsConnected)  // request timeout
                     {
                         kv.Value.CountDown = 0;  // set countdown to 'timeout'
-                        lock (timeoutTCQ)
-                        {
-                            timeoutTCQ.Enqueue(kv.Value);
-                        }
                         RemoveWaitFlag(kv.Key);
-                        ThreadPool.QueueUserWorkItem(_processTask, timeoutTCQ);
+                        ThreadPool.QueueUserWorkItem(_processTimeoutMessage, kv.Value.RequestMsg);
                     }
                 }
                 // feed the remote dog
@@ -592,11 +552,13 @@ namespace EntityOrientedCommunication
         {
             logger.Debug($"{nameof(__threadListen)}() on duty.");
 
-            var count = 1;
-            int k = 0, l = 0;
-            uint msgLen = 0, verifyLen = 0;
-            var lenBuff = new byte[sizeof(uint)];
-            var slotBackup = slot;
+            var count = 1;  // the actual received count of bytes by socket
+            var lenBuff = new byte[sizeof(uint)];  // store the message length number in byte format
+            var slot = new byte[slotSize];  // reception slot, it could maintain the integral data of a message
+            int k = 0, l = 0;  // pointer for slot, pointer for lenBuff
+            uint msgLen = 0, verifyLen = 0;  // message header, check code
+            var rbuffer = new byte[bufferSize];  // reception buffer
+            var slotBackup = slot;  // switch back to the primal slot after using super slot
 
             socket.SendBufferSize = this.bufferSize;
 
@@ -652,7 +614,7 @@ namespace EntityOrientedCommunication
                                     watchDog = 0;  // feed local dog, reset the timer
                                     if (msgLen == 1)  // system command code
                                     {
-                                        if (slot[0] == dogFoodFlag)  // dog food
+                                        if (slot[0] == DOG_FOOD_FLAG)  // dog food
                                         {
                                             // pass
                                         }
@@ -660,8 +622,7 @@ namespace EntityOrientedCommunication
                                     else
                                     {
                                         var msg = EMessage.FromBytes(slot, 0, k);
-                                        lock (inMsgQueue) inMsgQueue.Enqueue(msg);
-                                        ThreadPool.QueueUserWorkItem(_processTask, inMsgQueue);
+                                        ThreadPool.QueueUserWorkItem(_processInMessage, msg);
                                     }
                                     msgLen = 0;
                                 }

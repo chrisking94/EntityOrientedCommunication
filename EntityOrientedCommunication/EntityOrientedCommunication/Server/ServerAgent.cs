@@ -37,7 +37,7 @@ namespace EntityOrientedCommunication.Server
             this.server = server;
             ClientName = server.Name;
             TeleClientName = socket.RemoteEndPoint.ToString();
-            logger = new Logger(TeleClientName);
+            logger.SetOwner(TeleClientName);
             Phase = ConnectionPhase.P1Connected;
 
             GetControl(ThreadType.Listen).Start();
@@ -107,8 +107,8 @@ namespace EntityOrientedCommunication.Server
                         User = user;
                         Token = server.GenToken(TeleClientName);
                         msg = new EMLoggedin(login, ClientName, user, Token);
-                        msg.Status |= StatusCode.Command;  // sync time command
-                        logger = new Logger(TeleClientName);
+                        msg.Status |= StatusCode.Duplex;  // sync time command
+                        logger.SetOwner(TeleClientName);
 
                         Phase = ConnectionPhase.P2LoggedIn;
                         user.PostOffice.Activate(this);  // activate mailbox
@@ -185,7 +185,7 @@ namespace EntityOrientedCommunication.Server
 
         protected override void ProcessTimeoutRequest(EMessage msg)
         {
-            if (msg.HasFlag(StatusCode.Command))  // client refused a command
+            if (msg.HasFlag(StatusCode.Duplex))  // client refused a command
             {
                 Response(new EMError(GetEnvelope(), $"client did not response command '{msg.ID}' in time, the connection was cut off."));
 

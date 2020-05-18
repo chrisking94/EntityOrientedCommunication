@@ -14,7 +14,7 @@ namespace EntityOrientedCommunication.Messages
         /* basic status */
         Request         = 0x00_00_0001,
         Response        = 0x00_00_0002,
-        Command = Request | Response,  // this command is only emitted by server
+        Duplex          = Request | Response,  // represent request and response simultaneously
 
         /* operation */
         Register        = 0x00_00_0004,  // register a 'target'
@@ -30,7 +30,6 @@ namespace EntityOrientedCommunication.Messages
         /* target */
         Letter          = 0x01_00_0000,  // EOC letter
         Entity          = 0x02_00_0000,  // EOC entity
-        Time            = 0x04_00_0000,  // sychronize time.now
 
         /* EOC letter type code */
         Post            = 0x20_00_0000,  // post a letter to the target entity(ies), ignore all errors in the sending progress
