@@ -161,7 +161,7 @@ namespace ClientDemo
 }
 ```
 
-Then post a message of type 'Persion' to the remote entity.
+Then post a message of type 'Person' to the remote entity.
 
 ```c#
 boxA.Post("B@Tom", "hello B, this is a information card of Jerry!", new Person(20, "Jerry"));
