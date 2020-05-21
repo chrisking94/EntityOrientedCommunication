@@ -6,8 +6,10 @@
 
 As shown in the figure blow, EOC consists of 2 parts, respectively are **Server** and **Client**.
 
-The server includes **Mail Center** and **Server Postoffice**. Mail center is responsible for routing messages sent from the server postoffice. While server postoffice records the state of entities in the corresponding clien, dispatches the message issue by mail center to the client and upload message sent from client to the mailcenter.
-
-The client includes **Client PostOffice** and **Mailbox**. Mailbox is a communication device provided for entity, each entity has its own mailbox which could be used to send message to the remote entity, and when a mailbox receives a message from remote entity, it will pass the message to the entity it binds with. Client postoffice is a manager to the mailboxes, it route the messages from the server to the mailboxes, and dispatch the messages from the mailboxes to the server.
-
 ![Message flow of EOC](https://github.com/chrisking94/EntityOrientedCommunication/blob/master/.doc/MessageFlow.jpg?raw=true "Message flow of EOC")
+
+The the main components of **server** are **Mail Center** and **Server Postoffice**. Mail center is responsible for routing messages passed from the server postoffice. While server postoffice records the state of entities in the corresponding client, meanwhile dispatches the messages issued by mail center to the client and pass messages sent from the client to mail center.
+
+The **client** includes **Client PostOffice** and **Mailbox**. Mailbox is a communication device provided for entity, each entity has its own mailbox which could be used to send message to the remote entity, and when a mailbox receives a message from remote entity, it will pass the message to the entity it binds with. Client postoffice is a manager to the mailboxes, it route the messages from the server to the target mailboxes, and dispatch the messages from the mailboxes to the server.
+
+Specially there is a **RAM** connection between 'ServerPostOffice' and 'ClientPostOffice' in the figure above. The reason is that the 'ClientPostOffice' is a local client inside the server application, which connects server through memory to provide high performance communication. Usually it is used to offer some services in the server application.

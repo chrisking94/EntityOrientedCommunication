@@ -1,5 +1,5 @@
 # EntityOrientedCommunication
-A C/S framework library which enables object2object communication based on TCP/IP written in C#.
+A C/S framework library which enables object2object communication based on TCP/IP written in C#. 'EntityOrientedCommunication' is Called 'EOC' for short.
 
 ![EOC Demo Ani](https://github.com/chrisking94/EntityOrientedCommunication/blob/master/.doc/EOCDemo_Ani.gif?raw=true "EOC Demo Ani")
 
