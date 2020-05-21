@@ -1,1 +1,1 @@
-## 4. Entity
+## 3. EOC Server
