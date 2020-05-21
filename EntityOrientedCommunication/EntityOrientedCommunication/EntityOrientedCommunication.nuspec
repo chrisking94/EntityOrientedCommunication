@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>EntityOrientedCommunication</id>
-    <version>1.1.3</version>
+    <version>1.1.4</version>
     <title>$title$</title>
     <authors>chris</authors>
     <owners>$author$</owners>
@@ -11,7 +11,7 @@
 	<icon>EOC.png</icon>
     <projectUrl>https://github.com/chrisking94/EntityOrientedCommunication</projectUrl>
     <description>An easy-to-use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
-    <releaseNotes>Replace Newtonsoft.Json with System.Runtime.Serialization.Formatters.Binary. Users of this lib need to update both client and server .dll reference to make the applications work fine.</releaseNotes>
+    <releaseNotes>amend the underlying communication mechanism.</releaseNotes>
     <copyright>Copyright (c) Railsmart 2020</copyright>
     <tags>TCP/IP, C/S framework, login management, distributed object</tags>
     <dependencies>
