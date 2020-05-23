@@ -14,20 +14,20 @@ A C/S framework library which enables object2object communication based on TCP/I
    1.2 [Client Console](#section1_2) </br>
    1.3 [Excution Results](#section1_3) </br>
 2. [Intoduction](./.doc/chapter2.md) </br>
-3. [Entity](./.doc/chapter3.md) </br>
-4. [EOC Server](./.doc/chapter4.md) </br>
-5. [Client Postoffice](./.doc/chapter5.md) </br>
-6. [Client Mailbox](./.doc/chapter6.md) </br>
+3. [API Reference](./.doc/chapter3.md) </br>
+<!-- 4. [EOC Server](./.doc/chapter4.md) </br> -->
+<!-- 5. [Client Postoffice](./.doc/chapter5.md) </br> -->
+<!-- 6. [Client Mailbox](./.doc/chapter6.md) </br> -->
 
 
 <a name="QuickStart"></a>
 ## 1.Quick Start
 Assume there are 2 objects **A** and **B** on different computers, now they need to send messages(objects of any type) to each other.
 
-* It is able to use the libraray without downloading source code of which. Since the compiled library has been published on [nuget.org](nuget.org), we might use **EntityOrientedCommunication** library by installing the nuget package through some facilities. e.g. **PackageManager**.
-  ```code
-  PM> Install-Package EntityOrientedCommunication -Source nuget.org
-  ```
+* It is able to use the libraray without downloading source code of which. Since the compiled library has been published on [nuget.org](nuget.org), part of users might be pleased to use **EntityOrientedCommunication** library by installing the nuget package through some facilities. e.g. **PackageManager**.
+```code
+PM> Install-Package EntityOrientedCommunication -Source nuget.org
+```
 
 - - -
 <a name="section1_1"></a>
