@@ -119,7 +119,7 @@ namespace EntityOrientedCommunication
                 { ThreadType.Listen, new ThreadControl(ThreadType.Listen.ToString(), __threadListen, CloseSocket) },
                 { ThreadType.WatchDog, new ThreadControl(ThreadType.WatchDog.ToString(), __threadWatchdog) },
             };
-            GetInitialEnvelope();
+            this.envelope = GetInitialEnvelope();
 
             // start watchdog
             GetControl(ThreadType.WatchDog).Start();
@@ -267,7 +267,7 @@ namespace EntityOrientedCommunication
             envelope += 2;
             if (uint.MaxValue - envelope < 2)
             {
-                GetInitialEnvelope();
+                this.envelope = GetInitialEnvelope();
             }
             return env;
         }
