@@ -24,7 +24,7 @@ A C/S framework library which enables object2object communication based on TCP/I
 ## 1.Quick Start
 Assume there are 2 objects **A** and **B** on different computers, now they need to send messages(objects of any type) to each other.
 
-* It is able to use the libraray without downloading source code of which. Since the compiled library was published on [nuget.org](nuget.org), we might use **EntityOrientedCommunication** library by installing the nuget packge through some facilities. e.g. **PackageManager**.
+* It is able to use the libraray without downloading source code of which. Since the compiled library has been published on [nuget.org](nuget.org), we might use **EntityOrientedCommunication** library by installing the nuget package through some facilities. e.g. **PackageManager**.
   ```code
   PM> Install-Package EntityOrientedCommunication -Source nuget.org
   ```
