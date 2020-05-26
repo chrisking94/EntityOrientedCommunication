@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>EntityOrientedCommunication</id>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <title>$title$</title>
     <authors>chris</authors>
     <owners>$author$</owners>
@@ -11,7 +11,7 @@
 	<icon>EOC.png</icon>
     <projectUrl>https://github.com/chrisking94/EntityOrientedCommunication</projectUrl>
     <description>An easy-to-use framework that grants objects(class instances) to communicate with each other through TCP/IP.</description>
-    <releaseNotes>amend the underlying communication mechanism.</releaseNotes>
+    <releaseNotes>fix some problem on message ID.</releaseNotes>
     <copyright>Copyright (c) Railsmart 2020</copyright>
     <tags>TCP/IP, C/S framework, login management, distributed object</tags>
     <dependencies>
@@ -20,7 +20,7 @@
   </metadata>
   <files>
     <file src=".\EOC.png" target="" />
-    <file src=".\readme.txt" target="" />
+    <!--file src=".\readme.txt" target="" /-->
     <file src=".\NLog.config" target="Build" />
 	<file src=".\EntityOrientedCommunication.targets" target="Build" />
   </files>
