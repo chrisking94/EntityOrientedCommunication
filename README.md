@@ -15,7 +15,7 @@ A C/S framework library which enables object2object communication based on TCP/I
    1.3 [Excution Results](#section1_3) </br>
 2. [Introduction](./.doc/chapter2.md) </br>
 3. [API Reference](./.doc/chapter3.md) </br>
-<!-- 4. [EOC Server](./.doc/chapter4.md) </br> -->
+4. [FAQ](./.doc/chapter4.md) </br>
 <!-- 5. [Client Postoffice](./.doc/chapter5.md) </br> -->
 <!-- 6. [Client Mailbox](./.doc/chapter6.md) </br> -->
 
