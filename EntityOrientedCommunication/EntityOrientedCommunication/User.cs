@@ -27,9 +27,8 @@ namespace EntityOrientedCommunication
         public string NickName { get; set; }
 
         /// <summary>
-        /// Curstomized user information, should be a JsonObject, see NewtonSoft.Json. Set this property on server, and it will be distributed to the logged-in client.
+        /// Curstomized user information, should be a Serializable object.
         /// </summary>
-
         public object Detail { get; set; }
         #endregion
 

@@ -132,7 +132,7 @@ namespace ClientDemo
 }
 ```
 
-Certainly the code block 1 and 2 could be put at two diffrenct applications, and the two applications could run on different computers. Just make the agents point to same server if you want to connect the entities.
+Certainly the code block 1 and 2 could be placed on two diffrenct applications, and the two applications could run on different computers. Just make the agents point to same server if you want to connect the entities.
 
 Sometimes an entity might want to send an object to another entity, please mark [SerializableAttribute] to the class of the object which is going to be sent.
 
